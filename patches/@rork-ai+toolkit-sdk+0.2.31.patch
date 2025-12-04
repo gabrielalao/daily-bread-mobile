@@ -1,0 +1,17 @@
+diff --git a/node_modules/@rork-ai/toolkit-sdk/src/api.ts b/node_modules/@rork-ai/toolkit-sdk/src/api.ts
+index 5b221f3..0f4f9ee 100644
+--- a/node_modules/@rork-ai/toolkit-sdk/src/api.ts
++++ b/node_modules/@rork-ai/toolkit-sdk/src/api.ts
+@@ -1,5 +1,10 @@
+-export const BASE_URL =
+-  process.env["EXPO_PUBLIC_TOOLKIT_URL"] ?? "http://localhost:3005";
++import Constants from "expo-constants";
++
++const baseFromConfig =
++  (Constants.expoConfig?.extra?.EXPO_PUBLIC_TOOLKIT_URL as string | undefined) ??
++  process.env.EXPO_PUBLIC_TOOLKIT_URL;
++
++export const BASE_URL = baseFromConfig ?? "http://localhost:3005";
+ 
+ export function withBaseUrl(path: string) {
+   const cleanBaseUrl = BASE_URL.replace(/\/$/, "");
