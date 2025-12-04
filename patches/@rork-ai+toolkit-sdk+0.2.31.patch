@@ -1,3 +1,26 @@
+diff --git a/node_modules/@rork-ai/toolkit-sdk/lib/module/api.js b/node_modules/@rork-ai/toolkit-sdk/lib/module/api.js
+index 041fc5c..ff4341a 100644
+--- a/node_modules/@rork-ai/toolkit-sdk/lib/module/api.js
++++ b/node_modules/@rork-ai/toolkit-sdk/lib/module/api.js
+@@ -1,6 +1,17 @@
+ "use strict";
+ 
+-export const BASE_URL = process.env["EXPO_PUBLIC_TOOLKIT_URL"] ?? "http://localhost:3005";
++import Constants from "expo-constants";
++
++// Prefer value from app.json -> extra -> EXPO_PUBLIC_TOOLKIT_URL
++const baseFromConfig =
++  (Constants.expoConfig &&
++    Constants.expoConfig.extra &&
++    Constants.expoConfig.extra.EXPO_PUBLIC_TOOLKIT_URL) ||
++  // Fallback to build-time env (if ever inlined in app code)
++  process.env.EXPO_PUBLIC_TOOLKIT_URL;
++
++export const BASE_URL = baseFromConfig ?? "http://localhost:3005";
++
+ export function withBaseUrl(path) {
+   const cleanBaseUrl = BASE_URL.replace(/\/$/, "");
+   const cleanPath = path.replace(/^\//, "");
 diff --git a/node_modules/@rork-ai/toolkit-sdk/src/api.ts b/node_modules/@rork-ai/toolkit-sdk/src/api.ts
 index 5b221f3..0f4f9ee 100644
 --- a/node_modules/@rork-ai/toolkit-sdk/src/api.ts
