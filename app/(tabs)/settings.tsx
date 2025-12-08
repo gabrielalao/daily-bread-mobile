@@ -1,9 +1,9 @@
 import colors from "@/constants/colors";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { LinearGradient } from "expo-linear-gradient";
-import { Bell, BellOff, Clock } from "lucide-react-native";
+import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight } from "lucide-react-native";
 import React, { useState } from "react";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import {
   Alert,
   Platform,
@@ -21,6 +21,7 @@ export default function SettingsScreen() {
   const [selectedMinute, setSelectedMinute] = useState(parseInt(settings.time.split(':')[1]));
   const [showTimePicker, setShowTimePicker] = useState(false);
   const scrollRef = React.useRef<ScrollView>(null);
+  const router = useRouter();
 
   const handleToggleNotifications = async (value: boolean) => {
     if (Platform.OS === 'web') {
@@ -35,7 +36,7 @@ export default function SettingsScreen() {
     if (value) {
       const time = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
       const success = await enableNotifications(time);
-      
+
       if (!success) {
         Alert.alert(
           'Permission Required',
@@ -51,7 +52,7 @@ export default function SettingsScreen() {
   const handleTimeChange = async () => {
     const time = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
     await updateNotificationTime(time);
-    
+
     if (settings.enabled) {
       Alert.alert(
         'Time Updated',
@@ -59,7 +60,7 @@ export default function SettingsScreen() {
         [{ text: 'OK' }]
       );
     }
-    
+
     setShowTimePicker(false);
   };
 
@@ -169,7 +170,7 @@ export default function SettingsScreen() {
                     <View style={styles.timePickerHeader}>
                       <Text style={styles.timePickerTitle}>Select Time</Text>
                     </View>
-                    
+
                     <View style={styles.pickerRow}>
                       <View style={styles.pickerColumn}>
                         <Text style={styles.pickerLabel}>Hour</Text>
@@ -250,6 +251,58 @@ export default function SettingsScreen() {
               with a reminder to read your daily devotional. Content updates every 24 hours,
               so you&apos;ll always have fresh spiritual nourishment waiting for you.
             </Text>
+          </View>
+
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionHeaderText}>Legal & Support</Text>
+          </View>
+
+          <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.linkRow}
+              onPress={() => router.push("/terms")}
+              activeOpacity={0.7}
+            >
+              <View style={styles.linkLeft}>
+                <View style={styles.iconContainer}>
+                  <FileText size={24} color={colors.light.primary} />
+                </View>
+                <Text style={styles.linkTitle}>Terms of Service</Text>
+              </View>
+              <ChevronRight size={20} color={colors.light.textSecondary} />
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity
+              style={styles.linkRow}
+              onPress={() => router.push("/privacy")}
+              activeOpacity={0.7}
+            >
+              <View style={styles.linkLeft}>
+                <View style={styles.iconContainer}>
+                  <Shield size={24} color={colors.light.primary} />
+                </View>
+                <Text style={styles.linkTitle}>Privacy Policy</Text>
+              </View>
+              <ChevronRight size={20} color={colors.light.textSecondary} />
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity
+              style={styles.linkRow}
+              onPress={() => router.push("/support")}
+              activeOpacity={0.7}
+            >
+              <View style={styles.linkLeft}>
+                <View style={styles.iconContainer}>
+                  <HelpCircle size={24} color={colors.light.primary} />
+                </View>
+                <Text style={styles.linkTitle}>Support</Text>
+              </View>
+              <ChevronRight size={20} color={colors.light.textSecondary} />
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -437,5 +490,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.light.textSecondary,
     fontWeight: "600" as const,
+  },
+  sectionHeader: {
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  sectionHeaderText: {
+    fontSize: 18,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+  },
+  linkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 4,
+  },
+  linkLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    gap: 12,
+  },
+  linkTitle: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: colors.light.text,
   },
 });
