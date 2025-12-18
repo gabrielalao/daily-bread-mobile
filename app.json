@@ -3,7 +3,7 @@
     "name": "Daily Bread",
     "slug": "daily-bread-app-mp9wlbr",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "rork-app",
     "userInterfaceStyle": "automatic",
@@ -14,7 +14,7 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "app.rork.daily-bread-app-mp9wlbr",
       "infoPlist": {
         "UIBackgroundModes": [
@@ -48,7 +48,11 @@
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.SCHEDULE_EXACT_ALARM",
         "RECORD_AUDIO"
-      ]
+      ],
+      "softwareKeyboardLayoutMode": "pan",
+      "androidStatusBar": {
+        "translucent": true
+      }
     },
     "web": {
       "favicon": "./assets/images/favicon.png"

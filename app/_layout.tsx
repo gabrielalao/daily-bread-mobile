@@ -49,7 +49,7 @@ class ErrorBoundary extends Component<
 function RootLayoutNav() {
   return (
     <>
-      <StatusBar style="dark" />
+      <StatusBar style="auto" translucent={true} />
       <Stack
         screenOptions={{
           headerBackTitle: "Back",
