@@ -20,7 +20,7 @@
         "UIBackgroundModes": [
           "audio"
         ],
-        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone",
+        "NSMicrophoneUsageDescription": "Allow Daily Bread to access your microphone to record audio for therapy sessions and provide personalized feedback. Your audio data will not be stored and used only for the purpose of improving your mental health and wellness.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
           "NSExceptionDomains": {
@@ -78,7 +78,7 @@
       [
         "expo-av",
         {
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone"
+          "microphonePermission": "Allow Daily Bread to access your microphone to record audio for therapy sessions and provide personalized feedback. Your audio data will not be stored and used only for the purpose of improving your mental health and wellness."
         }
       ]
     ],
