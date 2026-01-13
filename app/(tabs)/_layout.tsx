@@ -4,9 +4,13 @@ import { BookOpen, BookMarked, Brain, HandHeart, Settings } from "lucide-react-n
 import React from "react";
 import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useContent } from "@/contexts/ContentContext";
+import { t } from "@/utils/i18n";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { userPreferences } = useContent();
+  const lang = userPreferences.appLanguage;
   
   return (
     <Tabs
@@ -48,40 +52,40 @@ export default function TabLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: "Home",
-          headerTitle: "Daily Bread",
+          title: t(lang, "tabs.home"),
+          headerTitle: t(lang, "headers.dailyBread"),
           tabBarIcon: ({ color }) => <BookOpen size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="prayers"
         options={{
-          title: "Prayer",
-          headerTitle: "Prayer Guides",
+          title: t(lang, "tabs.prayer"),
+          headerTitle: t(lang, "headers.prayerGuides"),
           tabBarIcon: ({ color }) => <HandHeart size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="study"
         options={{
-          title: "Study",
-          headerTitle: "Bible Study",
+          title: t(lang, "tabs.study"),
+          headerTitle: t(lang, "headers.bibleStudy"),
           tabBarIcon: ({ color }) => <BookMarked size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="therapy"
         options={{
-          title: "Therapy",
-          headerTitle: "Christian Therapy",
+          title: t(lang, "tabs.therapy"),
+          headerTitle: t(lang, "headers.christianTherapy"),
           tabBarIcon: ({ color }) => <Brain size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
-          headerTitle: "Notification Settings",
+          title: t(lang, "tabs.settings"),
+          headerTitle: t(lang, "headers.notificationSettings"),
           tabBarIcon: ({ color }) => <Settings size={22} color={color} />,
         }}
       />

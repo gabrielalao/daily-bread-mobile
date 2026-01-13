@@ -2,17 +2,26 @@ import colors from "@/constants/colors";
 import { devotionals, getPersonalizedDevotional, type Devotional } from "@/constants/devotionals";
 import { useContent } from "@/contexts/ContentContext";
 import { usePersonalization } from "@/hooks/usePersonalization";
+import { useScreenshotShare } from "@/hooks/useScreenshotShare";
+import { getVersionById } from "@/constants/bible-versions";
+import { getAppLanguageById } from "@/constants/app-languages";
+import { t } from "@/utils/i18n";
+import { translateTextCached } from "@/utils/translate";
 import { LinearGradient } from "expo-linear-gradient";
-import { BookOpen, Calendar, Clock } from "lucide-react-native";
+import { BookOpen, Calendar, Clock, Share2 } from "lucide-react-native";
 import React, { useState, useEffect, useMemo } from "react";
-import { Animated, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Animated, ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useFocusEffect } from "expo-router";
 
 export default function HomeScreen() {
   const { contentHistory, userPreferences, markDevotionalViewed, isLoaded, setCurrentDayDevotional } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
+  const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [translatedTitle, setTranslatedTitle] = useState<string | null>(null);
+  const [translatedVerse, setTranslatedVerse] = useState<string | null>(null);
+  const [translatedReflection, setTranslatedReflection] = useState<string | null>(null);
   const scrollRef = React.useRef<ScrollView>(null);
   
   const devotional = useMemo<Devotional>(() => {
@@ -31,6 +40,10 @@ export default function HomeScreen() {
     console.log('Selected new devotional for today:', selected.title);
     return selected;
   }, [contentHistory.currentDayDevotional, contentHistory.devotionals, userPreferences.topicsOfInterest]);
+
+  const bibleVersion = getVersionById(userPreferences.bibleVersion);
+  const lang = userPreferences.appLanguage;
+  const locale = getAppLanguageById(lang)?.locale ?? "en-US";
 
   React.useEffect(() => {
     if (isLoaded) {
@@ -73,17 +86,47 @@ export default function HomeScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  const today = currentTime.toLocaleDateString("en-US", {
+  const today = currentTime.toLocaleDateString(locale, {
     weekday: "long",
     month: "long",
     day: "numeric",
   });
 
-  const time = currentTime.toLocaleTimeString("en-US", {
+  const time = currentTime.toLocaleTimeString(locale, {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
   });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      // Reset when devotional changes or language changes
+      setTranslatedTitle(null);
+      setTranslatedVerse(null);
+      setTranslatedReflection(null);
+
+      if (!userPreferences.autoTranslateContent) return;
+      if (!lang || lang === "en") return;
+
+      const [titleRes, verseRes, reflectionRes] = await Promise.all([
+        translateTextCached({ text: devotional.title, targetLang: lang }),
+        translateTextCached({ text: devotional.verse, targetLang: lang }),
+        translateTextCached({ text: devotional.reflection, targetLang: lang }),
+      ]);
+
+      if (cancelled) return;
+      setTranslatedTitle(titleRes.text);
+      setTranslatedVerse(verseRes.text);
+      setTranslatedReflection(reflectionRes.text);
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [devotional.id, devotional.title, devotional.verse, devotional.reflection, lang, userPreferences.autoTranslateContent]);
 
   if (!isLoaded) {
     return (
@@ -93,7 +136,7 @@ export default function HomeScreen() {
           style={StyleSheet.absoluteFillObject}
         />
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text style={styles.loadingText}>{t(lang, "common.loading")}</Text>
         </View>
       </View>
     );
@@ -105,13 +148,28 @@ export default function HomeScreen() {
         colors={[colors.light.background, colors.light.cardBackground]}
         style={StyleSheet.absoluteFillObject}
       />
+      
+      {/* Share Button - Floating Action Button */}
+      <TouchableOpacity
+        style={styles.shareButton}
+        onPress={() => captureAndShare("Share today's devotional from Daily Bread")}
+        disabled={isCapturing}
+        activeOpacity={0.8}
+      >
+        {isCapturing ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : (
+          <Share2 size={24} color="#FFFFFF" />
+        )}
+      </TouchableOpacity>
+
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+        <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
           <View style={styles.header}>
             <View style={styles.dateTimeRow}>
               <View style={styles.dateContainer}>
@@ -123,7 +181,7 @@ export default function HomeScreen() {
                 <Text style={styles.timeText}>{time}</Text>
               </View>
             </View>
-            <Text style={styles.subtitle}>Today&apos;s devotional message for your spiritual journey</Text>
+            <Text style={styles.subtitle}>{t(lang, "home.subtitle")}</Text>
           </View>
 
           <View style={styles.card}>
@@ -132,8 +190,10 @@ export default function HomeScreen() {
                 <BookOpen size={24} color={colors.light.primary} />
               </View>
               <View style={styles.cardTitleContainer}>
-                <Text style={styles.cardTitle}>{devotional.title}</Text>
-                <Text style={styles.scripture}>{devotional.scripture}</Text>
+                <Text style={styles.cardTitle}>{translatedTitle ?? devotional.title}</Text>
+                <Text style={styles.scripture}>
+                  {devotional.scripture} {bibleVersion && `(${bibleVersion.abbreviation})`}
+                </Text>
               </View>
             </View>
 
@@ -141,22 +201,21 @@ export default function HomeScreen() {
               <View style={styles.quoteMarkContainer}>
                 <Text style={styles.quoteMark}>&quot;</Text>
               </View>
-              <Text style={styles.verse}>{devotional.verse}</Text>
+              <Text style={styles.verse}>{translatedVerse ?? devotional.verse}</Text>
             </View>
 
             <View style={styles.divider} />
 
             <View style={styles.reflectionContainer}>
-              <Text style={styles.reflectionTitle}>Today&apos;s Reflection</Text>
-              <Text style={styles.reflection}>{devotional.reflection}</Text>
+              <Text style={styles.reflectionTitle}>{t(lang, "home.reflectionTitle")}</Text>
+              <Text style={styles.reflection}>{translatedReflection ?? devotional.reflection}</Text>
             </View>
           </View>
 
           <View style={styles.prayerPrompt}>
-            <Text style={styles.prayerPromptTitle}>Take a moment to pray</Text>
+            <Text style={styles.prayerPromptTitle}>{t(lang, "home.prayerTitle")}</Text>
             <Text style={styles.prayerPromptText}>
-              Lord, thank You for Your Word today. Help me carry this truth with me
-              and live it out in my daily life. Amen.
+              {t(lang, "home.prayerText")}
             </Text>
           </View>
         </Animated.View>
@@ -256,6 +315,8 @@ const styles = StyleSheet.create({
     color: colors.light.text,
     marginBottom: 4,
     lineHeight: 28,
+    flexWrap: "wrap",
+    flexShrink: 1,
   },
   scripture: {
     fontSize: 14,
@@ -332,5 +393,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.light.textSecondary,
     fontWeight: "600" as const,
+  },
+  shareButton: {
+    position: "absolute" as const,
+    right: 20,
+    bottom: 100,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.light.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 1000,
   },
 });

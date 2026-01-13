@@ -1,4 +1,6 @@
 import colors from "@/constants/colors";
+import { useContent } from "@/contexts/ContentContext";
+import { translateTextCached } from "@/utils/translate";
 import { LinearGradient } from "expo-linear-gradient";
 import { HelpCircle, Mail, Send } from "lucide-react-native";
 import React, { useState } from "react";
@@ -17,6 +19,8 @@ import {
 
 export default function SupportScreen() {
     const email = "contactdailybreadapp@gmail.com";
+    const { userPreferences } = useContent();
+    const lang = userPreferences.appLanguage;
     const scrollRef = React.useRef<ScrollView>(null);
     const [formData, setFormData] = useState({
         name: "",
@@ -25,6 +29,7 @@ export default function SupportScreen() {
         message: "",
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [tr, setTr] = useState<Record<string, string>>({});
 
     useFocusEffect(
         React.useCallback(() => {
@@ -32,27 +37,82 @@ export default function SupportScreen() {
         }, [])
     );
 
+    React.useEffect(() => {
+        let cancelled = false;
+        const run = async () => {
+            setTr({});
+            if (!userPreferences.autoTranslateContent || !lang || lang === "en") return;
+
+            const base = {
+                title: "Support",
+                subtitle: "Get Help & Answer Your Questions",
+                intro:
+                    "Need help with Daily Bread? Fill out the form below or contact us directly. We'll respond promptly to your inquiry.",
+                nameLabel: "Name *",
+                emailLabel: "Email *",
+                subjectLabel: "Subject *",
+                messageLabel: "Message *",
+                namePh: "Your name",
+                emailPh: "your.email@example.com",
+                subjectPh: "What is this regarding?",
+                messagePh: "Tell us how we can help...",
+                openingEmail: "Opening Email...",
+                sendMessage: "Send Message",
+                orContact: "Or Contact Us Directly",
+                emailRow: "Email",
+                copiedSuffix: "Copied",
+                copiedBody: 'has been copied to your clipboard.',
+                missingInfoTitle: "Missing Information",
+                missingInfoBody: "Please fill in all fields before submitting.",
+                invalidEmailTitle: "Invalid Email",
+                invalidEmailBody: "Please enter a valid email address.",
+                emailOpenedTitle: "Email Opened",
+                emailOpenedBody:
+                    "Your email client should open with the message pre-filled. Please send it to complete your support request.",
+                emailInfoTitle: "Email Information",
+                errorTitle: "Error",
+                errorBody: "Unable to open email client. Please contact us directly at ",
+                ok: "OK",
+            };
+
+            const entries = await Promise.all(
+                Object.entries(base).map(async ([k, v]) => {
+                    const res = await translateTextCached({ text: v, targetLang: lang });
+                    return [k, res.text] as const;
+                })
+            );
+            if (cancelled) return;
+            setTr(Object.fromEntries(entries));
+        };
+        run();
+        return () => {
+            cancelled = true;
+        };
+    }, [lang, userPreferences.autoTranslateContent]);
+
+    const tt = (key: string, fallback: string) => tr[key] ?? fallback;
+
     const copyToClipboard = async (text: string, label: string) => {
         if (Platform.OS === "web" && navigator.clipboard) {
             try {
                 await navigator.clipboard.writeText(text);
                 Alert.alert(
-                    `${label} Copied`,
-                    `${label} "${text}" has been copied to your clipboard.`,
-                    [{ text: "OK" }]
+                    `${label} ${tt("copiedSuffix", "Copied")}`,
+                    `${label} "${text}" ${tt("copiedBody", "has been copied to your clipboard.")}`,
+                    [{ text: tt("ok", "OK") }]
                 );
             } catch (error) {
                 Alert.alert(
                     label,
                     `${label}: ${text}`,
-                    [{ text: "OK" }]
+                    [{ text: tt("ok", "OK") }]
                 );
             }
         } else {
             Alert.alert(
                 label,
                 `${label}: ${text}`,
-                [{ text: "OK" }]
+                [{ text: tt("ok", "OK") }]
             );
         }
     };
@@ -74,9 +134,9 @@ export default function SupportScreen() {
     const handleSubmit = async () => {
         if (!formData.name.trim() || !formData.email.trim() || !formData.subject.trim() || !formData.message.trim()) {
             Alert.alert(
-                "Missing Information",
-                "Please fill in all fields before submitting.",
-                [{ text: "OK" }]
+                tt("missingInfoTitle", "Missing Information"),
+                tt("missingInfoBody", "Please fill in all fields before submitting."),
+                [{ text: tt("ok", "OK") }]
             );
             return;
         }
@@ -87,9 +147,9 @@ export default function SupportScreen() {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
             Alert.alert(
-                "Invalid Email",
-                "Please enter a valid email address.",
-                [{ text: "OK" }]
+                tt("invalidEmailTitle", "Invalid Email"),
+                tt("invalidEmailBody", "Please enter a valid email address."),
+                [{ text: tt("ok", "OK") }]
             );
             setIsSubmitting(false);
             return;
@@ -113,23 +173,23 @@ export default function SupportScreen() {
                     message: "",
                 });
                 Alert.alert(
-                    "Email Opened",
-                    "Your email client should open with the message pre-filled. Please send it to complete your support request.",
-                    [{ text: "OK" }]
+                    tt("emailOpenedTitle", "Email Opened"),
+                    tt("emailOpenedBody", "Your email client should open with the message pre-filled. Please send it to complete your support request."),
+                    [{ text: tt("ok", "OK") }]
                 );
             } else {
                 // Fallback: show the email content
                 Alert.alert(
-                    "Email Information",
+                    tt("emailInfoTitle", "Email Information"),
                     `To: ${email}\nSubject: ${formData.subject}\n\nFrom: ${formData.name} (${formData.email})\n\nMessage:\n${formData.message}`,
-                    [{ text: "OK" }]
+                    [{ text: tt("ok", "OK") }]
                 );
             }
         } catch (error) {
             Alert.alert(
-                "Error",
-                "Unable to open email client. Please contact us directly at " + email,
-                [{ text: "OK" }]
+                tt("errorTitle", "Error"),
+                tt("errorBody", "Unable to open email client. Please contact us directly at ") + email,
+                [{ text: tt("ok", "OK") }]
             );
         } finally {
             setIsSubmitting(false);
@@ -153,21 +213,21 @@ export default function SupportScreen() {
                         <View style={styles.iconContainer}>
                             <HelpCircle size={32} color={colors.light.primary} />
                         </View>
-                        <Text style={styles.title}>Support</Text>
-                        <Text style={styles.subtitle}>Get Help & Answer Your Questions</Text>
+                        <Text style={styles.title}>{tt("title", "Support")}</Text>
+                        <Text style={styles.subtitle}>{tt("subtitle", "Get Help & Answer Your Questions")}</Text>
                     </View>
 
                     <View style={styles.card}>
                         <Text style={styles.intro}>
-                            Need help with Daily Bread? Fill out the form below or contact us directly. We&apos;ll respond promptly to your inquiry.
+                            {tt("intro", "Need help with Daily Bread? Fill out the form below or contact us directly. We'll respond promptly to your inquiry.")}
                         </Text>
 
                         <View style={styles.form}>
                             <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Name *</Text>
+                                <Text style={styles.label}>{tt("nameLabel", "Name *")}</Text>
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="Your name"
+                                    placeholder={tt("namePh", "Your name")}
                                     placeholderTextColor={colors.light.textSecondary}
                                     value={formData.name}
                                     onChangeText={(text) => setFormData({ ...formData, name: text })}
@@ -175,10 +235,10 @@ export default function SupportScreen() {
                             </View>
 
                             <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Email *</Text>
+                                <Text style={styles.label}>{tt("emailLabel", "Email *")}</Text>
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="your.email@example.com"
+                                    placeholder={tt("emailPh", "your.email@example.com")}
                                     placeholderTextColor={colors.light.textSecondary}
                                     value={formData.email}
                                     onChangeText={(text) => setFormData({ ...formData, email: text })}
@@ -188,10 +248,10 @@ export default function SupportScreen() {
                             </View>
 
                             <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Subject *</Text>
+                                <Text style={styles.label}>{tt("subjectLabel", "Subject *")}</Text>
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="What is this regarding?"
+                                    placeholder={tt("subjectPh", "What is this regarding?")}
                                     placeholderTextColor={colors.light.textSecondary}
                                     value={formData.subject}
                                     onChangeText={(text) => setFormData({ ...formData, subject: text })}
@@ -199,10 +259,10 @@ export default function SupportScreen() {
                             </View>
 
                             <View style={styles.inputGroup}>
-                                <Text style={styles.label}>Message *</Text>
+                                <Text style={styles.label}>{tt("messageLabel", "Message *")}</Text>
                                 <TextInput
                                     style={[styles.input, styles.textArea]}
-                                    placeholder="Tell us how we can help..."
+                                    placeholder={tt("messagePh", "Tell us how we can help...")}
                                     placeholderTextColor={colors.light.textSecondary}
                                     value={formData.message}
                                     onChangeText={(text) => setFormData({ ...formData, message: text })}
@@ -220,14 +280,14 @@ export default function SupportScreen() {
                             >
                                 <Send size={20} color="#fff" style={styles.submitIcon} />
                                 <Text style={styles.submitButtonText}>
-                                    {isSubmitting ? "Opening Email..." : "Send Message"}
+                                    {isSubmitting ? tt("openingEmail", "Opening Email...") : tt("sendMessage", "Send Message")}
                                 </Text>
                             </TouchableOpacity>
                         </View>
                     </View>
 
                     <View style={styles.card}>
-                        <Text style={styles.sectionTitle}>Or Contact Us Directly</Text>
+                        <Text style={styles.sectionTitle}>{tt("orContact", "Or Contact Us Directly")}</Text>
                         <TouchableOpacity
                             style={styles.contactItem}
                             onPress={handleEmailPress}
@@ -237,7 +297,7 @@ export default function SupportScreen() {
                                 <Mail size={24} color={colors.light.primary} />
                             </View>
                             <View style={styles.contactTextContainer}>
-                                <Text style={styles.contactLabel}>Email</Text>
+                                <Text style={styles.contactLabel}>{tt("emailRow", "Email")}</Text>
                                 <Text style={styles.contactValue}>{email}</Text>
                             </View>
                         </TouchableOpacity>

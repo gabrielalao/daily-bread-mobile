@@ -2,9 +2,17 @@ import colors from "@/constants/colors";
 import { getPersonalizedTherapy, therapyContents, type TherapyContent } from "@/constants/therapy";
 import { useContent } from "@/contexts/ContentContext";
 import { usePersonalization } from "@/hooks/usePersonalization";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { useScheduledSessions } from "@/contexts/ScheduledSessionsContext";
+import { useScreenshotShare } from "@/hooks/useScreenshotShare";
+import { getAppLanguageById } from "@/constants/app-languages";
+import { getVersionById } from "@/constants/bible-versions";
+import { translateTextCached } from "@/utils/translate";
+import { TypingIndicator } from "@/components/TypingIndicator";
+import { ScheduleNextSessionModal } from "@/components/ScheduleNextSessionModal";
 import { useRorkAgent, generateObject } from "@rork-ai/toolkit-sdk";
 import { LinearGradient } from "expo-linear-gradient";
-import { Brain, Check, Heart, Sparkles, MessageCircle, AlertTriangle, X, Send, ArrowLeft, Mic, MicOff, Volume2, VolumeX, Settings, Plus, Minus } from "lucide-react-native";
+import { Brain, Check, Heart, Sparkles, MessageCircle, AlertTriangle, X, Send, ArrowLeft, Mic, MicOff, Volume2, VolumeX, Settings, Plus, Minus, Calendar, Share2 } from "lucide-react-native";
 import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, Platform, FlatList, Alert } from "react-native";
 import { Audio } from "expo-av";
@@ -53,6 +61,9 @@ import Constants from "expo-constants";
 export default function TherapyScreen() {
   const { contentHistory, userPreferences, markTherapyViewed, isLoaded, setCurrentDayTherapy } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
+  const { isOffline, isOnline } = useNetworkStatus();
+  const { scheduleSession, getNextSession } = useScheduledSessions();
+  const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [showMainMenu, setShowMainMenu] = useState(true);
   const [showFocusSelection, setShowFocusSelection] = useState(false);
@@ -88,6 +99,10 @@ export default function TherapyScreen() {
     processEnv?: string;
     platform?: string;
   } | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const [thinkingDelay, setThinkingDelay] = useState(0);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [chatMessageCount, setChatMessageCount] = useState(0);
 
   const therapy = useMemo<(TherapyContent & { isGenerated?: boolean }) | null>(() => {
     if (generatedTherapy) {
@@ -109,6 +124,184 @@ export default function TherapyScreen() {
     console.log('Selected new therapy for today:', selected.title);
     return selected;
   }, [contentHistory.currentDayTherapy, contentHistory.therapy, userPreferences.therapyCategories, generatedTherapy]);
+
+  const bibleVersion = getVersionById(userPreferences.bibleVersion);
+  const lang = userPreferences.appLanguage;
+
+  // ---- UI text auto-translation (so Therapy UI is fully localized) ----
+  const [uiTr, setUiTr] = useState<Record<string, string>>({});
+  const tr = useCallback((s: string) => uiTr[s] ?? s, [uiTr]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      setUiTr({});
+      if (!userPreferences.autoTranslateContent || !lang || lang === "en") return;
+
+      const strings = [
+        "Loading...",
+        "Faith-Based Support",
+        "Choose how you'd like to receive guidance and support today",
+        "Personalized Session",
+        "Supportive Conversation",
+        "Offline",
+        "Requires internet connection",
+        "Get a custom faith-based therapy session with Scripture, practical steps, and prayers tailored to your needs",
+        "Biblical guidance",
+        "Practical action steps",
+        "Prayer prompts",
+        "Chat with a compassionate AI counselor for real-time emotional support and biblical wisdom",
+        "Real-time responses",
+        "Empathetic listening",
+        "Faith-based guidance",
+        "These tools support your well-being but don't replace professional therapy",
+        "No Internet Connection",
+        "AI-powered features require an internet connection. Please connect to the internet to use personalized sessions.",
+        "AI-powered conversations require an internet connection. Please connect to the internet to chat.",
+        "OK",
+        "Back",
+        "Let's understand how you're feeling",
+        "This helps me provide better support tailored to your needs",
+        "How are you feeling right now?",
+        "Start Conversation",
+        "What do you want to focus on today?",
+        "Generate My Session",
+        "Important Information",
+        "This is NOT Professional Therapy",
+        "When to Seek Professional Help",
+        "Privacy & Data",
+        "Faith-Based Guidance",
+        "Cancel",
+        "I Understand",
+        "Error Details",
+        "Diagnostic Information",
+        "Error Type:",
+        "Error Message:",
+        "Platform:",
+        "Toolkit URL (Constants):",
+        "Toolkit URL (process.env):",
+        "What to check:",
+        "• Verify internet connection",
+        "• Check if Toolkit URL is configured",
+        "• Ensure app has network permissions",
+        "• Try again in a few moments",
+        "Close",
+        "Voice Settings",
+        "Volume:",
+        "Speed:",
+        "Voice",
+        "Recording... Tap mic to stop",
+        "Hold to record",
+        "← New Session",
+        "Scripture Foundation",
+        "Therapeutic Focus",
+        "Practical Steps",
+        "Reflection",
+        "Prayer for Healing",
+        "Try these evidence-based practices today:",
+        "You",
+        "Counselor",
+        "Test Voice",
+        "Speaking...",
+        "Processing...",
+        "Share what's on your heart...",
+        "I'm feeling anxious today",
+        "Help me with depression",
+        "I need prayer guidance",
+        "Dealing with relationships",
+        "Hello, this is a test of the selected voice settings.",
+        "Share this therapy session from Daily Bread",
+        "Note: This content is designed to support your spiritual and emotional well-being. If you're experiencing severe mental health concerns, please seek professional help from a licensed counselor or therapist.",
+        "Recording Error",
+        "Failed to start recording. Please try again.",
+        "Failed to process recording. Please try again.",
+        "Recording Too Short",
+        "Please try recording again and speak clearly.",
+        "Invalid Audio",
+        "The audio format is not supported. Please try again.",
+        "Audio Too Large",
+        "Recording is too long. Please keep it under 25MB.",
+        "Transcription Error",
+        "Failed to process your recording. Please try again.",
+        "No Speech Detected",
+        "Please try speaking more clearly.",
+        "Failed to transcribe:",
+        "Please check your internet connection and try again.",
+        "Listening...",
+      ];
+
+      // Also translate focus + mood labels.
+      for (const f of FOCUS_AREAS) strings.push(f.label);
+      for (const m of MOODS) strings.push(m.label);
+
+      const uniq = Array.from(new Set(strings.filter(Boolean)));
+      const next: Record<string, string> = {};
+      let processed = 0;
+
+      for (const s of uniq) {
+        if (cancelled) return;
+        const res = await translateTextCached({ text: s, targetLang: lang });
+        next[s] = res.text;
+        processed += 1;
+        if (processed % 12 === 0) setUiTr((prev) => ({ ...prev, ...next }));
+      }
+      if (cancelled) return;
+      setUiTr((prev) => ({ ...prev, ...next }));
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [lang, userPreferences.autoTranslateContent]);
+
+  // ---- Translate the daily therapy content itself (titles, focus, steps, reflection, prayer) ----
+  const [translatedTherapy, setTranslatedTherapy] = useState<Partial<TherapyContent> | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      setTranslatedTherapy(null);
+      if (!therapy) return;
+      if (!userPreferences.autoTranslateContent || !lang || lang === "en") return;
+      // Generated sessions should already be in the selected language via prompt rules.
+      if ((therapy as any).isGenerated) return;
+
+      const [
+        titleRes,
+        categoryRes,
+        topicRes,
+        verseRes,
+        focusRes,
+        reflectionRes,
+        prayerRes,
+        stepsRes,
+      ] = await Promise.all([
+        translateTextCached({ text: therapy.title, targetLang: lang }),
+        translateTextCached({ text: therapy.category, targetLang: lang }),
+        translateTextCached({ text: therapy.topic, targetLang: lang }),
+        translateTextCached({ text: therapy.verse, targetLang: lang }),
+        translateTextCached({ text: therapy.therapeuticFocus, targetLang: lang }),
+        translateTextCached({ text: therapy.reflection, targetLang: lang }),
+        translateTextCached({ text: therapy.prayerPrompt, targetLang: lang }),
+        Promise.all(therapy.practicalSteps.map((s) => translateTextCached({ text: s, targetLang: lang }))),
+      ]);
+
+      if (cancelled) return;
+      setTranslatedTherapy({
+        title: titleRes.text,
+        category: categoryRes.text,
+        topic: topicRes.text,
+        verse: verseRes.text,
+        therapeuticFocus: focusRes.text,
+        reflection: reflectionRes.text,
+        prayerPrompt: prayerRes.text,
+        practicalSteps: stepsRes.map((r) => r.text),
+      });
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [therapy?.id, lang, userPreferences.autoTranslateContent]);
 
   useEffect(() => {
     console.log("Rork extra config:", Constants.expoConfig?.extra);
@@ -146,6 +339,22 @@ export default function TherapyScreen() {
 
   const generatePersonalizedTherapy = async () => {
     if (selectedFocus.length === 0 || !selectedMood) {
+      return;
+    }
+
+    // Check for offline status
+    if (isOffline) {
+      Alert.alert(
+        'No Internet Connection',
+        'AI-powered personalized sessions require an internet connection. Please check your connection and try again, or view the daily therapy session instead.',
+        [
+          { text: 'View Daily Session', onPress: () => {
+            setShowFocusSelection(false);
+            setShowMainMenu(false);
+          }},
+          { text: 'OK', style: 'cancel' }
+        ]
+      );
       return;
     }
 
@@ -234,39 +443,68 @@ Make it personal, compassionate, and practical. Focus on hope, healing, and God'
   });
 
   const startChatWithContext = async (focusAreas: string[], mood: string) => {
+    // Check for offline status
+    if (isOffline) {
+      Alert.alert(
+        'No Internet Connection',
+        'AI-powered conversations require an internet connection. Please check your connection and try again.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     const focusLabels = focusAreas.map(
       (id) => FOCUS_AREAS.find((f) => f.id === id)?.label || id
     ).join(", ");
     const moodLabel = MOODS.find((m) => m.id === mood)?.label || mood;
+    const appLang = getAppLanguageById(userPreferences.appLanguage);
+    const languageInstruction = appLang?.name
+      ? `CRITICAL LANGUAGE RULE: Respond ONLY in ${appLang.name}. Do not mix languages.`
+      : `CRITICAL LANGUAGE RULE: Respond ONLY in the user's selected app language. Do not mix languages.`;
 
     console.log('Starting chat with context:', { focusLabels, moodLabel });
 
     setShowChatOnboarding(false);
     setShowChatInterface(true);
 
+    // Show typing indicator before first message
+    setIsTyping(true);
+    
     setTimeout(() => {
       sendMessage({
-        text: `You are a compassionate Christian AI counselor providing emotional support and biblical guidance. 
+        text: `You are a compassionate Christian AI counselor. The user feels ${moodLabel} and wants support with: ${focusLabels}.
 
-The user is currently feeling ${moodLabel} and wants support with: ${focusLabels}.
+${languageInstruction}
 
-Your role is to:
-1. Listen with empathy and validate feelings
-2. Provide biblical wisdom and scriptural guidance
-3. Offer practical, faith-based coping strategies  
-4. Encourage users to seek professional help when needed
-5. Create a safe, non-judgmental space
+CRITICAL - RESPONSE LENGTH RULES:
+- MAXIMUM 2-3 sentences per response
+- Each response should be 40-80 words MAX
+- Think of this like texting a supportive friend
+- ONE thought or question per message
+- No long explanations in a single response
+- Break complex ideas across multiple exchanges
 
-Remember:
-- You are NOT a replacement for professional therapy
-- Be warm, compassionate, and encouraging
-- Reference Scripture when appropriate
-- Ask clarifying questions to understand their situation better
-- Offer hope rooted in God's love and presence
+CONVERSATION STYLE:
+- Be warm, genuine, and conversational
+- Use simple, everyday language
+- Ask open-ended questions naturally
+- Validate feelings with short, heartfelt phrases
+- Reference Scripture briefly when relevant (don't over-quote)
+- Respond like a caring human, not an AI
+- Use contractions (I'm, you're, let's)
+- Occasional empathetic interjections (I hear you, That makes sense, etc.)
 
-Respond with a warm greeting acknowledging their feelings (${moodLabel}) and concerns (${focusLabels}), and invite them to share more. Keep it brief and welcoming.`,
+Your approach:
+1. Listen with empathy (2 sentences max)
+2. Provide biblical wisdom naturally when appropriate
+3. Offer one practical suggestion at a time
+4. Encourage professional help when needed
+5. Create a safe, judgment-free space
+
+Start with: A warm 2-sentence greeting acknowledging they're feeling ${moodLabel}. Then ask ONE simple, caring question about ${focusLabels}.`,
       });
-    }, 300);
+      setIsTyping(false);
+    }, 1500); // Simulate thinking time
   };
 
   const resetToDaily = () => {
@@ -279,6 +517,35 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
     setShowChatOnboarding(false);
     setChatFocus([]);
     setChatMood(null);
+    setChatMessageCount(0);
+  };
+
+  const handleScheduleSession = async (dateTime: Date, recurrence: any, recurrenceEndDate?: Date) => {
+    const sessionId = await scheduleSession(
+      dateTime,
+      '🧠 Therapy Session',
+      "Time for your therapy session. Take a moment to check in with yourself and God.",
+      recurrence,
+      recurrenceEndDate
+    );
+
+    if (sessionId) {
+      const recurrenceText = recurrence !== 'none' ? ` (repeats ${recurrence})` : '';
+      Alert.alert(
+        'Session Scheduled! ✅',
+        `Your next therapy session is scheduled for ${dateTime.toLocaleDateString()} at ${dateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}${recurrenceText}.
+
+You'll receive a notification to remind you.`,
+        [{ text: 'Great!' }]
+      );
+      setShowScheduleModal(false);
+    } else {
+      Alert.alert(
+        'Unable to Schedule',
+        'Please enable notifications in your device settings to schedule therapy sessions.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   const handleSendMessage = () => {
@@ -287,11 +554,22 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
     const messageText = chatInput.trim();
     setChatInput("");
 
-    if (voiceModeEnabled) {
-      sendMessage(messageText);
-    } else {
-      sendMessage(messageText);
-    }
+    // Show typing indicator with realistic delay
+    const thinkingTime = Math.min(2000 + (messageText.length * 20), 4000); // 2-4 seconds based on message length
+    setIsTyping(true);
+
+    setTimeout(() => {
+      if (voiceModeEnabled) {
+        sendMessage(messageText);
+      } else {
+        sendMessage(messageText);
+      }
+      
+      // Keep typing indicator for a bit after sending
+      setTimeout(() => {
+        setIsTyping(false);
+      }, 800);
+    }, thinkingTime);
 
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true });
@@ -479,7 +757,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
       }
     } catch (error) {
       console.error('Failed to start recording:', error);
-      Alert.alert('Recording Error', 'Failed to start recording. Please try again.');
+      Alert.alert(tr('Recording Error'), tr('Failed to start recording. Please try again.'));
     }
   };
 
@@ -530,7 +808,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
       }
     } catch (error) {
       console.error('Failed to stop recording:', error);
-      Alert.alert('Recording Error', 'Failed to process recording. Please try again.');
+      Alert.alert(tr('Recording Error'), tr('Failed to process recording. Please try again.'));
       setIsTranscribing(false);
     }
   };
@@ -543,7 +821,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
       if (audioData instanceof Blob) {
         if (audioData.size < 100) {
           console.warn('Audio file too small, likely no audio recorded');
-          Alert.alert('Recording Too Short', 'Please try recording again and speak clearly.');
+          Alert.alert(tr('Recording Too Short'), tr('Please try recording again and speak clearly.'));
           setIsTranscribing(false);
           return;
         }
@@ -567,11 +845,11 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
         console.error('Transcription API error:', errorText);
 
         if (response.status === 400) {
-          Alert.alert('Invalid Audio', 'The audio format is not supported. Please try again.');
+          Alert.alert(tr('Invalid Audio'), tr('The audio format is not supported. Please try again.'));
         } else if (response.status === 413) {
-          Alert.alert('Audio Too Large', 'Recording is too long. Please keep it under 25MB.');
+          Alert.alert(tr('Audio Too Large'), tr('Recording is too long. Please keep it under 25MB.'));
         } else {
-          Alert.alert('Transcription Error', 'Failed to process your recording. Please try again.');
+          Alert.alert(tr('Transcription Error'), tr('Failed to process your recording. Please try again.'));
         }
         setIsTranscribing(false);
         return;
@@ -590,12 +868,15 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
         }
       } else {
         console.warn('No speech detected in audio');
-        Alert.alert('No Speech Detected', 'Please try speaking more clearly.');
+        Alert.alert(tr('No Speech Detected'), tr('Please try speaking more clearly.'));
       }
     } catch (error) {
       console.error('Transcription error details:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      Alert.alert('Transcription Error', `Failed to transcribe: ${errorMessage}. Please check your internet connection and try again.`);
+      Alert.alert(
+        tr('Transcription Error'),
+        `${tr('Failed to transcribe:')} ${errorMessage}. ${tr('Please check your internet connection and try again.')}`
+      );
     } finally {
       setIsTranscribing(false);
     }
@@ -659,6 +940,15 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
 
+      // Count non-system messages
+      const userMessages = messages.filter(m => 
+        m.role === 'user' && 
+        !m.parts.some((part: any) => 
+          part.type === 'text' && part.text.includes('You are a compassionate Christian AI counselor')
+        )
+      );
+      setChatMessageCount(userMessages.length);
+
       const lastMessage = messages[messages.length - 1];
 
       if (voiceModeEnabled && lastMessage && lastMessage.role === 'assistant' && lastMessage.id !== lastMessageIdRef.current) {
@@ -685,7 +975,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
           style={StyleSheet.absoluteFillObject}
         />
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text style={styles.loadingText}>{tr("Loading...")}</Text>
         </View>
       </View>
     );
@@ -706,9 +996,9 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
           <View style={styles.content}>
             <View style={styles.menuHeader}>
               <Brain size={40} color={colors.light.primary} />
-              <Text style={styles.menuTitle}>Faith-Based Support</Text>
+              <Text style={styles.menuTitle}>{tr("Faith-Based Support")}</Text>
               <Text style={styles.menuSubtitle}>
-                Choose how you&apos;d like to receive guidance and support today
+                {tr("Choose how you'd like to receive guidance and support today")}
               </Text>
             </View>
 
@@ -716,6 +1006,14 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
               <TouchableOpacity
                 style={styles.menuCard}
                 onPress={() => {
+                  if (isOffline) {
+                    Alert.alert(
+                      tr("No Internet Connection"),
+                      tr("AI-powered features require an internet connection. Please connect to the internet to use personalized sessions."),
+                      [{ text: tr("OK") }]
+                    );
+                    return;
+                  }
                   setShowMainMenu(false);
                   setShowFocusSelection(true);
                 }}
@@ -724,30 +1022,49 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                   <View style={styles.menuIconContainer}>
                     <Sparkles size={28} color={colors.light.primary} />
                   </View>
-                  <Text style={styles.menuCardTitle}>Personalized Session</Text>
+                  <Text style={styles.menuCardTitle}>{tr("Personalized Session")}</Text>
+                  {isOffline && (
+                    <View style={styles.offlineBadge}>
+                      <Text style={styles.offlineBadgeText}>{tr("Offline")}</Text>
+                    </View>
+                  )}
                 </View>
                 <Text style={styles.menuCardDescription}>
-                  Get a custom faith-based therapy session with Scripture, practical steps, and prayers tailored to your needs
+                  {tr("Get a custom faith-based therapy session with Scripture, practical steps, and prayers tailored to your needs")}
                 </Text>
                 <View style={styles.menuCardFeatures}>
                   <View style={styles.featureRow}>
                     <Check size={16} color={colors.light.success} />
-                    <Text style={styles.featureText}>Biblical guidance</Text>
+                    <Text style={styles.featureText}>{tr("Biblical guidance")}</Text>
                   </View>
                   <View style={styles.featureRow}>
                     <Check size={16} color={colors.light.success} />
-                    <Text style={styles.featureText}>Practical action steps</Text>
+                    <Text style={styles.featureText}>{tr("Practical action steps")}</Text>
                   </View>
                   <View style={styles.featureRow}>
                     <Check size={16} color={colors.light.success} />
-                    <Text style={styles.featureText}>Prayer prompts</Text>
+                    <Text style={styles.featureText}>{tr("Prayer prompts")}</Text>
                   </View>
                 </View>
+                {isOffline && (
+                  <View style={styles.offlineNotice}>
+                    <AlertTriangle size={14} color={colors.light.warning} />
+                    <Text style={styles.offlineNoticeText}>{tr("Requires internet connection")}</Text>
+                  </View>
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.menuCard}
                 onPress={() => {
+                  if (isOffline) {
+                    Alert.alert(
+                      tr("No Internet Connection"),
+                      tr("AI-powered conversations require an internet connection. Please connect to the internet to chat."),
+                      [{ text: tr("OK") }]
+                    );
+                    return;
+                  }
                   setShowMainMenu(false);
                   setShowChatOnboarding(true);
                 }}
@@ -756,32 +1073,43 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                   <View style={[styles.menuIconContainer, styles.menuIconContainerAlt]}>
                     <MessageCircle size={28} color={colors.light.accent} />
                   </View>
-                  <Text style={styles.menuCardTitle}>Supportive Conversation</Text>
+                  <Text style={styles.menuCardTitle}>{tr("Supportive Conversation")}</Text>
+                  {isOffline && (
+                    <View style={styles.offlineBadge}>
+                      <Text style={styles.offlineBadgeText}>{tr("Offline")}</Text>
+                    </View>
+                  )}
                 </View>
                 <Text style={styles.menuCardDescription}>
-                  Chat with a compassionate AI counselor for real-time emotional support and biblical wisdom
+                  {tr("Chat with a compassionate AI counselor for real-time emotional support and biblical wisdom")}
                 </Text>
                 <View style={styles.menuCardFeatures}>
                   <View style={styles.featureRow}>
                     <Check size={16} color={colors.light.success} />
-                    <Text style={styles.featureText}>Real-time responses</Text>
+                    <Text style={styles.featureText}>{tr("Real-time responses")}</Text>
                   </View>
                   <View style={styles.featureRow}>
                     <Check size={16} color={colors.light.success} />
-                    <Text style={styles.featureText}>Empathetic listening</Text>
+                    <Text style={styles.featureText}>{tr("Empathetic listening")}</Text>
                   </View>
                   <View style={styles.featureRow}>
                     <Check size={16} color={colors.light.success} />
-                    <Text style={styles.featureText}>Faith-based guidance</Text>
+                    <Text style={styles.featureText}>{tr("Faith-based guidance")}</Text>
                   </View>
                 </View>
+                {isOffline && (
+                  <View style={styles.offlineNotice}>
+                    <AlertTriangle size={14} color={colors.light.warning} />
+                    <Text style={styles.offlineNoticeText}>{tr("Requires internet connection")}</Text>
+                  </View>
+                )}
               </TouchableOpacity>
             </View>
 
             <View style={styles.menuDisclaimer}>
               <AlertTriangle size={16} color={colors.light.warning} />
               <Text style={styles.menuDisclaimerText}>
-                These tools support your well-being but don&apos;t replace professional therapy
+                {tr("These tools support your well-being but don't replace professional therapy")}
               </Text>
             </View>
           </View>
@@ -811,14 +1139,14 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
               }}
             >
               <ArrowLeft size={20} color={colors.light.text} />
-              <Text style={styles.backButtonText}>Back</Text>
+              <Text style={styles.backButtonText}>{tr("Back")}</Text>
             </TouchableOpacity>
 
             <View style={styles.selectionHeader}>
               <MessageCircle size={32} color={colors.light.accent} />
-              <Text style={styles.selectionTitle}>Let&apos;s understand how you&apos;re feeling</Text>
+              <Text style={styles.selectionTitle}>{tr("Let's understand how you're feeling")}</Text>
               <Text style={styles.selectionSubtitle}>
-                This helps me provide better support tailored to your needs
+                {tr("This helps me provide better support tailored to your needs")}
               </Text>
             </View>
 
@@ -845,7 +1173,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                       chatFocus.includes(focus.id) && styles.optionLabelSelected,
                     ]}
                   >
-                    {focus.label}
+                    {tr(focus.label)}
                   </Text>
                   {chatFocus.includes(focus.id) && (
                     <View style={styles.checkmark}>
@@ -857,7 +1185,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
             </View>
 
             <View style={styles.moodSection}>
-              <Text style={styles.moodTitle}>How are you feeling right now?</Text>
+              <Text style={styles.moodTitle}>{tr("How are you feeling right now?")}</Text>
               <View style={styles.moodContainer}>
                 {MOODS.map((mood) => (
                   <TouchableOpacity
@@ -875,7 +1203,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                         chatMood === mood.id && styles.moodLabelSelected,
                       ]}
                     >
-                      {mood.label}
+                    {tr(mood.label)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -900,7 +1228,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
               disabled={chatFocus.length === 0 || !chatMood}
             >
               <MessageCircle size={20} color="#FFFFFF" />
-              <Text style={styles.generateButtonText}>Start Conversation</Text>
+              <Text style={styles.generateButtonText}>{tr("Start Conversation")}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -924,7 +1252,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                 <View style={styles.warningIconContainer}>
                   <AlertTriangle size={32} color={colors.light.warning} />
                 </View>
-                <Text style={styles.modalTitle}>Important Information</Text>
+                <Text style={styles.modalTitle}>{tr("Important Information")}</Text>
               </View>
 
               <ScrollView
@@ -932,12 +1260,12 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                 showsVerticalScrollIndicator={false}
               >
                 <View style={styles.disclaimerContent}>
-                  <Text style={styles.disclaimerBold}>This is NOT Professional Therapy</Text>
+                  <Text style={styles.disclaimerBold}>{tr("This is NOT Professional Therapy")}</Text>
                   <Text style={styles.disclaimerParagraph}>
                     Our AI-powered supportive conversations are designed to provide emotional support and biblical guidance. However, they do not replace professional mental health care.
                   </Text>
 
-                  <Text style={styles.disclaimerBold}>When to Seek Professional Help</Text>
+                  <Text style={styles.disclaimerBold}>{tr("When to Seek Professional Help")}</Text>
                   <Text style={styles.disclaimerParagraph}>
                     If you&apos;re experiencing severe mental health concerns, thoughts of self-harm, or crisis situations, please immediately contact:
                   </Text>
@@ -947,12 +1275,12 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                     <Text style={styles.emergencyText}>• Emergency Services: 911</Text>
                   </View>
 
-                  <Text style={styles.disclaimerBold}>Privacy & Data</Text>
+                  <Text style={styles.disclaimerBold}>{tr("Privacy & Data")}</Text>
                   <Text style={styles.disclaimerParagraph}>
                     Your conversations are used to provide personalized support. Please avoid sharing sensitive personal information like full name, address, or financial details.
                   </Text>
 
-                  <Text style={styles.disclaimerBold}>Faith-Based Guidance</Text>
+                  <Text style={styles.disclaimerBold}>{tr("Faith-Based Guidance")}</Text>
                   <Text style={styles.disclaimerParagraph}>
                     Our responses are rooted in Christian faith and biblical principles. They are meant to supplement, not replace, your relationship with God, your church community, and professional care when needed.
                   </Text>
@@ -964,7 +1292,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                   style={styles.declineButton}
                   onPress={() => setShowDisclaimerModal(false)}
                 >
-                  <Text style={styles.declineButtonText}>Cancel</Text>
+                  <Text style={styles.declineButtonText}>{tr("Cancel")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.acceptButton}
@@ -981,7 +1309,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                     }
                   }}
                 >
-                  <Text style={styles.acceptButtonText}>I Understand</Text>
+                  <Text style={styles.acceptButtonText}>{tr("I Understand")}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1008,8 +1336,8 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                 <View style={styles.warningIconContainer}>
                   <AlertTriangle size={32} color={colors.light.error} />
                 </View>
-                <Text style={styles.modalTitle}>Error Details</Text>
-                <Text style={styles.modalSubtitle}>Diagnostic Information</Text>
+                <Text style={styles.modalTitle}>{tr("Error Details")}</Text>
+                <Text style={styles.modalSubtitle}>{tr("Diagnostic Information")}</Text>
               </View>
 
               <ScrollView
@@ -1018,38 +1346,38 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
               >
                 <View style={styles.errorDetailsContent}>
                   <View style={styles.errorDetailRow}>
-                    <Text style={styles.errorDetailLabel}>Error Type:</Text>
+                    <Text style={styles.errorDetailLabel}>{tr("Error Type:")}</Text>
                     <Text style={styles.errorDetailValue}>{errorDetails?.type || 'Unknown'}</Text>
                   </View>
 
                   <View style={styles.errorDetailRow}>
-                    <Text style={styles.errorDetailLabel}>Error Message:</Text>
+                    <Text style={styles.errorDetailLabel}>{tr("Error Message:")}</Text>
                     <Text style={styles.errorDetailValue}>{errorDetails?.message || 'No message'}</Text>
                   </View>
 
                   <View style={styles.errorDetailRow}>
-                    <Text style={styles.errorDetailLabel}>Platform:</Text>
+                    <Text style={styles.errorDetailLabel}>{tr("Platform:")}</Text>
                     <Text style={styles.errorDetailValue}>{errorDetails?.platform || 'Unknown'}</Text>
                   </View>
 
                   <View style={styles.errorDetailRow}>
-                    <Text style={styles.errorDetailLabel}>Toolkit URL (Constants):</Text>
+                    <Text style={styles.errorDetailLabel}>{tr("Toolkit URL (Constants):")}</Text>
                     <Text style={styles.errorDetailValue}>{errorDetails?.toolkitUrl || 'Not configured'}</Text>
                   </View>
 
                   {errorDetails?.processEnv && (
                     <View style={styles.errorDetailRow}>
-                      <Text style={styles.errorDetailLabel}>Toolkit URL (process.env):</Text>
+                      <Text style={styles.errorDetailLabel}>{tr("Toolkit URL (process.env):")}</Text>
                       <Text style={styles.errorDetailValue}>{errorDetails.processEnv}</Text>
                     </View>
                   )}
 
                   <View style={styles.errorHelpSection}>
-                    <Text style={styles.errorHelpTitle}>What to check:</Text>
-                    <Text style={styles.errorHelpText}>• Verify internet connection</Text>
-                    <Text style={styles.errorHelpText}>• Check if Toolkit URL is configured</Text>
-                    <Text style={styles.errorHelpText}>• Ensure app has network permissions</Text>
-                    <Text style={styles.errorHelpText}>• Try again in a few moments</Text>
+                    <Text style={styles.errorHelpTitle}>{tr("What to check:")}</Text>
+                    <Text style={styles.errorHelpText}>{tr("• Verify internet connection")}</Text>
+                    <Text style={styles.errorHelpText}>{tr("• Check if Toolkit URL is configured")}</Text>
+                    <Text style={styles.errorHelpText}>{tr("• Ensure app has network permissions")}</Text>
+                    <Text style={styles.errorHelpText}>{tr("• Try again in a few moments")}</Text>
                   </View>
                 </View>
               </ScrollView>
@@ -1059,7 +1387,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                   style={styles.acceptButton}
                   onPress={() => setErrorDetails(null)}
                 >
-                  <Text style={styles.acceptButtonText}>Close</Text>
+                  <Text style={styles.acceptButtonText}>{tr("Close")}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1090,12 +1418,12 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
               }}
             >
               <ArrowLeft size={20} color={colors.light.text} />
-              <Text style={styles.backButtonText}>Back</Text>
+              <Text style={styles.backButtonText}>{tr("Back")}</Text>
             </TouchableOpacity>
 
             <View style={styles.selectionHeader}>
               <Sparkles size={32} color={colors.light.primary} />
-              <Text style={styles.selectionTitle}>What do you want to focus on today?</Text>
+              <Text style={styles.selectionTitle}>{tr("What do you want to focus on today?")}</Text>
               <Text style={styles.selectionSubtitle}>
                 Choose areas where you&apos;re seeking healing and biblical guidance
               </Text>
@@ -1118,7 +1446,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                       selectedFocus.includes(focus.id) && styles.optionLabelSelected,
                     ]}
                   >
-                    {focus.label}
+                    {tr(focus.label)}
                   </Text>
                   {selectedFocus.includes(focus.id) && (
                     <View style={styles.checkmark}>
@@ -1130,7 +1458,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
             </View>
 
             <View style={styles.moodSection}>
-              <Text style={styles.moodTitle}>How are you feeling right now?</Text>
+              <Text style={styles.moodTitle}>{tr("How are you feeling right now?")}</Text>
               <View style={styles.moodContainer}>
                 {MOODS.map((mood) => (
                   <TouchableOpacity
@@ -1148,7 +1476,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                         selectedMood === mood.id && styles.moodLabelSelected,
                       ]}
                     >
-                      {mood.label}
+                    {tr(mood.label)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -1169,7 +1497,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
               ) : (
                 <>
                   <Sparkles size={20} color="#FFFFFF" />
-                  <Text style={styles.generateButtonText}>Generate My Session</Text>
+                  <Text style={styles.generateButtonText}>{tr("Generate My Session")}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -1198,9 +1526,17 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
             </TouchableOpacity>
             <View style={styles.chatHeaderContent}>
               <MessageCircle size={24} color={colors.light.accent} />
-              <Text style={styles.chatHeaderTitle}>Supportive Conversation</Text>
+              <Text style={styles.chatHeaderTitle}>{tr("Supportive Conversation")}</Text>
             </View>
             <View style={styles.chatHeaderActions}>
+              {chatMessageCount >= 5 && (
+                <TouchableOpacity
+                  onPress={() => setShowScheduleModal(true)}
+                  style={styles.scheduleButton}
+                >
+                  <Calendar size={20} color={colors.light.primary} />
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
                 onPress={() => setShowVoiceSettings(!showVoiceSettings)}
                 style={styles.voiceModeToggle}
@@ -1227,10 +1563,10 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
 
           {showVoiceSettings && (
             <View style={styles.voiceSettingsPanel}>
-              <Text style={styles.voiceSettingsTitle}>Voice Settings</Text>
+              <Text style={styles.voiceSettingsTitle}>{tr("Voice Settings")}</Text>
 
               <View style={styles.settingRow}>
-                <Text style={styles.settingLabel}>Volume: {Math.round(speechVolume * 100)}%</Text>
+                <Text style={styles.settingLabel}>{tr("Volume:")} {Math.round(speechVolume * 100)}%</Text>
                 <View style={styles.sliderControls}>
                   <TouchableOpacity
                     onPress={() => setSpeechVolume(Math.max(0, speechVolume - 0.1))}
@@ -1251,7 +1587,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
               </View>
 
               <View style={styles.settingRow}>
-                <Text style={styles.settingLabel}>Speed: {speechRate.toFixed(1)}x</Text>
+                <Text style={styles.settingLabel}>{tr("Speed:")} {speechRate.toFixed(1)}x</Text>
                 <View style={styles.sliderControls}>
                   <TouchableOpacity
                     onPress={() => setSpeechRate(Math.max(0.5, speechRate - 0.1))}
@@ -1273,7 +1609,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
 
               {availableVoices.length > 0 && (
                 <View style={styles.settingRow}>
-                  <Text style={styles.settingLabel}>Voice</Text>
+                  <Text style={styles.settingLabel}>{tr("Voice")}</Text>
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -1309,12 +1645,12 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
 
               <TouchableOpacity
                 style={styles.testVoiceButton}
-                onPress={() => speakText("Hello, this is a test of the selected voice settings.")}
+                onPress={() => speakText(tr("Hello, this is a test of the selected voice settings."))}
                 disabled={isSpeaking}
               >
                 <Volume2 size={16} color="#FFFFFF" />
                 <Text style={styles.testVoiceButtonText}>
-                  {isSpeaking ? "Speaking..." : "Test Voice"}
+                  {isSpeaking ? tr("Speaking...") : tr("Test Voice")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1361,19 +1697,25 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                   })}
                 </View>
                 <Text style={styles.messageTime}>
-                  {message.role === "user" ? "You" : "Counselor"}
+                  {message.role === "user" ? tr("You") : tr("Counselor")}
                 </Text>
               </View>
             )}
           />
 
+          {isTyping && (
+            <View style={styles.typingIndicatorContainer}>
+              <TypingIndicator />
+            </View>
+          )}
+
           <View style={styles.suggestedQuestions}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {[
-                "I'm feeling anxious today",
-                "Help me with depression",
-                "I need prayer guidance",
-                "Dealing with relationships",
+                tr("I'm feeling anxious today"),
+                tr("Help me with depression"),
+                tr("I need prayer guidance"),
+                tr("Dealing with relationships"),
               ].map((question, index) => (
                 <TouchableOpacity
                   key={index}
@@ -1391,7 +1733,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
           {isRecording && (
             <View style={styles.recordingHint}>
               <View style={styles.recordingPulse} />
-              <Text style={styles.recordingHintText}>Recording... Tap mic to stop</Text>
+              <Text style={styles.recordingHintText}>{tr("Recording... Tap mic to stop")}</Text>
             </View>
           )}
 
@@ -1406,7 +1748,7 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                 </TouchableOpacity>
                 {messages.length <= 2 && (
                   <View style={styles.voiceHintBubble}>
-                    <Text style={styles.voiceHintText}>Hold to record</Text>
+                    <Text style={styles.voiceHintText}>{tr("Hold to record")}</Text>
                   </View>
                 )}
               </View>
@@ -1438,12 +1780,12 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
               onChangeText={setChatInput}
               placeholder={
                 isRecording
-                  ? "Listening..."
+                  ? tr("Recording... Tap mic to stop")
                   : isTranscribing
-                    ? "Processing..."
+                    ? tr("Processing...")
                     : isSpeaking
-                      ? "Speaking..."
-                      : "Share what's on your heart..."
+                      ? tr("Speaking...")
+                      : tr("Share what's on your heart...")
               }
               placeholderTextColor={colors.light.textSecondary}
               multiline
@@ -1463,10 +1805,20 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
               <Send size={20} color={chatInput.trim() && !isRecording && !isTranscribing && !isSpeaking ? "#FFFFFF" : colors.light.textSecondary} />
             </TouchableOpacity>
           </View>
+
+          <ScheduleNextSessionModal
+            visible={showScheduleModal}
+            onClose={() => setShowScheduleModal(false)}
+            onSchedule={handleScheduleSession}
+          />
         </KeyboardAvoidingView>
       </View>
     );
   }
+
+  const displayTherapy = (therapy && translatedTherapy)
+    ? ({ ...therapy, ...translatedTherapy } as any)
+    : therapy;
 
   return (
     <View style={styles.container}>
@@ -1474,25 +1826,40 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
         colors={[colors.light.background, colors.light.cardBackground]}
         style={StyleSheet.absoluteFillObject}
       />
+      
+      {/* Share Button - Floating Action Button */}
+      <TouchableOpacity
+        style={styles.shareButton}
+        onPress={() => captureAndShare(tr("Share this therapy session from Daily Bread"))}
+        disabled={isCapturing}
+        activeOpacity={0.8}
+      >
+        {isCapturing ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : (
+          <Share2 size={24} color="#FFFFFF" />
+        )}
+      </TouchableOpacity>
+      
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+        <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
           <View style={styles.actionBar}>
             <TouchableOpacity style={styles.actionButton} onPress={resetToDaily}>
-              <Text style={styles.actionButtonText}>← New Session</Text>
+              <Text style={styles.actionButtonText}>{tr("← New Session")}</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.header}>
             <View style={styles.categoryBadge}>
               <Brain size={16} color={colors.light.primary} />
-              <Text style={styles.categoryText}>{therapy.category}</Text>
+              <Text style={styles.categoryText}>{displayTherapy.category}</Text>
             </View>
-            <Text style={styles.title}>{therapy.title}</Text>
-            <Text style={styles.topic}>{therapy.topic}</Text>
+            <Text style={styles.title}>{displayTherapy.title}</Text>
+            <Text style={styles.topic}>{displayTherapy.topic}</Text>
           </View>
 
           <View style={styles.card}>
@@ -1501,8 +1868,10 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
                 <Heart size={24} color={colors.light.accent} />
               </View>
               <View style={styles.cardTitleContainer}>
-                <Text style={styles.cardTitle}>Scripture Foundation</Text>
-                <Text style={styles.scripture}>{therapy.scripture}</Text>
+                <Text style={styles.cardTitle}>{tr("Scripture Foundation")}</Text>
+                <Text style={styles.scripture}>
+                  {displayTherapy.scripture} {bibleVersion && `(${bibleVersion.abbreviation})`}
+                </Text>
               </View>
             </View>
 
@@ -1510,22 +1879,22 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
               <View style={styles.quoteMarkContainer}>
                 <Text style={styles.quoteMark}>&quot;</Text>
               </View>
-              <Text style={styles.verse}>{therapy.verse}</Text>
+              <Text style={styles.verse}>{displayTherapy.verse}</Text>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Therapeutic Focus</Text>
-            <Text style={styles.sectionText}>{therapy.therapeuticFocus}</Text>
+            <Text style={styles.sectionTitle}>{tr("Therapeutic Focus")}</Text>
+            <Text style={styles.sectionText}>{displayTherapy.therapeuticFocus}</Text>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Practical Steps</Text>
+            <Text style={styles.sectionTitle}>{tr("Practical Steps")}</Text>
             <Text style={styles.sectionSubtitle}>
-              Try these evidence-based practices today:
+              {tr("Try these evidence-based practices today:")}
             </Text>
             <View style={styles.stepsContainer}>
-              {therapy.practicalSteps.map((step, index) => (
+              {displayTherapy.practicalSteps.map((step: string, index: number) => (
                 <View key={index} style={styles.stepRow}>
                   <View style={styles.stepNumber}>
                     <Text style={styles.stepNumberText}>{index + 1}</Text>
@@ -1537,23 +1906,21 @@ Respond with a warm greeting acknowledging their feelings (${moodLabel}) and con
           </View>
 
           <View style={styles.reflectionCard}>
-            <Text style={styles.reflectionTitle}>Reflection</Text>
-            <Text style={styles.reflectionText}>{therapy.reflection}</Text>
+            <Text style={styles.reflectionTitle}>{tr("Reflection")}</Text>
+            <Text style={styles.reflectionText}>{displayTherapy.reflection}</Text>
           </View>
 
           <View style={styles.prayerPrompt}>
             <View style={styles.prayerHeader}>
               <Check size={20} color={colors.light.success} />
-              <Text style={styles.prayerPromptTitle}>Prayer for Healing</Text>
+              <Text style={styles.prayerPromptTitle}>{tr("Prayer for Healing")}</Text>
             </View>
-            <Text style={styles.prayerPromptText}>{therapy.prayerPrompt}</Text>
+            <Text style={styles.prayerPromptText}>{displayTherapy.prayerPrompt}</Text>
           </View>
 
           <View style={styles.disclaimer}>
             <Text style={styles.disclaimerText}>
-              Note: This content is designed to support your spiritual and emotional
-              well-being. If you&apos;re experiencing severe mental health concerns,
-              please seek professional help from a licensed counselor or therapist.
+              {tr("Note: This content is designed to support your spiritual and emotional well-being. If you're experiencing severe mental health concerns, please seek professional help from a licensed counselor or therapist.")}
             </Text>
           </View>
         </Animated.View>
@@ -2121,6 +2488,10 @@ const styles = StyleSheet.create({
     color: colors.light.textSecondary,
     marginLeft: 4,
   },
+  typingIndicatorContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
   suggestedQuestions: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -2195,6 +2566,11 @@ const styles = StyleSheet.create({
   },
   voiceModeToggle: {
     padding: 8,
+  },
+  scheduleButton: {
+    padding: 8,
+    backgroundColor: `${colors.light.primary}15`,
+    borderRadius: 20,
   },
   chatHeaderActions: {
     flexDirection: "row",
@@ -2479,5 +2855,49 @@ const styles = StyleSheet.create({
     color: colors.light.textSecondary,
     lineHeight: 22,
     marginBottom: 6,
+  },
+  offlineBadge: {
+    backgroundColor: colors.light.warning,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  offlineBadgeText: {
+    fontSize: 10,
+    fontWeight: "700" as const,
+    color: "#FFFFFF",
+    textTransform: "uppercase" as const,
+  },
+  offlineNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.light.border,
+  },
+  offlineNoticeText: {
+    fontSize: 12,
+    color: colors.light.warning,
+    fontWeight: "600" as const,
+  },
+  shareButton: {
+    position: "absolute" as const,
+    right: 20,
+    bottom: 100,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.light.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 1000,
   },
 });
