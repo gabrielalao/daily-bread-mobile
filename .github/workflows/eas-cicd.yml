@@ -1,0 +1,84 @@
+name: EAS Build & Submit
+
+on:
+  push:
+    branches: ["main"]
+
+concurrency:
+  group: eas-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios:
+    name: iOS Build & Submit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Write iOS credential file
+        run: |
+          mkdir -p key
+          cat > key/AuthKey_88HX5JHC89.p8 <<'EOF'
+          ${{ secrets.ASC_KEY_P8 }}
+          EOF
+
+      - name: Expo doctor
+        run: npx expo-doctor
+
+      - name: EAS Build (iOS)
+        run: eas build --platform ios --profile production --non-interactive
+
+      - name: EAS Submit (iOS)
+        run: eas submit --platform ios --profile production --latest --non-interactive
+
+  android:
+    name: Android Build & Submit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Write Android credential file
+        run: |
+          mkdir -p key
+          cat > key/daily-bread-480715-201ad83e8677.json <<'EOF'
+          ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          EOF
+
+      - name: Expo doctor
+        run: npx expo-doctor
+
+      - name: EAS Build (Android)
+        run: eas build --platform android --profile production --non-interactive
+
+      - name: EAS Submit (Android)
+        run: eas submit --platform android --profile production --latest --non-interactive

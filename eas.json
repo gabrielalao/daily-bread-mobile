@@ -12,13 +12,32 @@
       "distribution": "internal"
     },
     "production": {
+      "distribution": "store",
       "autoIncrement": true,
+      "ios": {
+        "simulator": false,
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      },
       "env": {
         "EXPO_PUBLIC_TOOLKIT_URL": "https://toolkit.rork.com"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascApiKeyPath": "./key/AuthKey_88HX5JHC89.p8",
+        "ascApiKeyId": "88HX5JHC89",
+        "ascApiKeyIssuerId": "ea0f4913-2875-417c-bd9f-203ac0e4f389",
+        "ascAppId": "6755737219"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./key/daily-bread-480715-201ad83e8677.json",
+        "track": "beta"
+      }
+    }
   }
 }
