@@ -287,7 +287,7 @@ export function getPersonalizedDevotional(viewedIds: string[], preferences: stri
 }
 
 // Get theme keywords from devotional to match with prayer and study
-export function getDevotionalThemeKeywords(devotional: Devotional): string[] {
+export function getCorrelatedDevotionalTheme(devotional: Devotional): string[] {
   const keywords: string[] = [];
   const text = `${devotional.title} ${devotional.reflection}`.toLowerCase();
   
