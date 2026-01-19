@@ -1,4 +1,6 @@
 import colors from "@/constants/colors";
+import { useContent } from "@/contexts/ContentContext";
+import { translateTextCached } from "@/utils/translate";
 import { LinearGradient } from "expo-linear-gradient";
 import { Shield } from "lucide-react-native";
 import React from "react";
@@ -12,12 +14,48 @@ import {
 
 export default function PrivacyScreen() {
   const scrollRef = React.useRef<ScrollView>(null);
+  const { userPreferences } = useContent();
+  const lang = userPreferences.appLanguage;
+  const [tr, setTr] = React.useState<Record<string, string>>({});
 
   useFocusEffect(
     React.useCallback(() => {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
     }, [])
   );
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      setTr({});
+      if (!userPreferences.autoTranslateContent || !lang || lang === "en") return;
+
+      const base = {
+        title: "Privacy Policy",
+        subtitle: "Protecting Your Data",
+        intro: "At Daily Bread, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data.",
+        s1t: "Data Collection",
+        s1b: "We collect minimal data to improve our services. No personal data is required to use Daily Bread.",
+        s2t: "Data Use",
+        s2b: "We use data to improve our services and personalize your experience.",
+        s3t: "Data Protection",
+        s3b: "We implement reasonable security measures to protect your data.",
+      };
+
+      const entries = await Promise.all(
+        Object.entries(base).map(async ([k, v]) => {
+          const res = await translateTextCached({ text: v, targetLang: lang });
+          return [k, res.text] as const;
+        })
+      );
+      if (cancelled) return;
+      setTr(Object.fromEntries(entries));
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [lang, userPreferences.autoTranslateContent]);
 
   return (
     <View style={styles.container}>
@@ -36,33 +74,33 @@ export default function PrivacyScreen() {
             <View style={styles.iconContainer}>
               <Shield size={32} color={colors.light.primary} />
             </View>
-            <Text style={styles.title}>Privacy Policy</Text>
-            <Text style={styles.subtitle}>Protecting Your Data</Text>
+            <Text style={styles.title}>{tr.title ?? "Privacy Policy"}</Text>
+            <Text style={styles.subtitle}>{tr.subtitle ?? "Protecting Your Data"}</Text>
           </View>
 
           <View style={styles.card}>
             <Text style={styles.intro}>
-              At Daily Bread, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data.
+              {tr.intro ?? "At Daily Bread, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data."}
             </Text>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Data Collection</Text>
+              <Text style={styles.sectionTitle}>{tr.s1t ?? "Data Collection"}</Text>
               <Text style={styles.sectionText}>
-                We collect minimal data to improve our services. No personal data is required to use Daily Bread.
+                {tr.s1b ?? "We collect minimal data to improve our services. No personal data is required to use Daily Bread."}
               </Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Data Use</Text>
+              <Text style={styles.sectionTitle}>{tr.s2t ?? "Data Use"}</Text>
               <Text style={styles.sectionText}>
-                We use data to improve our services and personalize your experience.
+                {tr.s2b ?? "We use data to improve our services and personalize your experience."}
               </Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Data Protection</Text>
+              <Text style={styles.sectionTitle}>{tr.s3t ?? "Data Protection"}</Text>
               <Text style={styles.sectionText}>
-                We implement reasonable security measures to protect your data.
+                {tr.s3b ?? "We implement reasonable security measures to protect your data."}
               </Text>
             </View>
           </View>

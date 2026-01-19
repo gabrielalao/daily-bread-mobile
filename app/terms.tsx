@@ -1,4 +1,7 @@
 import colors from "@/constants/colors";
+import { useContent } from "@/contexts/ContentContext";
+import { translateTextCached } from "@/utils/translate";
+import { t } from "@/utils/i18n";
 import { LinearGradient } from "expo-linear-gradient";
 import { FileText } from "lucide-react-native";
 import React from "react";
@@ -12,12 +15,51 @@ import {
 
 export default function TermsScreen() {
   const scrollRef = React.useRef<ScrollView>(null);
+  const { userPreferences } = useContent();
+  const lang = userPreferences.appLanguage;
+
+  const [tr, setTr] = React.useState<Record<string, string>>({});
 
   useFocusEffect(
     React.useCallback(() => {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
     }, [])
   );
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      setTr({});
+      if (!userPreferences.autoTranslateContent || !lang || lang === "en") return;
+
+      const base = {
+        title: "Terms of Service",
+        subtitle: "User Agreement & Guidelines",
+        lastUpdated: `Last updated: ${new Date().toLocaleDateString(lang)}`,
+        intro:
+          `Welcome to Daily Bread! These Terms of Service ("Terms") govern your use of our mobile application, website, and services. By using Daily Bread, you agree to be bound by these Terms. Please read them carefully.`,
+        s1t: "Use of Service",
+        s1b: "Daily Bread is available for personal, non-commercial use. You are responsible for complying with these Terms.",
+        s2t: "Intellectual Property",
+        s2b: "Daily Bread and its content are protected by intellectual property laws. You may not copy, reproduce, or distribute any content from Daily Bread without our prior written consent.",
+        s3t: "Disclaimer of Warranties",
+        s3b: 'Daily Bread is provided on an "AS IS" and "AS AVAILABLE" basis. We disclaim all warranties, express or implied.',
+      };
+
+      const entries = await Promise.all(
+        Object.entries(base).map(async ([k, v]) => {
+          const res = await translateTextCached({ text: v, targetLang: lang });
+          return [k, res.text] as const;
+        })
+      );
+      if (cancelled) return;
+      setTr(Object.fromEntries(entries));
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [lang, userPreferences.autoTranslateContent]);
 
   return (
     <View style={styles.container}>
@@ -36,35 +78,35 @@ export default function TermsScreen() {
             <View style={styles.iconContainer}>
               <FileText size={32} color={colors.light.primary} />
             </View>
-            <Text style={styles.title}>Terms of Service</Text>
-            <Text style={styles.subtitle}>User Agreement & Guidelines</Text>
+            <Text style={styles.title}>{tr.title ?? "Terms of Service"}</Text>
+            <Text style={styles.subtitle}>{tr.subtitle ?? "User Agreement & Guidelines"}</Text>
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.lastUpdated}>Last updated: {new Date().toLocaleDateString()}</Text>
+            <Text style={styles.lastUpdated}>{tr.lastUpdated ?? `Last updated: ${new Date().toLocaleDateString(lang)}`}</Text>
 
             <Text style={styles.intro}>
-              Welcome to Daily Bread! These Terms of Service ("Terms") govern your use of our mobile application, website, and services. By using Daily Bread, you agree to be bound by these Terms. Please read them carefully.
+              {tr.intro ?? `Welcome to Daily Bread! These Terms of Service ("Terms") govern your use of our mobile application, website, and services. By using Daily Bread, you agree to be bound by these Terms. Please read them carefully.`}
             </Text>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Use of Service</Text>
+              <Text style={styles.sectionTitle}>{tr.s1t ?? "Use of Service"}</Text>
               <Text style={styles.sectionText}>
-                Daily Bread is available for personal, non-commercial use. You are responsible for complying with these Terms.
+                {tr.s1b ?? "Daily Bread is available for personal, non-commercial use. You are responsible for complying with these Terms."}
               </Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Intellectual Property</Text>
+              <Text style={styles.sectionTitle}>{tr.s2t ?? "Intellectual Property"}</Text>
               <Text style={styles.sectionText}>
-                Daily Bread and its content are protected by intellectual property laws. You may not copy, reproduce, or distribute any content from Daily Bread without our prior written consent.
+                {tr.s2b ?? "Daily Bread and its content are protected by intellectual property laws. You may not copy, reproduce, or distribute any content from Daily Bread without our prior written consent."}
               </Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Disclaimer of Warranties</Text>
+              <Text style={styles.sectionTitle}>{tr.s3t ?? "Disclaimer of Warranties"}</Text>
               <Text style={styles.sectionText}>
-                Daily Bread is provided on an "AS IS" and "AS AVAILABLE" basis. We disclaim all warranties, express or implied.
+                {tr.s3b ?? 'Daily Bread is provided on an "AS IS" and "AS AVAILABLE" basis. We disclaim all warranties, express or implied.'}
               </Text>
             </View>
           </View>

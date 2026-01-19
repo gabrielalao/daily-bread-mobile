@@ -2,7 +2,7 @@
   "expo": {
     "name": "Daily Bread",
     "slug": "daily-bread-app-mp9wlbr",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "rork-app",
@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.rork.daily-bread-app-mp9wlbr",
+      "buildNumber": "2",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Allow Daily Bread to access your microphone to record audio for therapy sessions and provide personalized feedback. Your audio data will not be stored and used only for the purpose of improving your mental health and wellness.",
         "NSAppTransportSecurity": {

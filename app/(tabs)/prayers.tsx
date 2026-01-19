@@ -2,6 +2,9 @@ import colors from "@/constants/colors";
 import { getRecommendedPrayers, PrayerGuide } from "@/constants/prayers";
 import { useContent } from "@/contexts/ContentContext";
 import { usePersonalization } from "@/hooks/usePersonalization";
+import { useScreenshotShare } from "@/hooks/useScreenshotShare";
+import { translateTextCached } from "@/utils/translate";
+import { t } from "@/utils/i18n";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   Heart,
@@ -20,6 +23,7 @@ import {
   Calculator,
   MessageCircle,
   Activity,
+  Share2,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import { useFocusEffect } from "expo-router";
@@ -31,6 +35,7 @@ import {
   TouchableOpacity,
   View,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -54,13 +59,22 @@ const iconMap: Record<string, React.ComponentType<{ size: number; color: string 
 };
 
 const { width } = Dimensions.get('window');
+const isTablet = width >= 768;
 const isSmallScreen = width < 375;
 
 export default function PrayerScreen() {
   const { contentHistory, userPreferences, markPrayerViewed, addPrayerCategory, isLoaded } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
+  const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
   const [selectedGuide, setSelectedGuide] = useState<PrayerGuide | null>(null);
   const [fadeAnim] = useState(new Animated.Value(1));
+  const [translatedListItems, setTranslatedListItems] = useState<Record<string, { title?: string; description?: string }>>({});
+  const [translatedDetail, setTranslatedDetail] = useState<{
+    title?: string;
+    description?: string;
+    prayers?: string[];
+    scriptureVerses?: string[];
+  } | null>(null);
   const insets = useSafeAreaInsets();
   const scrollRef = React.useRef<ScrollView>(null);
   
@@ -68,6 +82,71 @@ export default function PrayerScreen() {
     contentHistory.prayers,
     userPreferences.prayerCategories
   );
+
+  // Translate list cards (title + description) when enabled.
+  React.useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const lang = userPreferences.appLanguage;
+      if (!userPreferences.autoTranslateContent || !lang || lang === "en") {
+        setTranslatedListItems({});
+        return;
+      }
+
+      // Be gentle to free providers: translate sequentially (cached results are instant).
+      const next: Record<string, { title?: string; description?: string }> = {};
+      for (const g of recommendedPrayers) {
+        if (cancelled) return;
+        const [titleRes, descRes] = await Promise.all([
+          translateTextCached({ text: g.title, targetLang: lang }),
+          translateTextCached({ text: g.description, targetLang: lang }),
+        ]);
+        next[g.id] = { title: titleRes.text, description: descRes.text };
+      }
+      if (cancelled) return;
+      setTranslatedListItems(next);
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [recommendedPrayers.map(p => p.id).join("|"), userPreferences.appLanguage, userPreferences.autoTranslateContent]);
+
+  // Translate selected prayer detail (full) when enabled.
+  React.useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      setTranslatedDetail(null);
+      const lang = userPreferences.appLanguage;
+      if (!userPreferences.autoTranslateContent) return;
+      if (!lang || lang === "en") return;
+      if (!selectedGuide) return;
+
+      const [titleRes, descRes] = await Promise.all([
+        translateTextCached({ text: selectedGuide.title, targetLang: lang }),
+        translateTextCached({ text: selectedGuide.description, targetLang: lang }),
+      ]);
+
+      const prayersRes = await Promise.all(
+        selectedGuide.prayers.map((p) => translateTextCached({ text: p, targetLang: lang }))
+      );
+      const scriptureVersesRes = await Promise.all(
+        selectedGuide.scriptures.map((s) => translateTextCached({ text: s.verse, targetLang: lang }))
+      );
+
+      if (cancelled) return;
+      setTranslatedDetail({
+        title: titleRes.text,
+        description: descRes.text,
+        prayers: prayersRes.map((r) => r.text),
+        scriptureVerses: scriptureVersesRes.map((r) => r.text),
+      });
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedGuide?.id, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
 
   const handleSelectGuide = (guide: PrayerGuide) => {
     Animated.timing(fadeAnim, {
@@ -124,7 +203,7 @@ export default function PrayerScreen() {
           style={StyleSheet.absoluteFillObject}
         />
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text style={styles.loadingText}>{t(userPreferences.appLanguage, "common.loading")}</Text>
         </View>
       </View>
     );
@@ -137,6 +216,21 @@ export default function PrayerScreen() {
           colors={[colors.light.background, colors.light.cardBackground]}
           style={StyleSheet.absoluteFillObject}
         />
+        
+        {/* Share Button - Floating Action Button */}
+        <TouchableOpacity
+          style={styles.shareButton}
+          onPress={() => captureAndShare(`Share this prayer guide from Daily Bread: ${selectedGuide.title}`)}
+          disabled={isCapturing}
+          activeOpacity={0.8}
+        >
+          {isCapturing ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Share2 size={24} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
+        
         <ScrollView
           ref={scrollRef}
           style={styles.scrollView}
@@ -146,13 +240,13 @@ export default function PrayerScreen() {
           ]}
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+          <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
             <TouchableOpacity
               onPress={handleBack}
               style={styles.backButton}
               activeOpacity={0.7}
             >
-              <Text style={styles.backButtonText}>← Back to Prayers</Text>
+              <Text style={styles.backButtonText}>{t(userPreferences.appLanguage, "prayers.backToPrayers")}</Text>
             </TouchableOpacity>
 
             <View style={styles.detailHeader}>
@@ -167,29 +261,29 @@ export default function PrayerScreen() {
                   color: colors.light.primary,
                 })}
               </View>
-              <Text style={styles.detailTitle}>{selectedGuide.title}</Text>
+              <Text style={styles.detailTitle}>{translatedDetail?.title ?? selectedGuide.title}</Text>
               <Text style={styles.detailDescription}>
-                {selectedGuide.description}
+                {translatedDetail?.description ?? selectedGuide.description}
               </Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Prayers</Text>
+              <Text style={styles.sectionTitle}>{t(userPreferences.appLanguage, "prayers.sectionPrayers")}</Text>
               {selectedGuide.prayers.map((prayer, index) => (
                 <View key={index} style={styles.prayerCard}>
                   <View style={styles.prayerNumber}>
                     <Text style={styles.prayerNumberText}>{index + 1}</Text>
                   </View>
-                  <Text style={styles.prayerText}>{prayer}</Text>
+                  <Text style={styles.prayerText}>{translatedDetail?.prayers?.[index] ?? prayer}</Text>
                 </View>
               ))}
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Scripture References</Text>
+              <Text style={styles.sectionTitle}>{t(userPreferences.appLanguage, "prayers.sectionScripture")}</Text>
               {selectedGuide.scriptures.map((scripture, index) => (
                 <View key={index} style={styles.scriptureCard}>
-                  <Text style={styles.scriptureVerse}>&quot;{scripture.verse}&quot;</Text>
+                  <Text style={styles.scriptureVerse}>&quot;{translatedDetail?.scriptureVerses?.[index] ?? scripture.verse}&quot;</Text>
                   <Text style={styles.scriptureReference}>
                     — {scripture.reference}
                   </Text>
@@ -208,6 +302,21 @@ export default function PrayerScreen() {
         colors={[colors.light.background, colors.light.cardBackground]}
         style={StyleSheet.absoluteFillObject}
       />
+      
+      {/* Share Button - Floating Action Button */}
+      <TouchableOpacity
+        style={styles.shareButton}
+        onPress={() => captureAndShare("Share prayer guides from Daily Bread")}
+        disabled={isCapturing}
+        activeOpacity={0.8}
+      >
+        {isCapturing ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : (
+          <Share2 size={24} color="#FFFFFF" />
+        )}
+      </TouchableOpacity>
+      
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}
@@ -217,16 +326,17 @@ export default function PrayerScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+        <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
           <View style={styles.header}>
             <Text style={styles.subtitle}>
-              Connect with God through guided prayers for life&apos;s moments
+              {t(userPreferences.appLanguage, "prayers.subtitle")}
             </Text>
           </View>
 
           <View style={styles.gridContainer}>
             {recommendedPrayers.map((guide) => {
               const IconComponent = iconMap[guide.icon];
+              const translated = translatedListItems[guide.id];
               return (
                 <TouchableOpacity
                   key={guide.id}
@@ -242,9 +352,9 @@ export default function PrayerScreen() {
                   >
                     <IconComponent size={28} color={colors.light.primary} />
                   </View>
-                  <Text style={styles.guideTitle}>{guide.title}</Text>
+                  <Text style={styles.guideTitle}>{translated?.title ?? guide.title}</Text>
                   <Text style={styles.guideDescription} numberOfLines={2}>
-                    {guide.description}
+                    {translated?.description ?? guide.description}
                   </Text>
                 </TouchableOpacity>
               );
@@ -267,7 +377,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   content: {
-    padding: isSmallScreen ? 16 : 20,
+    padding: isTablet ? 32 : (isSmallScreen ? 16 : 20),
   },
   header: {
     marginBottom: isSmallScreen ? 20 : 24,
@@ -289,8 +399,8 @@ const styles = StyleSheet.create({
   },
   guideCard: {
     backgroundColor: colors.light.cardBackground,
-    borderRadius: 16,
-    padding: isSmallScreen ? 16 : 20,
+    borderRadius: isTablet ? 20 : 16,
+    padding: isTablet ? 28 : (isSmallScreen ? 16 : 20),
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -345,6 +455,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: "center" as const,
     paddingHorizontal: 8,
+    flexWrap: "wrap",
+    flexShrink: 1,
   },
   detailDescription: {
     fontSize: isSmallScreen ? 14 : 16,
@@ -423,5 +535,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.light.textSecondary,
     fontWeight: "600" as const,
+  },
+  shareButton: {
+    position: "absolute" as const,
+    right: 20,
+    bottom: 100,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.light.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 1000,
   },
 });
