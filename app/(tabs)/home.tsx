@@ -35,6 +35,7 @@ export default function HomeScreen() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewingPastContent, setViewingPastContent] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const hasSetInitialDevotional = useRef(false);
   
   // Draggable share button position
   const pan = useRef(new Animated.ValueXY({ x: screenWidth - 60, y: 100 })).current;
@@ -96,7 +97,7 @@ export default function HomeScreen() {
     );
     console.log('Selected new devotional for today:', selected.title);
     return selected;
-  }, [contentHistory.currentDayDevotional, contentHistory.devotionals, userPreferences.topicsOfInterest, selectedDate, viewingPastContent]);
+  }, [contentHistory.currentDayDevotional, selectedDate, viewingPastContent]);
 
   const bibleVersion = getVersionById(userPreferences.bibleVersion);
   const lang = userPreferences.appLanguage;
@@ -113,9 +114,10 @@ export default function HomeScreen() {
   }, [fadeAnim, isLoaded]);
   
   useEffect(() => {
-    if (isLoaded && devotional) {
+    if (isLoaded && devotional && !hasSetInitialDevotional.current) {
       if (contentHistory.currentDayDevotional !== devotional.id) {
         setCurrentDayDevotional(devotional.id);
+        hasSetInitialDevotional.current = true;
         console.log('Set current day devotional to:', devotional.id);
       }
       
