@@ -977,15 +977,15 @@ const styles = StyleSheet.create({
     fontWeight: "600" as const,
   },
   todayButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     backgroundColor: colors.light.primary,
-    borderRadius: 16,
+    borderRadius: 12,
     marginLeft: 8,
   },
   todayButtonText: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "600" as const,
   },
   modalOverlay: {
