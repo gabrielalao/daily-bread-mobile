@@ -1,17 +1,40 @@
 import colors from "@/constants/colors";
-import { ContentProvider } from "@/contexts/ContentContext";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { ContentProvider, useContent } from "@/contexts/ContentContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { ScheduledSessionsProvider } from "@/contexts/ScheduledSessionsContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import * as Notifications from "expo-notifications";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, Component, ReactNode } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Platform } from "react-native";
+import { t } from "@/utils/i18n";
 
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
+
+// Configure notification handler to show therapy notifications prominently
+Notifications.setNotificationHandler({
+  handleNotification: async (notification) => {
+    const isTherapySession = notification.request.content.data?.type === 'therapy_session';
+    
+    return {
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: isTherapySession ? true : false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+      // Make therapy sessions more prominent
+      priority: isTherapySession 
+        ? Notifications.AndroidNotificationPriority.MAX 
+        : Notifications.AndroidNotificationPriority.HIGH,
+    };
+  },
+});
 
 class ErrorBoundary extends Component<
   { children: ReactNode },
@@ -47,12 +70,15 @@ class ErrorBoundary extends Component<
 }
 
 function RootLayoutNav() {
+  const { userPreferences } = useContent();
+  const lang = userPreferences.appLanguage;
   return (
     <>
       <StatusBar style="auto" translucent={true} />
+      <OfflineIndicator />
       <Stack
         screenOptions={{
-          headerBackTitle: "Back",
+          headerBackTitle: t(lang, "common.back"),
           headerStyle: {
             backgroundColor: colors.light.background,
           },
@@ -65,9 +91,9 @@ function RootLayoutNav() {
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="terms" options={{ title: "Terms of Service" }} />
-        <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }} />
-        <Stack.Screen name="support" options={{ title: "Support" }} />
+        <Stack.Screen name="terms" options={{ title: t(lang, "headers.terms") }} />
+        <Stack.Screen name="privacy" options={{ title: t(lang, "headers.privacy") }} />
+        <Stack.Screen name="support" options={{ title: t(lang, "headers.support") }} />
       </Stack>
     </>
   );
@@ -83,11 +109,13 @@ export default function RootLayout() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <NotificationProvider>
-          <ContentProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <RootLayoutNav />
-            </GestureHandlerRootView>
-          </ContentProvider>
+          <ScheduledSessionsProvider>
+            <ContentProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <RootLayoutNav />
+              </GestureHandlerRootView>
+            </ContentProvider>
+          </ScheduledSessionsProvider>
         </NotificationProvider>
       </QueryClientProvider>
     </ErrorBoundary>
