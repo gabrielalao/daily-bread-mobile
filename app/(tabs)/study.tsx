@@ -211,29 +211,6 @@ export default function BibleStudyScreen() {
     };
   }, [recommendedStudies.map(p => p.id).join("|"), userPreferences.appLanguage, userPreferences.autoTranslateContent]);
 
-  // Translate daily study verse when enabled.
-  React.useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      setTranslatedStudyVerse(null);
-      const lang = userPreferences.appLanguage;
-      if (!userPreferences.autoTranslateContent || !lang || lang === "en") return;
-      if (!todayStudyVerse) return;
-
-      const [refRes, textRes] = await Promise.all([
-        translateTextCached({ text: todayStudyVerse.reference, targetLang: lang }),
-        translateTextCached({ text: todayStudyVerse.text, targetLang: lang }),
-      ]);
-
-      if (cancelled) return;
-      setTranslatedStudyVerse({ reference: refRes.text, text: textRes.text });
-    };
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [todayStudyVerse?.reference, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
-
   // Translate selected plan reading list content progressively (focus + insights) when enabled.
   React.useEffect(() => {
     let cancelled = false;
