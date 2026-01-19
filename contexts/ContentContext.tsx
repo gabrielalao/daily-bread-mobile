@@ -94,10 +94,33 @@ export const [ContentProvider, useContent] = createContextHook(() => {
         const parsed = JSON.parse(historyData);
         const lastUpdated = new Date(parsed.lastUpdated);
         const now = new Date();
-        const hoursSinceLastUpdate = (now.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60);
         
-        if (hoursSinceLastUpdate >= 12) {
-          console.log(`Content refresh: ${hoursSinceLastUpdate.toFixed(1)} hours since last update`);
+        // Check if we need to refresh content (daily at 5am local time)
+        const shouldRefresh = () => {
+          // Get today's 5am
+          const today5am = new Date(now);
+          today5am.setHours(5, 0, 0, 0);
+          
+          // Get yesterday's 5am
+          const yesterday5am = new Date(today5am);
+          yesterday5am.setDate(yesterday5am.getDate() - 1);
+          
+          // If last update was before today's 5am and it's now past 5am, refresh
+          if (now >= today5am && lastUpdated < today5am) {
+            return true;
+          }
+          
+          // If it's before 5am today, check if last update was before yesterday's 5am
+          if (now < today5am && lastUpdated < yesterday5am) {
+            return true;
+          }
+          
+          return false;
+        };
+        
+        if (shouldRefresh()) {
+          const hoursSinceUpdate = (now.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60);
+          console.log(`Content refresh at 5am cycle: ${hoursSinceUpdate.toFixed(1)} hours since last update`);
           const resetHistory: ContentHistory = {
             devotionals: [],
             prayers: [],
@@ -112,7 +135,8 @@ export const [ContentProvider, useContent] = createContextHook(() => {
           await AsyncStorage.setItem(CONTENT_HISTORY_KEY, JSON.stringify(resetHistory));
           setContentHistory(resetHistory);
         } else {
-          console.log(`Content still fresh: ${hoursSinceLastUpdate.toFixed(1)} hours since last update`);
+          const hoursSinceUpdate = (now.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60);
+          console.log(`Content still fresh: ${hoursSinceUpdate.toFixed(1)} hours since last update (next refresh at 5am)`);
           // Migrate old data structure to new structure
           const migratedData: ContentHistory = {
             devotionals: parsed.devotionals || [],
