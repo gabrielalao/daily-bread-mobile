@@ -28,11 +28,16 @@ export default function TabLayout() {
       width: 36,
       height: 36,
       borderRadius: 8,
-      backgroundColor: colors.light.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
+      overflow: 'hidden',
     }}>
-      <BookOpen size={22} color="#FFFFFF" strokeWidth={2.5} />
+      <Image 
+        source={require('@/assets/images/icon.png')}
+        style={{
+          width: 36,
+          height: 36,
+        }}
+        resizeMode="cover"
+      />
     </View>
   ), []);
   
