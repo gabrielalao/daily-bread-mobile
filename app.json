@@ -36,9 +36,6 @@
         }
       }
     },
-    "androidStatusBar": {
-      "translucent": true
-    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -50,7 +47,10 @@
         "android.permission.SCHEDULE_EXACT_ALARM",
         "RECORD_AUDIO"
       ],
-      "softwareKeyboardLayoutMode": "pan"
+      "softwareKeyboardLayoutMode": "pan",
+      "androidStatusBar": {
+        "translucent": true
+      }
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
