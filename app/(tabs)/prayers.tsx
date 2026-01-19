@@ -24,8 +24,10 @@ import {
   MessageCircle,
   Activity,
   Share2,
+  Calendar,
+  Clock,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useFocusEffect } from "expo-router";
 import {
   Animated,
@@ -68,6 +70,7 @@ export default function PrayerScreen() {
   const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
   const [selectedGuide, setSelectedGuide] = useState<PrayerGuide | null>(null);
   const [fadeAnim] = useState(new Animated.Value(1));
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [translatedListItems, setTranslatedListItems] = useState<Record<string, { title?: string; description?: string }>>({});
   const [translatedDetail, setTranslatedDetail] = useState<{
     title?: string;
@@ -83,6 +86,40 @@ export default function PrayerScreen() {
     contentHistory.prayers,
     userPreferences.prayerCategories
   );
+
+  // Update time display (only when minute changes to reduce re-renders)
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const lastMinute = currentTime.getMinutes();
+      const currentMinute = now.getMinutes();
+      
+      if (lastMinute !== currentMinute) {
+        setCurrentTime(now);
+      }
+    };
+
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [currentTime]);
+
+  const locale = userPreferences.appLanguage === 'en' ? 'en-US' :
+                 userPreferences.appLanguage === 'fr' ? 'fr-FR' :
+                 userPreferences.appLanguage === 'da' ? 'da-DK' :
+                 userPreferences.appLanguage === 'es' ? 'es-ES' :
+                 userPreferences.appLanguage === 'de' ? 'de-DE' : 'en-US';
+
+  const today = currentTime.toLocaleDateString(locale, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+
+  const time = currentTime.toLocaleTimeString(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 
   // Translate list cards (title + description) when enabled.
   React.useEffect(() => {
@@ -328,8 +365,18 @@ export default function PrayerScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
+          <View style={styles.dateTimeContainer}>
+            <View style={styles.dateRow}>
+              <Calendar size={20} color={colors.light.textSecondary} />
+              <Text style={styles.dateText}>{today}</Text>
+            </View>
+            <View style={styles.timeRow}>
+              <Clock size={20} color={colors.light.textSecondary} />
+              <Text style={styles.timeText}>{time}</Text>
+            </View>
+          </View>
+
           <View style={styles.header}>
-            <Text style={styles.greeting}>{t(userPreferences.appLanguage, "prayers.greeting")}</Text>
             <Text style={styles.subtitle}>
               {t(userPreferences.appLanguage, "prayers.subtitle")}
             </Text>
@@ -416,6 +463,32 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: isTablet ? 32 : (isSmallScreen ? 16 : 20),
+  },
+  dateTimeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  dateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  dateText: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    fontWeight: "500" as const,
+  },
+  timeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  timeText: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    fontWeight: "500" as const,
   },
   header: {
     marginBottom: isSmallScreen ? 20 : 24,
