@@ -106,6 +106,36 @@ export default function BibleStudyScreen() {
     }
   }, [todayStudy, isLoaded, contentHistory.currentDayStudy, setCurrentDayStudy]);
 
+  // Translate today's daily study when enabled
+  React.useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      setTranslatedDailyStudy(null);
+      const lang = userPreferences.appLanguage;
+      if (!userPreferences.autoTranslateContent || !lang || lang === "en") return;
+      if (!todayStudy) return;
+
+      const [titleRes, verseRes, insightRes, reflectionRes] = await Promise.all([
+        translateTextCached({ text: todayStudy.title, targetLang: lang }),
+        translateTextCached({ text: todayStudy.verse, targetLang: lang }),
+        translateTextCached({ text: todayStudy.insight, targetLang: lang }),
+        translateTextCached({ text: todayStudy.reflection, targetLang: lang }),
+      ]);
+
+      if (cancelled) return;
+      setTranslatedDailyStudy({ 
+        title: titleRes.text, 
+        verse: verseRes.text,
+        insight: insightRes.text,
+        reflection: reflectionRes.text,
+      });
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [todayStudy?.id, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
+
   const translateCategory = (category: string) => {
     const key = `cat.${category.toLowerCase().replace(/[^a-z]+/g, "")}`;
     const translated = t(userPreferences.appLanguage, key);
@@ -982,39 +1012,46 @@ export default function BibleStudyScreen() {
             </Text>
           </View>
 
-          {/* Today's Study Verse */}
-          {todayStudyVerse && (
-            <View style={styles.todaySection}>
-              <View style={styles.todaySectionHeader}>
-                <Text style={styles.todaySectionTitle}>📚 {t(userPreferences.appLanguage, "study.todaysStudy")}</Text>
-                <Text style={styles.todaySectionSubtitle}>{t(userPreferences.appLanguage, "study.dailyGuidance")}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.todayVerseCard}
-                onPress={() => {
-                  setActiveReadingDay(0);
-                  setIsModalInsightExpanded(true);
-                  fetchVerseMutation.mutate(todayStudyVerse.reference);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={styles.todayIconContainer}>
-                  <BookOpen size={32} color={colors.light.primary} />
-                </View>
-                <View style={styles.todayTextContainer}>
-                  <Text style={styles.todayVerseReference}>
-                    {translatedStudyVerse?.reference ?? todayStudyVerse.reference}
-                  </Text>
-                  <Text style={styles.todayVerseText} numberOfLines={2}>
-                    &quot;{translatedStudyVerse?.text ?? todayStudyVerse.text}&quot;
-                  </Text>
-                  <View style={styles.todayVerseFooter}>
-                    <Text style={styles.todayVerseTag}>{t(userPreferences.appLanguage, "study.correlatedWithDevotion")}</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
+          {/* Today's Study */}
+          <View style={styles.todaySection}>
+            <View style={styles.todaySectionHeader}>
+              <Text style={styles.todaySectionTitle}>📚 {t(userPreferences.appLanguage, "study.todaysStudy")}</Text>
+              <Text style={styles.todaySectionSubtitle}>{t(userPreferences.appLanguage, "study.dailyGuidance")}</Text>
             </View>
-          )}
+            <View style={styles.todayStudyCard}>
+              <View style={styles.todayIconContainer}>
+                <BookOpen size={32} color={colors.light.primary} />
+              </View>
+              <View style={styles.todayTextContainer}>
+                <Text style={styles.todayStudyTitle}>{translatedDailyStudy?.title ?? todayStudy.title}</Text>
+                <View style={styles.todayScriptureRow}>
+                  <Book size={14} color={colors.light.accent} />
+                  <Text style={styles.todayStudyScripture}>{todayStudy.scripture}</Text>
+                </View>
+                <Text style={styles.todayStudyVerse}>
+                  &quot;{translatedDailyStudy?.verse ?? todayStudy.verse}&quot;
+                </Text>
+                <View style={styles.todayInsightContainer}>
+                  <View style={styles.todayInsightHeader}>
+                    <Lightbulb size={14} color={colors.light.primary} />
+                    <Text style={styles.todayInsightLabel}>{t(userPreferences.appLanguage, "study.insight")}</Text>
+                  </View>
+                  <Text style={styles.todayInsightText}>
+                    {translatedDailyStudy?.insight ?? todayStudy.insight}
+                  </Text>
+                </View>
+                <View style={styles.todayReflectionContainer}>
+                  <View style={styles.todayReflectionHeader}>
+                    <Heart size={14} color={colors.light.accent} />
+                    <Text style={styles.todayReflectionLabel}>{t(userPreferences.appLanguage, "study.reflection")}</Text>
+                  </View>
+                  <Text style={styles.todayReflectionText}>
+                    {translatedDailyStudy?.reflection ?? todayStudy.reflection}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
 
           {/* All Study Plans */}
           <View style={styles.allStudiesHeader}>
@@ -1136,6 +1173,96 @@ const styles = StyleSheet.create({
   todaySectionSubtitle: {
     fontSize: 14,
     color: colors.light.textSecondary,
+  },
+  todayStudyCard: {
+    backgroundColor: colors.light.cardBackground,
+    borderRadius: isTablet ? 20 : 16,
+    padding: isTablet ? 24 : (isSmallScreen ? 16 : 20),
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 16,
+    shadowColor: colors.light.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 2,
+    borderColor: colors.light.primary,
+  },
+  todayStudyTitle: {
+    fontSize: isSmallScreen ? 16 : 18,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+    marginBottom: 8,
+  },
+  todayScriptureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+  },
+  todayStudyScripture: {
+    fontSize: 13,
+    color: colors.light.accent,
+    fontWeight: "600" as const,
+  },
+  todayStudyVerse: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: colors.light.text,
+    fontStyle: "italic" as const,
+    marginBottom: 16,
+    paddingLeft: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.light.accent,
+  },
+  todayInsightContainer: {
+    backgroundColor: `${colors.light.primary}08`,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  todayInsightHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+  },
+  todayInsightLabel: {
+    fontSize: 12,
+    fontWeight: "700" as const,
+    color: colors.light.primary,
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.5,
+  },
+  todayInsightText: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: colors.light.text,
+  },
+  todayReflectionContainer: {
+    backgroundColor: `${colors.light.accent}08`,
+    borderRadius: 12,
+    padding: 12,
+  },
+  todayReflectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+  },
+  todayReflectionLabel: {
+    fontSize: 12,
+    fontWeight: "700" as const,
+    color: colors.light.accent,
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.5,
+  },
+  todayReflectionText: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: colors.light.text,
+    fontStyle: "italic" as const,
   },
   todayVerseCard: {
     backgroundColor: colors.light.cardBackground,
