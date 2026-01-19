@@ -375,3 +375,55 @@ export function getRecommendedPrayers(viewedIds: string[], preferredCategories: 
   
   return [...unviewed, ...prayerGuides.filter(p => viewedIds.includes(p.id))];
 }
+
+export function getTodayPrayer(viewedIds: string[] = []): PrayerGuide {
+  const today = new Date();
+  const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000);
+  
+  const unviewed = prayerGuides.filter(p => !viewedIds.includes(p.id));
+  
+  if (unviewed.length > 0) {
+    return unviewed[dayOfYear % unviewed.length];
+  }
+  
+  return prayerGuides[dayOfYear % prayerGuides.length];
+}
+
+// Get prayer that matches devotional theme
+export function getCorrelatedPrayer(devotionalThemes: string[]): PrayerGuide {
+  // Try to match prayer with devotional theme
+  for (const theme of devotionalThemes) {
+    const matchedPrayer = prayerGuides.find(p => 
+      p.id.includes(theme) || 
+      p.title.toLowerCase().includes(theme) ||
+      p.description.toLowerCase().includes(theme)
+    );
+    if (matchedPrayer) return matchedPrayer;
+  }
+  
+  // Default fallback
+  return prayerGuides[0]; // Peace & Anxiety
+}
+
+export function getPersonalizedPrayer(viewedIds: string[], preferences: string[] = []): PrayerGuide {
+  const unviewed = prayerGuides.filter(p => !viewedIds.includes(p.id));
+  
+  if (unviewed.length === 0) {
+    return prayerGuides[Math.floor(Math.random() * prayerGuides.length)];
+  }
+  
+  if (preferences.length > 0) {
+    const preferredPrayers = unviewed.filter(p => 
+      preferences.some(pref => 
+        p.title.toLowerCase().includes(pref.toLowerCase()) ||
+        p.description.toLowerCase().includes(pref.toLowerCase())
+      )
+    );
+    
+    if (preferredPrayers.length > 0) {
+      return preferredPrayers[Math.floor(Math.random() * preferredPrayers.length)];
+    }
+  }
+  
+  return unviewed[Math.floor(Math.random() * unviewed.length)];
+}

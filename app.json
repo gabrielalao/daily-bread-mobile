@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Daily Bread",
+    "name": "Christian Daily Bread",
     "slug": "daily-bread-app-mp9wlbr",
     "version": "2.0.0",
     "orientation": "default",
@@ -18,7 +18,7 @@
       "bundleIdentifier": "app.rork.daily-bread-app-mp9wlbr",
       "buildNumber": "2",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Allow Daily Bread to access your microphone to record audio for therapy sessions and provide personalized feedback. Your audio data will not be stored and used only for the purpose of improving your mental health and wellness.",
+        "NSMicrophoneUsageDescription": "Allow Christian Daily Bread to access your microphone to record audio for therapy sessions and provide personalized feedback. Your audio data will not be stored and used only for the purpose of improving your mental health and wellness.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
           "NSExceptionDomains": {
@@ -76,7 +76,7 @@
       [
         "expo-av",
         {
-          "microphonePermission": "Allow Daily Bread to access your microphone to record audio for therapy sessions and provide personalized feedback. Your audio data will not be stored and used only for the purpose of improving your mental health and wellness."
+          "microphonePermission": "Allow Christian Daily Bread to access your microphone to record audio for therapy sessions and provide personalized feedback. Your audio data will not be stored and used only for the purpose of improving your mental health and wellness."
         }
       ]
     ],

@@ -7,7 +7,7 @@ import { bibleVersions, getPopularVersions, getVersionById } from "@/constants/b
 import { appLanguages, getAppLanguageById } from "@/constants/app-languages";
 import { t, tParams } from "@/utils/i18n";
 import { LinearGradient } from "expo-linear-gradient";
-import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Trash2, Edit, Repeat, Share2 } from "lucide-react-native";
+import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Trash2, Edit, Repeat, Share2, X } from "lucide-react-native";
 import React, { useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
@@ -26,7 +26,12 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScheduleNextSessionModal } from "@/components/ScheduleNextSessionModal";
 
-export default function SettingsScreen() {
+interface SettingsModalProps {
+  visible: boolean;
+  onClose: () => void;
+}
+
+export function SettingsModal({ visible, onClose }: SettingsModalProps) {
   const { settings, isLoaded, enableNotifications, disableNotifications, updateNotificationTime } = useNotifications();
   const { userPreferences, setBibleVersion, setAppLanguage, setAutoTranslateContent, isLoaded: contentLoaded } = useContent();
   const tLang = userPreferences.appLanguage;
@@ -99,11 +104,11 @@ export default function SettingsScreen() {
   const handleLanguageChange = async (languageId: string) => {
     await setAppLanguage(languageId);
     setShowLanguagePicker(false);
-    const lang = getAppLanguageById(languageId);
+    const language = getAppLanguageById(languageId);
     Alert.alert(
-      t(tLang, "settings.languageUpdatedTitle"),
-      tParams(tLang, "settings.languageUpdatedBody", { languageName: lang?.nativeName ?? languageId }),
-      [{ text: t(tLang, "common.ok") }]
+      t(languageId, "settings.languageUpdatedTitle"),
+      tParams(languageId, "settings.languageUpdatedBody", { name: language?.name ?? languageId }),
+      [{ text: t(languageId, "common.ok") }]
     );
   };
 
@@ -176,11 +181,11 @@ export default function SettingsScreen() {
 
   const handleShareApp = async () => {
     try {
-      const message = `Check out Daily Bread - Christian Therapy! 🙏\n\nGet daily spiritual guidance, Bible studies, prayers, and AI-powered Christian therapy sessions.\n\n📱 Download Links:\n\n🍎 App Store:\nhttps://apps.apple.com/us/app/daily-bread-christian-therapy/id6755737219\n\n🤖 Google Play:\nhttps://play.google.com/store/apps/details?id=app.rork.daily_bread_app_mp9wlbr\n\nAvailable on both iOS and Android!`;
+      const message = `Check out Christian Daily Bread - Christian Therapy! 🙏\n\nGet daily spiritual guidance, Bible studies, prayers, and AI-powered Christian therapy sessions.\n\n📱 Download Links:\n\n🍎 App Store:\nhttps://apps.apple.com/us/app/daily-bread-christian-therapy/id6755737219\n\n🤖 Google Play:\nhttps://play.google.com/store/apps/details?id=app.rork.daily_bread_app_mp9wlbr\n\nAvailable on both iOS and Android!`;
 
       const result = await Share.share({
         message,
-        title: 'Daily Bread - Christian Therapy',
+        title: 'Christian Daily Bread - Christian Therapy',
       });
 
       if (result.action === Share.sharedAction) {
@@ -316,11 +321,25 @@ export default function SettingsScreen() {
     : appLanguages.filter(l => `${l.name} ${l.nativeName} ${l.id}`.toLowerCase().includes(normalizedLangQuery));
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={[colors.light.background, colors.light.cardBackground]}
-        style={StyleSheet.absoluteFillObject}
-      />
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <View style={styles.container}>
+        <LinearGradient
+          colors={[colors.light.background, colors.light.cardBackground]}
+          style={StyleSheet.absoluteFillObject}
+        />
+        
+        {/* Header with Close Button */}
+        <View style={[styles.modalHeader, { paddingTop: insets.top + 12 }]}>
+          <Text style={styles.modalHeaderTitle}>{t(tLang, "headers.notificationSettings")}</Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <X size={24} color={colors.light.text} />
+          </TouchableOpacity>
+        </View>
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}
@@ -813,7 +832,7 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionHeaderText}>Share Daily Bread</Text>
+            <Text style={styles.sectionHeaderText}>Share Christian Daily Bread</Text>
           </View>
 
           <View style={styles.card}>
@@ -829,7 +848,7 @@ export default function SettingsScreen() {
                 <View style={styles.shareTextContainer}>
                   <Text style={styles.shareTitle}>Share with Friends</Text>
                   <Text style={styles.shareDescription}>
-                    Help others discover Daily Bread and grow in their faith journey
+                    Help others discover Christian Daily Bread and grow in their faith journey
                   </Text>
                 </View>
               </View>
@@ -849,12 +868,36 @@ export default function SettingsScreen() {
         onUpdate={handleUpdateSession}
       />
     </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    backgroundColor: colors.light.cardBackground,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.light.border,
+  },
+  modalHeaderTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.light.text,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: `${colors.light.primary}10`,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollView: {
     flex: 1,

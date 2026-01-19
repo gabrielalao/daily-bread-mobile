@@ -215,7 +215,7 @@ export default function TherapyScreen() {
         "I need prayer guidance",
         "Dealing with relationships",
         "Hello, this is a test of the selected voice settings.",
-        "Share this therapy session from Daily Bread",
+        "Share this therapy session from Christian Daily Bread",
         "Note: This content is designed to support your spiritual and emotional well-being. If you're experiencing severe mental health concerns, please seek professional help from a licensed counselor or therapist.",
         "Recording Error",
         "Failed to start recording. Please try again.",
@@ -1959,14 +1959,14 @@ You'll receive a notification to remind you.`,
       {/* Share Button - Floating Action Button */}
       <TouchableOpacity
         style={styles.shareButton}
-        onPress={() => captureAndShare(tr("Share this therapy session from Daily Bread"))}
+        onPress={() => captureAndShare(tr("Share this therapy session from Christian Daily Bread"))}
         disabled={isCapturing}
         activeOpacity={0.8}
       >
         {isCapturing ? (
           <ActivityIndicator size="small" color="#FFFFFF" />
         ) : (
-          <Share2 size={24} color="#FFFFFF" />
+          <Share2 size={18} color="#FFFFFF" />
         )}
       </TouchableOpacity>
       
@@ -3018,9 +3018,9 @@ const styles = StyleSheet.create({
     position: "absolute" as const,
     right: 20,
     bottom: 100,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.light.primary,
     alignItems: "center",
     justifyContent: "center",

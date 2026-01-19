@@ -91,8 +91,8 @@ export const [NotificationProvider, useNotifications] = createContextHook(() => 
 
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: 'Daily Bread 📖',
-          body: 'Your daily devotional is ready. Take a moment with God today.',
+          title: 'Christian Daily Bread 📖🙏📚',
+          body: 'Your daily devotional, prayer, and Bible study are ready. Spend time with God today.',
           sound: true,
           priority: Notifications.AndroidNotificationPriority.HIGH,
         },

@@ -47,7 +47,7 @@ export default function SupportScreen() {
                 title: "Support",
                 subtitle: "Get Help & Answer Your Questions",
                 intro:
-                    "Need help with Daily Bread? Fill out the form below or contact us directly. We'll respond promptly to your inquiry.",
+                    "Need help with Christian Daily Bread? Fill out the form below or contact us directly. We'll respond promptly to your inquiry.",
                 nameLabel: "Name *",
                 emailLabel: "Email *",
                 subjectLabel: "Subject *",
@@ -219,7 +219,7 @@ export default function SupportScreen() {
 
                     <View style={styles.card}>
                         <Text style={styles.intro}>
-                            {tt("intro", "Need help with Daily Bread? Fill out the form below or contact us directly. We'll respond promptly to your inquiry.")}
+                            {tt("intro", "Need help with Christian Daily Bread? Fill out the form below or contact us directly. We'll respond promptly to your inquiry.")}
                         </Text>
 
                         <View style={styles.form}>

@@ -1,7 +1,9 @@
 import colors from "@/constants/colors";
+import { dailyPrayers, DailyPrayer, getCorrelatedDailyPrayer, getTodayDailyPrayer } from "@/constants/daily-prayers";
 import { getRecommendedPrayers, PrayerGuide } from "@/constants/prayers";
 import { useContent } from "@/contexts/ContentContext";
 import { usePersonalization } from "@/hooks/usePersonalization";
+import { devotionals, getCorrelatedDevotionalTheme } from "@/constants/devotionals";
 import { useScreenshotShare } from "@/hooks/useScreenshotShare";
 import { translateTextCached } from "@/utils/translate";
 import { t } from "@/utils/i18n";
@@ -24,8 +26,12 @@ import {
   MessageCircle,
   Activity,
   Share2,
+  Calendar,
+  Clock,
+  BookOpen,
+  X,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useFocusEffect } from "expo-router";
 import {
   Animated,
@@ -36,8 +42,14 @@ import {
   View,
   Dimensions,
   ActivityIndicator,
+  Alert,
+  PanResponder,
+  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Calendar as RNCalendar } from 'react-native-calendars';
+
+const screenWidth = Dimensions.get('window').width;
 
 const iconMap: Record<string, React.ComponentType<{ size: number; color: string }>> = {
   heart: Heart,
@@ -63,11 +75,13 @@ const isTablet = width >= 768;
 const isSmallScreen = width < 375;
 
 export default function PrayerScreen() {
-  const { contentHistory, userPreferences, markPrayerViewed, addPrayerCategory, isLoaded } = useContent();
+  const { contentHistory, userPreferences, markPrayerViewed, addPrayerCategory, isLoaded, setCurrentDayPrayer } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
   const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
   const [selectedGuide, setSelectedGuide] = useState<PrayerGuide | null>(null);
   const [fadeAnim] = useState(new Animated.Value(1));
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [translatedDailyPrayer, setTranslatedDailyPrayer] = useState<{ title?: string; prayer?: string; verse?: string } | null>(null);
   const [translatedListItems, setTranslatedListItems] = useState<Record<string, { title?: string; description?: string }>>({});
   const [translatedDetail, setTranslatedDetail] = useState<{
     title?: string;
@@ -76,12 +90,144 @@ export default function PrayerScreen() {
     scriptureVerses?: string[];
   } | null>(null);
   const insets = useSafeAreaInsets();
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [viewingPastContent, setViewingPastContent] = useState(false);
+  
+  // Draggable share button position
+  const pan = useRef(new Animated.ValueXY({ x: screenWidth - 60, y: 100 })).current;
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        pan.setOffset({
+          x: (pan.x as any)._value,
+          y: (pan.y as any)._value,
+        });
+        pan.setValue({ x: 0, y: 0 });
+      },
+      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
+        useNativeDriver: false,
+      }),
+      onPanResponderRelease: () => {
+        pan.flattenOffset();
+        
+        const maxX = screenWidth - 60;
+        const maxY = 800;
+        
+        Animated.spring(pan, {
+          toValue: {
+            x: Math.max(20, Math.min((pan.x as any)._value, maxX)),
+            y: Math.max(20, Math.min((pan.y as any)._value, maxY)),
+          },
+          useNativeDriver: false,
+        }).start();
+      },
+    })
+  ).current;
   const scrollRef = React.useRef<ScrollView>(null);
+  
+  // Use the correlated daily prayer or fallback
+  const todayPrayer = React.useMemo<DailyPrayer>(() => {
+    // If viewing a specific past date, get prayer for that date
+    if (selectedDate && viewingPastContent) {
+      const startOfYear = new Date(selectedDate.getFullYear(), 0, 1);
+      const dayOfYear = Math.floor((selectedDate.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const prayerIndex = (dayOfYear - 1) % 365;
+      const datePrayer = dailyPrayers[prayerIndex];
+      console.log(`Viewing prayer for ${selectedDate.toDateString()}: Day ${dayOfYear}, ${datePrayer.title}`);
+      return datePrayer;
+    }
+    
+    // Otherwise, show today's prayer
+    if (contentHistory.currentDayPrayer) {
+      const cached = dailyPrayers.find(p => p.id === contentHistory.currentDayPrayer);
+      if (cached) return cached;
+    }
+    
+    // Get correlated prayer based on devotional ID and theme
+    if (contentHistory.currentDayDevotional) {
+      const devotion = devotionals.find(d => d.id === contentHistory.currentDayDevotional);
+      if (devotion) {
+        const theme = getCorrelatedDevotionalTheme(devotion);
+        return getCorrelatedDailyPrayer(devotion.id, theme, contentHistory.prayers);
+      }
+    }
+    
+    // Fallback to daily cycle
+    return getTodayDailyPrayer(contentHistory.prayers);
+  }, [contentHistory.currentDayPrayer, contentHistory.prayers, contentHistory.currentDayDevotional, selectedDate, viewingPastContent]);
   
   const recommendedPrayers = getRecommendedPrayers(
     contentHistory.prayers,
     userPreferences.prayerCategories
   );
+  
+  // Save the correlated prayer to context
+  React.useEffect(() => {
+    if (isLoaded && todayPrayer && contentHistory.currentDayPrayer !== todayPrayer.id) {
+      setCurrentDayPrayer(todayPrayer.id);
+    }
+  }, [todayPrayer, isLoaded, contentHistory.currentDayPrayer]);
+
+  // Translate today's daily prayer when enabled
+  React.useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      setTranslatedDailyPrayer(null);
+      const lang = userPreferences.appLanguage;
+      if (!userPreferences.autoTranslateContent || !lang || lang === "en") return;
+      if (!todayPrayer) return;
+
+      const [titleRes, prayerRes, verseRes] = await Promise.all([
+        translateTextCached({ text: todayPrayer.title, targetLang: lang }),
+        translateTextCached({ text: todayPrayer.prayer, targetLang: lang }),
+        translateTextCached({ text: todayPrayer.verse, targetLang: lang }),
+      ]);
+
+      if (cancelled) return;
+      setTranslatedDailyPrayer({ title: titleRes.text, prayer: prayerRes.text, verse: verseRes.text });
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [todayPrayer?.id, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
+
+  // Update time display (only when minute changes to reduce re-renders)
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const lastMinute = currentTime.getMinutes();
+      const currentMinute = now.getMinutes();
+      
+      if (lastMinute !== currentMinute) {
+        setCurrentTime(now);
+      }
+    };
+
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [currentTime]);
+
+  const locale = userPreferences.appLanguage === 'en' ? 'en-US' :
+                 userPreferences.appLanguage === 'fr' ? 'fr-FR' :
+                 userPreferences.appLanguage === 'da' ? 'da-DK' :
+                 userPreferences.appLanguage === 'es' ? 'es-ES' :
+                 userPreferences.appLanguage === 'de' ? 'de-DE' : 'en-US';
+
+  const today = currentTime.toLocaleDateString(locale, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+
+  const time = currentTime.toLocaleTimeString(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 
   // Translate list cards (title + description) when enabled.
   React.useEffect(() => {
@@ -220,14 +366,14 @@ export default function PrayerScreen() {
         {/* Share Button - Floating Action Button */}
         <TouchableOpacity
           style={styles.shareButton}
-          onPress={() => captureAndShare(`Share this prayer guide from Daily Bread: ${selectedGuide.title}`)}
+          onPress={() => captureAndShare(`Share this prayer guide from Christian Daily Bread: ${selectedGuide.title}`)}
           disabled={isCapturing}
           activeOpacity={0.8}
         >
           {isCapturing ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Share2 size={24} color="#FFFFFF" />
+            <Share2 size={18} color="#FFFFFF" />
           )}
         </TouchableOpacity>
         
@@ -303,20 +449,30 @@ export default function PrayerScreen() {
         style={StyleSheet.absoluteFillObject}
       />
       
-      {/* Share Button - Floating Action Button */}
-      <TouchableOpacity
-        style={styles.shareButton}
-        onPress={() => captureAndShare("Share prayer guides from Daily Bread")}
-        disabled={isCapturing}
-        activeOpacity={0.8}
+      {/* Share Button - Draggable Floating Action Button */}
+      <Animated.View
+        style={[
+          styles.shareButton,
+          {
+            transform: [{ translateX: pan.x }, { translateY: pan.y }],
+          },
+        ]}
+        {...panResponder.panHandlers}
       >
-        {isCapturing ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : (
-          <Share2 size={24} color="#FFFFFF" />
-        )}
-      </TouchableOpacity>
-      
+        <TouchableOpacity
+          style={styles.shareButtonInner}
+          onPress={() => captureAndShare("Share prayer guides from Christian Daily Bread")}
+          disabled={isCapturing}
+          activeOpacity={0.8}
+        >
+          {isCapturing ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Share2 size={18} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
+      </Animated.View>
+
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}
@@ -327,10 +483,76 @@ export default function PrayerScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
+          <View style={styles.dateTimeContainer}>
+            <TouchableOpacity
+              style={styles.dateRow}
+              onPress={() => setShowCalendar(true)}
+              activeOpacity={0.7}
+            >
+              <Calendar size={20} color={colors.light.primary} />
+              <Text style={[styles.dateText, viewingPastContent && styles.pastDateText]}>
+                {viewingPastContent && selectedDate
+                  ? selectedDate.toLocaleDateString(locale, { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+                  : today}
+              </Text>
+            </TouchableOpacity>
+            {viewingPastContent && (
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedDate(null);
+                  setViewingPastContent(false);
+                }}
+                style={styles.todayButton}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.todayButtonText}>Today</Text>
+              </TouchableOpacity>
+            )}
+            <View style={styles.timeRow}>
+              <Clock size={20} color={colors.light.textSecondary} />
+              <Text style={styles.timeText}>{time}</Text>
+            </View>
+          </View>
+
           <View style={styles.header}>
             <Text style={styles.subtitle}>
               {t(userPreferences.appLanguage, "prayers.subtitle")}
             </Text>
+          </View>
+
+          {/* Today's Prayer Card */}
+          <View style={styles.todaySection}>
+            <View style={styles.todaySectionHeader}>
+              <Text style={styles.todaySectionTitle}>🙏 {t(userPreferences.appLanguage, "prayers.todaysPrayer")}</Text>
+              <Text style={styles.todaySectionSubtitle}>{t(userPreferences.appLanguage, "prayers.dailyGuidance")}</Text>
+            </View>
+            <View style={styles.todayPrayerCard}>
+              <View style={styles.todayIconContainer}>
+                <Heart size={32} color={colors.light.primary} />
+              </View>
+              <View style={styles.todayTextContainer}>
+                <Text style={styles.todayTitle}>{translatedDailyPrayer?.title ?? todayPrayer.title}</Text>
+                <Text style={styles.todayPrayerText}>
+                  {translatedDailyPrayer?.prayer ?? todayPrayer.prayer}
+                </Text>
+                
+                {/* Bible Verse */}
+                <View style={styles.todayVerseCard}>
+                  <Text style={styles.todayVerse}>
+                    &quot;{translatedDailyPrayer?.verse ?? todayPrayer.verse}&quot;
+                  </Text>
+                  <View style={styles.todayScriptureContainer}>
+                    <BookOpen size={14} color={colors.light.accent} />
+                    <Text style={styles.todayScripture}>{todayPrayer.scripture}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* All Prayer Guides */}
+          <View style={styles.allPrayersHeader}>
+            <Text style={styles.allPrayersTitle}>{t(userPreferences.appLanguage, "prayers.allPrayers")}</Text>
           </View>
 
           <View style={styles.gridContainer}>
@@ -362,6 +584,83 @@ export default function PrayerScreen() {
           </View>
         </Animated.View>
       </ScrollView>
+
+      {/* Calendar Modal */}
+      <Modal
+        visible={showCalendar}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowCalendar(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.calendarModal}>
+            <View style={styles.calendarHeader}>
+              <Text style={styles.calendarTitle}>Select a Date</Text>
+              <TouchableOpacity
+                onPress={() => setShowCalendar(false)}
+                style={styles.closeButton}
+              >
+                <X size={24} color={colors.light.text} />
+              </TouchableOpacity>
+            </View>
+
+            <RNCalendar
+              onDayPress={(day) => {
+                const selected = new Date(day.dateString);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (selected <= today) {
+                  setSelectedDate(selected);
+                  setViewingPastContent(selected.toDateString() !== today.toDateString());
+                  setShowCalendar(false);
+                }
+              }}
+              maxDate={new Date().toISOString().split('T')[0]}
+              theme={{
+                backgroundColor: colors.light.cardBackground,
+                calendarBackground: colors.light.cardBackground,
+                textSectionTitleColor: colors.light.textSecondary,
+                selectedDayBackgroundColor: colors.light.primary,
+                selectedDayTextColor: '#ffffff',
+                todayTextColor: colors.light.primary,
+                dayTextColor: colors.light.text,
+                textDisabledColor: colors.light.textSecondary,
+                dotColor: colors.light.primary,
+                selectedDotColor: '#ffffff',
+                arrowColor: colors.light.primary,
+                monthTextColor: colors.light.text,
+                indicatorColor: colors.light.primary,
+              }}
+              markedDates={{
+                [new Date().toISOString().split('T')[0]]: {
+                  marked: true,
+                  dotColor: colors.light.primary,
+                },
+                ...(selectedDate && viewingPastContent
+                  ? {
+                      [selectedDate.toISOString().split('T')[0]]: {
+                        selected: true,
+                        selectedColor: colors.light.primary,
+                      },
+                    }
+                  : {}),
+              }}
+            />
+
+            <TouchableOpacity
+              style={styles.todayButtonInModal}
+              onPress={() => {
+                setSelectedDate(null);
+                setViewingPastContent(false);
+                setShowCalendar(false);
+              }}
+            >
+              <Text style={styles.todayButtonInModalText}>Go to Today</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -379,6 +678,32 @@ const styles = StyleSheet.create({
   content: {
     padding: isTablet ? 32 : (isSmallScreen ? 16 : 20),
   },
+  dateTimeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  dateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  dateText: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    fontWeight: "500" as const,
+  },
+  timeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  timeText: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    fontWeight: "500" as const,
+  },
   header: {
     marginBottom: isSmallScreen ? 20 : 24,
   },
@@ -389,10 +714,157 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 24,
-    fontWeight: "700" as const,
+    fontSize: isSmallScreen ? 14 : 16,
     color: colors.light.textSecondary,
-    lineHeight: 32,
+    lineHeight: 22,
+  },
+  todaySection: {
+    marginBottom: 32,
+  },
+  todaySectionHeader: {
+    marginBottom: 16,
+  },
+  todaySectionTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+    marginBottom: 4,
+  },
+  todaySectionSubtitle: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+  },
+  todayPrayerCard: {
+    backgroundColor: colors.light.cardBackground,
+    borderRadius: isTablet ? 24 : 20,
+    padding: isTablet ? 32 : (isSmallScreen ? 20 : 24),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 20,
+    gap: 12,
+  },
+  todayIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: `${colors.light.primary}15`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardTitleContainer: {
+    flex: 1,
+  },
+  todayTextContainer: {
+    flex: 1,
+  },
+  todayTitle: {
+    fontSize: 22,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+    marginBottom: 4,
+    lineHeight: 28,
+    flexWrap: "wrap",
+    flexShrink: 1,
+  },
+  scripture: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    fontWeight: "600" as const,
+  },
+  verseContainer: {
+    position: "relative" as const,
+    paddingLeft: 20,
+    marginBottom: 24,
+  },
+  quoteMarkContainer: {
+    position: "absolute" as const,
+    left: -4,
+    top: -8,
+  },
+  quoteMark: {
+    fontSize: 48,
+    color: colors.light.accent,
+    fontWeight: "700" as const,
+    opacity: 0.3,
+  },
+  verse: {
+    fontSize: 17,
+    lineHeight: 28,
+    color: colors.light.text,
+    fontStyle: "italic" as const,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.light.border,
+    marginVertical: 20,
+  },
+  reflectionContainer: {
+    gap: 12,
+  },
+  reflectionTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+    marginBottom: 8,
+  },
+  reflection: {
+    fontSize: 16,
+    lineHeight: 26,
+    color: colors.light.textSecondary,
+  },
+  todayDescription: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    lineHeight: 20,
+  },
+  todayPrayerText: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: colors.light.text,
+    fontStyle: "italic" as const,
+    marginBottom: 12,
+  },
+  todayScriptureContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  todayVerseCard: {
+    backgroundColor: `${colors.light.accent}10`,
+    borderRadius: 12,
+    padding: isSmallScreen ? 14 : 16,
+    marginBottom: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.light.accent,
+  },
+  todayVerse: {
+    fontSize: isSmallScreen ? 14 : 15,
+    lineHeight: isSmallScreen ? 22 : 24,
+    color: colors.light.text,
+    marginBottom: 8,
+    fontStyle: "italic" as const,
+  },
+  todayScripture: {
+    fontSize: 13,
+    color: colors.light.accent,
+    fontWeight: "600" as const,
+  },
+  allPrayersHeader: {
+    marginBottom: 16,
+  },
+  allPrayersTitle: {
+    fontSize: 18,
+    fontWeight: "700" as const,
+    color: colors.light.text,
   },
   gridContainer: {
     gap: 16,
@@ -538,11 +1010,14 @@ const styles = StyleSheet.create({
   },
   shareButton: {
     position: "absolute" as const,
-    right: 20,
-    bottom: 100,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 40,
+    height: 40,
+    zIndex: 1000,
+  },
+  shareButtonInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.light.primary,
     alignItems: "center",
     justifyContent: "center",
@@ -551,6 +1026,67 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-    zIndex: 1000,
+  },
+  pastDateText: {
+    color: colors.light.primary,
+    fontWeight: "600" as const,
+  },
+  todayButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: colors.light.primary,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  todayButtonText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "600" as const,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  calendarModal: {
+    backgroundColor: colors.light.cardBackground,
+    borderRadius: 20,
+    padding: 20,
+    width: "100%",
+    maxWidth: 400,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  calendarHeader: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  calendarTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  todayButtonInModal: {
+    backgroundColor: colors.light.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  todayButtonInModalText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600" as const,
   },
 });

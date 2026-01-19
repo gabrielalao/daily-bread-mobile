@@ -1,19 +1,50 @@
 import colors from "@/constants/colors";
 import { Tabs } from "expo-router";
-import { BookOpen, BookMarked, Brain, HandHeart, Settings } from "lucide-react-native";
-import React from "react";
-import { Platform } from "react-native";
+import { BookOpen, BookMarked, Brain, HandHeart, Book, Settings } from "lucide-react-native";
+import React, { useState, useCallback, useMemo } from "react";
+import { Platform, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useContent } from "@/contexts/ContentContext";
 import { t } from "@/utils/i18n";
+import { SettingsModal } from "@/components/SettingsModal";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { userPreferences } = useContent();
   const lang = userPreferences.appLanguage;
+  const [showSettings, setShowSettings] = useState(false);
+  
+  const handleOpenSettings = useCallback(() => {
+    setShowSettings(true);
+  }, []);
+  
+  const handleCloseSettings = useCallback(() => {
+    setShowSettings(false);
+  }, []);
+  
+  const settingsButton = useMemo(() => (
+    <TouchableOpacity
+      onPress={handleOpenSettings}
+      style={{
+        marginRight: 16,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: `${colors.light.primary}10`,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Settings size={20} color={colors.light.primary} />
+    </TouchableOpacity>
+  ), [handleOpenSettings]);
   
   return (
-    <Tabs
+    <>
+      {showSettings && (
+        <SettingsModal visible={showSettings} onClose={handleCloseSettings} />
+      )}
+      <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.light.primary,
         tabBarInactiveTintColor: colors.light.tabIconDefault,
@@ -55,6 +86,7 @@ export default function TabLayout() {
           title: t(lang, "tabs.home"),
           headerTitle: t(lang, "headers.dailyBread"),
           tabBarIcon: ({ color }) => <BookOpen size={22} color={color} />,
+          headerRight: () => settingsButton,
         }}
       />
       <Tabs.Screen
@@ -82,13 +114,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="bible"
         options={{
-          title: t(lang, "tabs.settings"),
-          headerTitle: t(lang, "headers.notificationSettings"),
-          tabBarIcon: ({ color }) => <Settings size={22} color={color} />,
+          title: t(lang, "tabs.bible"),
+          headerTitle: t(lang, "headers.holyBible"),
+          tabBarIcon: ({ color }) => <Book size={22} color={color} />,
         }}
       />
     </Tabs>
+    </>
   );
 }

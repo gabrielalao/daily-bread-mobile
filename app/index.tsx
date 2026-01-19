@@ -126,7 +126,7 @@ export default function LandingPage() {
               </View>
             </View>
             
-            <Text style={styles.appName}>Daily Bread</Text>
+            <Text style={styles.appName}>Christian Daily Bread</Text>
             <Text style={styles.tagline}>
               Nourishing Your Soul, One Day at a Time
             </Text>

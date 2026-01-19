@@ -1,15 +1,17 @@
 import colors from "@/constants/colors";
-import { getRecommendedStudies, BibleStudyPlan } from "@/constants/bible-studies";
+import { dailyStudies, DailyStudy, getCorrelatedDailyStudy, getTodayDailyStudy } from "@/constants/daily-studies";
+import { getRecommendedStudies, getTodayStudy, BibleStudyPlan } from "@/constants/bible-studies";
 import { getPassageProviderCode, getVersionById } from "@/constants/bible-versions";
 import { translateTextCached } from "@/utils/translate";
 import { useContent } from "@/contexts/ContentContext";
+import { devotionals, getCorrelatedDevotionalTheme } from "@/constants/devotionals";
 import { usePersonalization } from "@/hooks/usePersonalization";
 import { useScreenshotShare } from "@/hooks/useScreenshotShare";
 import { getStudyInsight, mergeInsightOverrides } from "@/utils/studyInsights";
 import { t } from "@/utils/i18n";
 import { tParams } from "@/utils/i18n";
 import { LinearGradient } from "expo-linear-gradient";
-import { Book, Calendar, ChevronRight, X, Share2, ChevronDown, ChevronUp, Lightbulb, BookOpen, Heart } from "lucide-react-native";
+import { Book, Calendar, ChevronRight, X, Share2, ChevronDown, ChevronUp, Lightbulb, BookOpen, Heart, Clock } from "lucide-react-native";
 import React, { useState, useRef } from "react";
 import { useFocusEffect } from "expo-router";
 import {
@@ -24,11 +26,13 @@ import {
   Platform,
   Alert,
   Dimensions,
+  PanResponder,
 } from "react-native";
 import { useMutation } from "@tanstack/react-query";
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Calendar as RNCalendar } from 'react-native-calendars';
 
 type BibleVerse = {
   reference: string;
@@ -45,13 +49,14 @@ type FormattedVerse = {
 };
 
 export default function BibleStudyScreen() {
-  const { contentHistory, userPreferences, markStudyViewed, addStudyCategory, isLoaded, getStudyPlanCycle, getStudyPlanCompletedDays, markStudyDayCompleted, advanceStudyPlanCycle } = useContent();
+  const { contentHistory, userPreferences, markStudyViewed, addStudyCategory, isLoaded, getStudyPlanCycle, getStudyPlanCompletedDays, markStudyDayCompleted, advanceStudyPlanCycle, setCurrentDayStudy } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
   const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
   const modalViewRef = useRef<any>(null); // Separate ref for modal content
   const insets = useSafeAreaInsets();
   const [selectedPlan, setSelectedPlan] = useState<BibleStudyPlan | null>(null);
   const [fadeAnim] = useState(new Animated.Value(1));
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedVerse, setSelectedVerse] = useState<BibleVerse | null>(null);
   const [verses, setVerses] = useState<FormattedVerse[]>([]);
   const [isCapturingModal, setIsCapturingModal] = useState(false);
@@ -67,12 +72,118 @@ export default function BibleStudyScreen() {
   const [translatedReadings, setTranslatedReadings] = useState<
     Record<number, { focus?: string; spiritualInsight?: string; keyThemes?: string[]; practicalApplication?: string }>
   >({});
+  const [translatedDailyStudy, setTranslatedDailyStudy] = useState<{ title?: string; verse?: string; insight?: string; reflection?: string } | null>(null);
   const scrollRef = React.useRef<ScrollView>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [viewingPastContent, setViewingPastContent] = useState(false);
   
+  // Draggable share button position
+  const pan = useRef(new Animated.ValueXY({ x: screenWidth - 60, y: 100 })).current;
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        pan.setOffset({
+          x: (pan.x as any)._value,
+          y: (pan.y as any)._value,
+        });
+        pan.setValue({ x: 0, y: 0 });
+      },
+      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
+        useNativeDriver: false,
+      }),
+      onPanResponderRelease: () => {
+        pan.flattenOffset();
+        
+        const maxX = screenWidth - 60;
+        const maxY = 800;
+        
+        Animated.spring(pan, {
+          toValue: {
+            x: Math.max(20, Math.min((pan.x as any)._value, maxX)),
+            y: Math.max(20, Math.min((pan.y as any)._value, maxY)),
+          },
+          useNativeDriver: false,
+        }).start();
+      },
+    })
+  ).current;
+  
+  // Use the correlated daily study or fallback
+  const todayStudy = React.useMemo<DailyStudy>(() => {
+    // If viewing a specific past date, get study for that date
+    if (selectedDate && viewingPastContent) {
+      const startOfYear = new Date(selectedDate.getFullYear(), 0, 1);
+      const dayOfYear = Math.floor((selectedDate.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const studyIndex = (dayOfYear - 1) % 365;
+      const dateStudy = dailyStudies[studyIndex];
+      console.log(`Viewing study for ${selectedDate.toDateString()}: Day ${dayOfYear}, ${dateStudy.title}`);
+      return dateStudy;
+    }
+    
+    // Otherwise, show today's study
+    if (contentHistory.currentDayStudy) {
+      const cached = dailyStudies.find(s => s.id === contentHistory.currentDayStudy);
+      if (cached) return cached;
+    }
+    
+    // Get correlated study based on devotional ID and theme
+    if (contentHistory.currentDayDevotional) {
+      const devotion = devotionals.find(d => d.id === contentHistory.currentDayDevotional);
+      if (devotion) {
+        const theme = getCorrelatedDevotionalTheme(devotion);
+        return getCorrelatedDailyStudy(devotion.id, theme, contentHistory.studies);
+      }
+    }
+    
+    // Fallback to daily cycle
+    return getTodayDailyStudy(contentHistory.studies);
+  }, [contentHistory.currentDayStudy, contentHistory.studies, contentHistory.currentDayDevotional, selectedDate, viewingPastContent]);
+  
+  const todayStudyPlan = getTodayStudy(contentHistory.studies);
   const recommendedStudies = getRecommendedStudies(
     contentHistory.studies,
     userPreferences.studyCategories
   );
+  
+  // Save the correlated study to context
+  React.useEffect(() => {
+    if (isLoaded && todayStudy && contentHistory.currentDayStudy !== todayStudy.id) {
+      setCurrentDayStudy(todayStudy.id);
+    }
+  }, [todayStudy, isLoaded, contentHistory.currentDayStudy]);
+
+  // Translate today's daily study when enabled
+  React.useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      setTranslatedDailyStudy(null);
+      const lang = userPreferences.appLanguage;
+      if (!userPreferences.autoTranslateContent || !lang || lang === "en") return;
+      if (!todayStudy) return;
+
+      const [titleRes, verseRes, insightRes, reflectionRes] = await Promise.all([
+        translateTextCached({ text: todayStudy.title, targetLang: lang }),
+        translateTextCached({ text: todayStudy.verse, targetLang: lang }),
+        translateTextCached({ text: todayStudy.insight, targetLang: lang }),
+        translateTextCached({ text: todayStudy.reflection, targetLang: lang }),
+      ]);
+
+      if (cancelled) return;
+      setTranslatedDailyStudy({ 
+        title: titleRes.text, 
+        verse: verseRes.text,
+        insight: insightRes.text,
+        reflection: reflectionRes.text,
+      });
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [todayStudy?.id, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
 
   const translateCategory = (category: string) => {
     const key = `cat.${category.toLowerCase().replace(/[^a-z]+/g, "")}`;
@@ -86,6 +197,40 @@ export default function BibleStudyScreen() {
     const count = Number(m[1]);
     return tParams(userPreferences.appLanguage, "common.daysCount", { count });
   };
+
+  // Update time display (only when minute changes to reduce re-renders)
+  React.useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const lastMinute = currentTime.getMinutes();
+      const currentMinute = now.getMinutes();
+      
+      if (lastMinute !== currentMinute) {
+        setCurrentTime(now);
+      }
+    };
+
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [currentTime]);
+
+  const locale = userPreferences.appLanguage === 'en' ? 'en-US' :
+                 userPreferences.appLanguage === 'fr' ? 'fr-FR' :
+                 userPreferences.appLanguage === 'da' ? 'da-DK' :
+                 userPreferences.appLanguage === 'es' ? 'es-ES' :
+                 userPreferences.appLanguage === 'de' ? 'de-DE' : 'en-US';
+
+  const today = currentTime.toLocaleDateString(locale, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+
+  const time = currentTime.toLocaleTimeString(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 
   // Translate plan cards (title + description) on list view when enabled.
   React.useEffect(() => {
@@ -576,14 +721,14 @@ export default function BibleStudyScreen() {
         {/* Share Button - Floating Action Button */}
         <TouchableOpacity
           style={styles.shareButton}
-          onPress={() => captureAndShare(`Share this Bible study from Daily Bread: ${selectedPlan.title}`)}
+          onPress={() => captureAndShare(`Share this Bible study from Christian Daily Bread: ${selectedPlan.title}`)}
           disabled={isCapturing}
           activeOpacity={0.8}
         >
           {isCapturing ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Share2 size={24} color="#FFFFFF" />
+            <Share2 size={18} color="#FFFFFF" />
           )}
         </TouchableOpacity>
         
@@ -828,7 +973,7 @@ export default function BibleStudyScreen() {
                     {isCapturingModal ? (
                       <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
-                      <Share2 size={20} color="#FFFFFF" />
+                      <Share2 size={16} color="#FFFFFF" />
                     )}
                   </TouchableOpacity>
                 </>
@@ -855,20 +1000,30 @@ export default function BibleStudyScreen() {
         style={StyleSheet.absoluteFillObject}
       />
       
-      {/* Share Button - Floating Action Button */}
-      <TouchableOpacity
-        style={styles.shareButton}
-        onPress={() => captureAndShare("Share this Bible study from Daily Bread")}
-        disabled={isCapturing}
-        activeOpacity={0.8}
+      {/* Share Button - Draggable Floating Action Button */}
+      <Animated.View
+        style={[
+          styles.shareButton,
+          {
+            transform: [{ translateX: pan.x }, { translateY: pan.y }],
+          },
+        ]}
+        {...panResponder.panHandlers}
       >
-        {isCapturing ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : (
-          <Share2 size={24} color="#FFFFFF" />
-        )}
-      </TouchableOpacity>
-      
+        <TouchableOpacity
+          style={styles.shareButtonInner}
+          onPress={() => captureAndShare("Share this Bible study from Christian Daily Bread")}
+          disabled={isCapturing}
+          activeOpacity={0.8}
+        >
+          {isCapturing ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Share2 size={18} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
+      </Animated.View>
+
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}
@@ -876,10 +1031,87 @@ export default function BibleStudyScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
+          <View style={styles.dateTimeContainer}>
+            <TouchableOpacity
+              style={styles.dateRow}
+              onPress={() => setShowCalendar(true)}
+              activeOpacity={0.7}
+            >
+              <Calendar size={20} color={colors.light.primary} />
+              <Text style={[styles.dateText, viewingPastContent && styles.pastDateText]}>
+                {viewingPastContent && selectedDate
+                  ? selectedDate.toLocaleDateString(locale, { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+                  : today}
+              </Text>
+            </TouchableOpacity>
+            {viewingPastContent && (
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedDate(null);
+                  setViewingPastContent(false);
+                }}
+                style={styles.todayButton}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.todayButtonText}>Today</Text>
+              </TouchableOpacity>
+            )}
+            <View style={styles.timeRow}>
+              <Clock size={20} color={colors.light.textSecondary} />
+              <Text style={styles.timeText}>{time}</Text>
+            </View>
+          </View>
+
           <View style={styles.header}>
             <Text style={styles.subtitle}>
               {t(userPreferences.appLanguage, "study.subtitle")}
             </Text>
+          </View>
+
+          {/* Today's Study */}
+          <View style={styles.todaySection}>
+            <View style={styles.todaySectionHeader}>
+              <Text style={styles.todaySectionTitle}>📚 {t(userPreferences.appLanguage, "study.todaysStudy")}</Text>
+              <Text style={styles.todaySectionSubtitle}>{t(userPreferences.appLanguage, "study.dailyGuidance")}</Text>
+            </View>
+            <View style={styles.todayStudyCard}>
+              <View style={styles.todayIconContainer}>
+                <BookOpen size={32} color={colors.light.primary} />
+              </View>
+              <View style={styles.todayTextContainer}>
+                <Text style={styles.todayStudyTitle}>{translatedDailyStudy?.title ?? todayStudy.title}</Text>
+                <View style={styles.todayScriptureRow}>
+                  <Book size={14} color={colors.light.accent} />
+                  <Text style={styles.todayStudyScripture}>{todayStudy.scripture}</Text>
+                </View>
+                <Text style={styles.todayStudyVerse}>
+                  &quot;{translatedDailyStudy?.verse ?? todayStudy.verse}&quot;
+                </Text>
+                <View style={styles.todayInsightContainer}>
+                  <View style={styles.todayInsightHeader}>
+                    <Lightbulb size={14} color={colors.light.primary} />
+                    <Text style={styles.todayInsightLabel}>{t(userPreferences.appLanguage, "study.insight")}</Text>
+                  </View>
+                  <Text style={styles.todayInsightText}>
+                    {translatedDailyStudy?.insight ?? todayStudy.insight}
+                  </Text>
+                </View>
+                <View style={styles.todayReflectionContainer}>
+                  <View style={styles.todayReflectionHeader}>
+                    <Heart size={14} color={colors.light.accent} />
+                    <Text style={styles.todayReflectionLabel}>{t(userPreferences.appLanguage, "study.reflection")}</Text>
+                  </View>
+                  <Text style={styles.todayReflectionText}>
+                    {translatedDailyStudy?.reflection ?? todayStudy.reflection}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* All Study Plans */}
+          <View style={styles.allStudiesHeader}>
+            <Text style={styles.allStudiesTitle}>{t(userPreferences.appLanguage, "study.allPlans")}</Text>
           </View>
 
           <View style={styles.plansContainer}>
@@ -925,6 +1157,83 @@ export default function BibleStudyScreen() {
           </View>
         </Animated.View>
       </ScrollView>
+
+      {/* Calendar Modal */}
+      <Modal
+        visible={showCalendar}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowCalendar(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.calendarModal}>
+            <View style={styles.calendarHeader}>
+              <Text style={styles.calendarTitle}>Select a Date</Text>
+              <TouchableOpacity
+                onPress={() => setShowCalendar(false)}
+                style={styles.closeButton}
+              >
+                <X size={24} color={colors.light.text} />
+              </TouchableOpacity>
+            </View>
+
+            <RNCalendar
+              onDayPress={(day) => {
+                const selected = new Date(day.dateString);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (selected <= today) {
+                  setSelectedDate(selected);
+                  setViewingPastContent(selected.toDateString() !== today.toDateString());
+                  setShowCalendar(false);
+                }
+              }}
+              maxDate={new Date().toISOString().split('T')[0]}
+              theme={{
+                backgroundColor: colors.light.cardBackground,
+                calendarBackground: colors.light.cardBackground,
+                textSectionTitleColor: colors.light.textSecondary,
+                selectedDayBackgroundColor: colors.light.primary,
+                selectedDayTextColor: '#ffffff',
+                todayTextColor: colors.light.primary,
+                dayTextColor: colors.light.text,
+                textDisabledColor: colors.light.textSecondary,
+                dotColor: colors.light.primary,
+                selectedDotColor: '#ffffff',
+                arrowColor: colors.light.primary,
+                monthTextColor: colors.light.text,
+                indicatorColor: colors.light.primary,
+              }}
+              markedDates={{
+                [new Date().toISOString().split('T')[0]]: {
+                  marked: true,
+                  dotColor: colors.light.primary,
+                },
+                ...(selectedDate && viewingPastContent
+                  ? {
+                      [selectedDate.toISOString().split('T')[0]]: {
+                        selected: true,
+                        selectedColor: colors.light.primary,
+                      },
+                    }
+                  : {}),
+              }}
+            />
+
+            <TouchableOpacity
+              style={styles.todayButtonInModal}
+              onPress={() => {
+                setSelectedDate(null);
+                setViewingPastContent(false);
+                setShowCalendar(false);
+              }}
+            >
+              <Text style={styles.todayButtonInModalText}>Go to Today</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -942,20 +1251,316 @@ const styles = StyleSheet.create({
   content: {
     padding: isTablet ? 32 : (isSmallScreen ? 16 : 20),
   },
+  dateTimeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  dateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  dateText: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    fontWeight: "500" as const,
+  },
+  timeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  timeText: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    fontWeight: "500" as const,
+  },
   header: {
     marginBottom: 24,
   },
   greeting: {
-    fontSize: 32,
+    fontSize: isSmallScreen ? 28 : 32,
     fontWeight: "700" as const,
     color: colors.light.text,
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 24,
-    fontWeight: "700" as const,
+    fontSize: isSmallScreen ? 14 : 16,
     color: colors.light.textSecondary,
-    lineHeight: 32,
+    lineHeight: 22,
+  },
+  todaySection: {
+    marginBottom: 32,
+  },
+  todaySectionHeader: {
+    marginBottom: 16,
+  },
+  todaySectionTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+    marginBottom: 4,
+  },
+  todaySectionSubtitle: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+  },
+  todayStudyCard: {
+    backgroundColor: colors.light.cardBackground,
+    borderRadius: isTablet ? 24 : 20,
+    padding: isTablet ? 32 : (isSmallScreen ? 20 : 24),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 20,
+    gap: 12,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: `${colors.light.primary}15`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardTitleContainer: {
+    flex: 1,
+  },
+  todayStudyTitle: {
+    fontSize: 22,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+    marginBottom: 4,
+    lineHeight: 28,
+    flexWrap: "wrap",
+    flexShrink: 1,
+  },
+  scripture: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    fontWeight: "600" as const,
+  },
+  verseContainer: {
+    position: "relative" as const,
+    paddingLeft: 20,
+    marginBottom: 24,
+  },
+  quoteMarkContainer: {
+    position: "absolute" as const,
+    left: -4,
+    top: -8,
+  },
+  quoteMark: {
+    fontSize: 48,
+    color: colors.light.accent,
+    fontWeight: "700" as const,
+    opacity: 0.3,
+  },
+  verse: {
+    fontSize: 17,
+    lineHeight: 28,
+    color: colors.light.text,
+    fontStyle: "italic" as const,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.light.border,
+    marginVertical: 20,
+  },
+  reflectionContainer: {
+    gap: 12,
+  },
+  reflectionTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+    marginBottom: 8,
+  },
+  reflection: {
+    fontSize: 16,
+    lineHeight: 26,
+    color: colors.light.textSecondary,
+  },
+  todayScriptureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+  },
+  todayStudyScripture: {
+    fontSize: 13,
+    color: colors.light.accent,
+    fontWeight: "600" as const,
+  },
+  todayStudyVerse: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: colors.light.text,
+    fontStyle: "italic" as const,
+    marginBottom: 16,
+    paddingLeft: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.light.accent,
+  },
+  todayInsightContainer: {
+    backgroundColor: `${colors.light.primary}08`,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  todayInsightHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+  },
+  todayInsightLabel: {
+    fontSize: 12,
+    fontWeight: "700" as const,
+    color: colors.light.primary,
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.5,
+  },
+  todayInsightText: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: colors.light.text,
+  },
+  todayReflectionContainer: {
+    backgroundColor: `${colors.light.accent}08`,
+    borderRadius: 12,
+    padding: 12,
+  },
+  todayReflectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+  },
+  todayReflectionLabel: {
+    fontSize: 12,
+    fontWeight: "700" as const,
+    color: colors.light.accent,
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.5,
+  },
+  todayReflectionText: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: colors.light.text,
+    fontStyle: "italic" as const,
+  },
+  todayVerseCard: {
+    backgroundColor: colors.light.cardBackground,
+    borderRadius: isTablet ? 20 : 16,
+    padding: isTablet ? 24 : (isSmallScreen ? 16 : 20),
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 16,
+    shadowColor: colors.light.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 2,
+    borderColor: colors.light.primary,
+  },
+  todayVerseReference: {
+    fontSize: isSmallScreen ? 16 : 18,
+    fontWeight: "700" as const,
+    color: colors.light.primary,
+    marginBottom: 8,
+  },
+  todayVerseText: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: colors.light.text,
+    fontStyle: "italic" as const,
+    marginBottom: 12,
+  },
+  todayVerseFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  todayVerseTag: {
+    fontSize: 12,
+    color: colors.light.accent,
+    fontWeight: "600" as const,
+    backgroundColor: `${colors.light.accent}15`,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  todayIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: `${colors.light.primary}20`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  todayTextContainer: {
+    flex: 1,
+  },
+  todayTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+    gap: 12,
+  },
+  todayTitle: {
+    fontSize: isSmallScreen ? 18 : 20,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+    flex: 1,
+  },
+  todayBadge: {
+    backgroundColor: `${colors.light.accent}15`,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  todayBadgeText: {
+    fontSize: 11,
+    fontWeight: "600" as const,
+    color: colors.light.accent,
+    textTransform: "uppercase" as const,
+  },
+  todayDescription: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  todayFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  todayDuration: {
+    fontSize: 13,
+    color: colors.light.textSecondary,
+    fontWeight: "500" as const,
+  },
+  allStudiesHeader: {
+    marginBottom: 16,
+  },
+  allStudiesTitle: {
+    fontSize: 18,
+    fontWeight: "700" as const,
+    color: colors.light.text,
   },
   plansContainer: {
     gap: 16,
@@ -1446,11 +2051,14 @@ const styles = StyleSheet.create({
   },
   shareButton: {
     position: "absolute" as const,
-    right: 20,
-    bottom: 100,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 40,
+    height: 40,
+    zIndex: 1000,
+  },
+  shareButtonInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.light.primary,
     alignItems: "center",
     justifyContent: "center",
@@ -1459,15 +2067,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-    zIndex: 1000,
   },
   modalShareButton: {
     position: "absolute" as const,
     bottom: 16,
     right: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.light.primary,
     alignItems: "center",
     justifyContent: "center",
@@ -1477,5 +2084,60 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
     zIndex: 1001,
+  },
+  pastDateText: {
+    color: colors.light.primary,
+    fontWeight: "600" as const,
+  },
+  todayButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: colors.light.primary,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  todayButtonText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "600" as const,
+  },
+  calendarModal: {
+    backgroundColor: colors.light.cardBackground,
+    borderRadius: 20,
+    padding: 20,
+    width: "100%",
+    maxWidth: 400,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  calendarHeader: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  calendarTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  todayButtonInModal: {
+    backgroundColor: colors.light.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  todayButtonInModalText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600" as const,
   },
 });
