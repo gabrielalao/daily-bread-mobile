@@ -79,7 +79,7 @@ export default function BibleStudyScreen() {
   const [viewingPastContent, setViewingPastContent] = useState(false);
   
   // Draggable share button position
-  const pan = useRef(new Animated.ValueXY({ x: screenWidth - 76, y: 100 })).current;
+  const pan = useRef(new Animated.ValueXY({ x: screenWidth - 60, y: 100 })).current;
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -97,7 +97,7 @@ export default function BibleStudyScreen() {
       onPanResponderRelease: () => {
         pan.flattenOffset();
         
-        const maxX = screenWidth - 76;
+        const maxX = screenWidth - 60;
         const maxY = 800;
         
         Animated.spring(pan, {
@@ -728,7 +728,7 @@ export default function BibleStudyScreen() {
           {isCapturing ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Share2 size={24} color="#FFFFFF" />
+            <Share2 size={18} color="#FFFFFF" />
           )}
         </TouchableOpacity>
         
@@ -973,7 +973,7 @@ export default function BibleStudyScreen() {
                     {isCapturingModal ? (
                       <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
-                      <Share2 size={20} color="#FFFFFF" />
+                      <Share2 size={16} color="#FFFFFF" />
                     )}
                   </TouchableOpacity>
                 </>
@@ -1019,7 +1019,7 @@ export default function BibleStudyScreen() {
           {isCapturing ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Share2 size={24} color="#FFFFFF" />
+            <Share2 size={18} color="#FFFFFF" />
           )}
         </TouchableOpacity>
       </Animated.View>
@@ -1988,14 +1988,14 @@ const styles = StyleSheet.create({
   },
   shareButton: {
     position: "absolute" as const,
-    width: 56,
-    height: 56,
+    width: 40,
+    height: 40,
     zIndex: 1000,
   },
   shareButtonInner: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.light.primary,
     alignItems: "center",
     justifyContent: "center",
