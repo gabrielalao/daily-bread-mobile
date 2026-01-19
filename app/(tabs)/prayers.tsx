@@ -29,6 +29,7 @@ import {
   Calendar,
   Clock,
   BookOpen,
+  X,
 } from "lucide-react-native";
 import React, { useState, useEffect, useRef } from "react";
 import { useFocusEffect } from "expo-router";
@@ -43,8 +44,10 @@ import {
   ActivityIndicator,
   Alert,
   PanResponder,
+  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Calendar as RNCalendar } from 'react-native-calendars';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -87,6 +90,9 @@ export default function PrayerScreen() {
     scriptureVerses?: string[];
   } | null>(null);
   const insets = useSafeAreaInsets();
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [viewingPastContent, setViewingPastContent] = useState(false);
   
   // Draggable share button position
   const pan = useRef(new Animated.ValueXY({ x: screenWidth - 76, y: 100 })).current;
@@ -124,6 +130,17 @@ export default function PrayerScreen() {
   
   // Use the correlated daily prayer or fallback
   const todayPrayer = React.useMemo<DailyPrayer>(() => {
+    // If viewing a specific past date, get prayer for that date
+    if (selectedDate && viewingPastContent) {
+      const startOfYear = new Date(selectedDate.getFullYear(), 0, 1);
+      const dayOfYear = Math.floor((selectedDate.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const prayerIndex = (dayOfYear - 1) % 365;
+      const datePrayer = dailyPrayers[prayerIndex];
+      console.log(`Viewing prayer for ${selectedDate.toDateString()}: Day ${dayOfYear}, ${datePrayer.title}`);
+      return datePrayer;
+    }
+    
+    // Otherwise, show today's prayer
     if (contentHistory.currentDayPrayer) {
       const cached = dailyPrayers.find(p => p.id === contentHistory.currentDayPrayer);
       if (cached) return cached;
@@ -140,7 +157,7 @@ export default function PrayerScreen() {
     
     // Fallback to daily cycle
     return getTodayDailyPrayer(contentHistory.prayers);
-  }, [contentHistory.currentDayPrayer, contentHistory.prayers, contentHistory.currentDayDevotional]);
+  }, [contentHistory.currentDayPrayer, contentHistory.prayers, contentHistory.currentDayDevotional, selectedDate, viewingPastContent]);
   
   const recommendedPrayers = getRecommendedPrayers(
     contentHistory.prayers,
@@ -467,10 +484,30 @@ export default function PrayerScreen() {
       >
         <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
           <View style={styles.dateTimeContainer}>
-            <View style={styles.dateRow}>
-              <Calendar size={20} color={colors.light.textSecondary} />
-              <Text style={styles.dateText}>{today}</Text>
-            </View>
+            <TouchableOpacity
+              style={styles.dateRow}
+              onPress={() => setShowCalendar(true)}
+              activeOpacity={0.7}
+            >
+              <Calendar size={20} color={colors.light.primary} />
+              <Text style={[styles.dateText, viewingPastContent && styles.pastDateText]}>
+                {viewingPastContent && selectedDate
+                  ? selectedDate.toLocaleDateString(locale, { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+                  : today}
+              </Text>
+            </TouchableOpacity>
+            {viewingPastContent && (
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedDate(null);
+                  setViewingPastContent(false);
+                }}
+                style={styles.todayButton}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.todayButtonText}>Today</Text>
+              </TouchableOpacity>
+            )}
             <View style={styles.timeRow}>
               <Clock size={20} color={colors.light.textSecondary} />
               <Text style={styles.timeText}>{time}</Text>
@@ -547,6 +584,83 @@ export default function PrayerScreen() {
           </View>
         </Animated.View>
       </ScrollView>
+
+      {/* Calendar Modal */}
+      <Modal
+        visible={showCalendar}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowCalendar(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.calendarModal}>
+            <View style={styles.calendarHeader}>
+              <Text style={styles.calendarTitle}>Select a Date</Text>
+              <TouchableOpacity
+                onPress={() => setShowCalendar(false)}
+                style={styles.closeButton}
+              >
+                <X size={24} color={colors.light.text} />
+              </TouchableOpacity>
+            </View>
+
+            <RNCalendar
+              onDayPress={(day) => {
+                const selected = new Date(day.dateString);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (selected <= today) {
+                  setSelectedDate(selected);
+                  setViewingPastContent(selected.toDateString() !== today.toDateString());
+                  setShowCalendar(false);
+                }
+              }}
+              maxDate={new Date().toISOString().split('T')[0]}
+              theme={{
+                backgroundColor: colors.light.cardBackground,
+                calendarBackground: colors.light.cardBackground,
+                textSectionTitleColor: colors.light.textSecondary,
+                selectedDayBackgroundColor: colors.light.primary,
+                selectedDayTextColor: '#ffffff',
+                todayTextColor: colors.light.primary,
+                dayTextColor: colors.light.text,
+                textDisabledColor: colors.light.textSecondary,
+                dotColor: colors.light.primary,
+                selectedDotColor: '#ffffff',
+                arrowColor: colors.light.primary,
+                monthTextColor: colors.light.text,
+                indicatorColor: colors.light.primary,
+              }}
+              markedDates={{
+                [new Date().toISOString().split('T')[0]]: {
+                  marked: true,
+                  dotColor: colors.light.primary,
+                },
+                ...(selectedDate && viewingPastContent
+                  ? {
+                      [selectedDate.toISOString().split('T')[0]]: {
+                        selected: true,
+                        selectedColor: colors.light.primary,
+                      },
+                    }
+                  : {}),
+              }}
+            />
+
+            <TouchableOpacity
+              style={styles.todayButtonInModal}
+              onPress={() => {
+                setSelectedDate(null);
+                setViewingPastContent(false);
+                setShowCalendar(false);
+              }}
+            >
+              <Text style={styles.todayButtonInModalText}>Go to Today</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -857,5 +971,67 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  pastDateText: {
+    color: colors.light.primary,
+    fontWeight: "600" as const,
+  },
+  todayButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: colors.light.primary,
+    borderRadius: 16,
+    marginLeft: 8,
+  },
+  todayButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600" as const,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  calendarModal: {
+    backgroundColor: colors.light.cardBackground,
+    borderRadius: 20,
+    padding: 20,
+    width: "100%",
+    maxWidth: 400,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  calendarHeader: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  calendarTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  todayButtonInModal: {
+    backgroundColor: colors.light.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  todayButtonInModalText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600" as const,
   },
 });

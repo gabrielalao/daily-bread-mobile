@@ -32,6 +32,7 @@ import { useMutation } from "@tanstack/react-query";
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Calendar as RNCalendar } from 'react-native-calendars';
 
 type BibleVerse = {
   reference: string;
@@ -73,6 +74,9 @@ export default function BibleStudyScreen() {
   >({});
   const [translatedDailyStudy, setTranslatedDailyStudy] = useState<{ title?: string; verse?: string; insight?: string; reflection?: string } | null>(null);
   const scrollRef = React.useRef<ScrollView>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [viewingPastContent, setViewingPastContent] = useState(false);
   
   // Draggable share button position
   const pan = useRef(new Animated.ValueXY({ x: screenWidth - 76, y: 100 })).current;
@@ -109,6 +113,17 @@ export default function BibleStudyScreen() {
   
   // Use the correlated daily study or fallback
   const todayStudy = React.useMemo<DailyStudy>(() => {
+    // If viewing a specific past date, get study for that date
+    if (selectedDate && viewingPastContent) {
+      const startOfYear = new Date(selectedDate.getFullYear(), 0, 1);
+      const dayOfYear = Math.floor((selectedDate.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const studyIndex = (dayOfYear - 1) % 365;
+      const dateStudy = dailyStudies[studyIndex];
+      console.log(`Viewing study for ${selectedDate.toDateString()}: Day ${dayOfYear}, ${dateStudy.title}`);
+      return dateStudy;
+    }
+    
+    // Otherwise, show today's study
     if (contentHistory.currentDayStudy) {
       const cached = dailyStudies.find(s => s.id === contentHistory.currentDayStudy);
       if (cached) return cached;
@@ -125,7 +140,7 @@ export default function BibleStudyScreen() {
     
     // Fallback to daily cycle
     return getTodayDailyStudy(contentHistory.studies);
-  }, [contentHistory.currentDayStudy, contentHistory.studies, contentHistory.currentDayDevotional]);
+  }, [contentHistory.currentDayStudy, contentHistory.studies, contentHistory.currentDayDevotional, selectedDate, viewingPastContent]);
   
   const todayStudyPlan = getTodayStudy(contentHistory.studies);
   const recommendedStudies = getRecommendedStudies(
@@ -1017,10 +1032,30 @@ export default function BibleStudyScreen() {
       >
         <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
           <View style={styles.dateTimeContainer}>
-            <View style={styles.dateRow}>
-              <Calendar size={20} color={colors.light.textSecondary} />
-              <Text style={styles.dateText}>{today}</Text>
-            </View>
+            <TouchableOpacity
+              style={styles.dateRow}
+              onPress={() => setShowCalendar(true)}
+              activeOpacity={0.7}
+            >
+              <Calendar size={20} color={colors.light.primary} />
+              <Text style={[styles.dateText, viewingPastContent && styles.pastDateText]}>
+                {viewingPastContent && selectedDate
+                  ? selectedDate.toLocaleDateString(locale, { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+                  : today}
+              </Text>
+            </TouchableOpacity>
+            {viewingPastContent && (
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedDate(null);
+                  setViewingPastContent(false);
+                }}
+                style={styles.todayButton}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.todayButtonText}>Today</Text>
+              </TouchableOpacity>
+            )}
             <View style={styles.timeRow}>
               <Clock size={20} color={colors.light.textSecondary} />
               <Text style={styles.timeText}>{time}</Text>
@@ -1122,6 +1157,83 @@ export default function BibleStudyScreen() {
           </View>
         </Animated.View>
       </ScrollView>
+
+      {/* Calendar Modal */}
+      <Modal
+        visible={showCalendar}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowCalendar(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.calendarModal}>
+            <View style={styles.calendarHeader}>
+              <Text style={styles.calendarTitle}>Select a Date</Text>
+              <TouchableOpacity
+                onPress={() => setShowCalendar(false)}
+                style={styles.closeButton}
+              >
+                <X size={24} color={colors.light.text} />
+              </TouchableOpacity>
+            </View>
+
+            <RNCalendar
+              onDayPress={(day) => {
+                const selected = new Date(day.dateString);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (selected <= today) {
+                  setSelectedDate(selected);
+                  setViewingPastContent(selected.toDateString() !== today.toDateString());
+                  setShowCalendar(false);
+                }
+              }}
+              maxDate={new Date().toISOString().split('T')[0]}
+              theme={{
+                backgroundColor: colors.light.cardBackground,
+                calendarBackground: colors.light.cardBackground,
+                textSectionTitleColor: colors.light.textSecondary,
+                selectedDayBackgroundColor: colors.light.primary,
+                selectedDayTextColor: '#ffffff',
+                todayTextColor: colors.light.primary,
+                dayTextColor: colors.light.text,
+                textDisabledColor: colors.light.textSecondary,
+                dotColor: colors.light.primary,
+                selectedDotColor: '#ffffff',
+                arrowColor: colors.light.primary,
+                monthTextColor: colors.light.text,
+                indicatorColor: colors.light.primary,
+              }}
+              markedDates={{
+                [new Date().toISOString().split('T')[0]]: {
+                  marked: true,
+                  dotColor: colors.light.primary,
+                },
+                ...(selectedDate && viewingPastContent
+                  ? {
+                      [selectedDate.toISOString().split('T')[0]]: {
+                        selected: true,
+                        selectedColor: colors.light.primary,
+                      },
+                    }
+                  : {}),
+              }}
+            />
+
+            <TouchableOpacity
+              style={styles.todayButtonInModal}
+              onPress={() => {
+                setSelectedDate(null);
+                setViewingPastContent(false);
+                setShowCalendar(false);
+              }}
+            >
+              <Text style={styles.todayButtonInModalText}>Go to Today</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1909,5 +2021,60 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
     zIndex: 1001,
+  },
+  pastDateText: {
+    color: colors.light.primary,
+    fontWeight: "600" as const,
+  },
+  todayButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: colors.light.primary,
+    borderRadius: 16,
+    marginLeft: 8,
+  },
+  todayButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600" as const,
+  },
+  calendarModal: {
+    backgroundColor: colors.light.cardBackground,
+    borderRadius: 20,
+    padding: 20,
+    width: "100%",
+    maxWidth: 400,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  calendarHeader: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  calendarTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  todayButtonInModal: {
+    backgroundColor: colors.light.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  todayButtonInModalText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600" as const,
   },
 });
