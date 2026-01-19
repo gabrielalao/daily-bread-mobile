@@ -255,13 +255,24 @@ export default function BibleScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, styles.chapterModal]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{currentBook.name} - Select Chapter</Text>
-              <TouchableOpacity onPress={() => setShowChapterPicker(false)}>
-                <Text style={styles.modalClose}>Close</Text>
+              <View>
+                <Text style={styles.modalTitle}>{currentBook.name}</Text>
+                <Text style={styles.modalSubtitle}>
+                  {currentBook.chapters} {currentBook.chapters === 1 ? 'Chapter' : 'Chapters'}
+                </Text>
+              </View>
+              <TouchableOpacity 
+                onPress={() => setShowChapterPicker(false)}
+                style={styles.closeButton}
+              >
+                <Text style={styles.modalClose}>Done</Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.chapterGrid}>
+            <ScrollView 
+              contentContainerStyle={styles.chapterGrid}
+              showsVerticalScrollIndicator={false}
+            >
               {Array.from({ length: currentBook.chapters }, (_, i) => i + 1).map((chapter) => (
                 <TouchableOpacity
                   key={chapter}
@@ -270,6 +281,7 @@ export default function BibleScreen() {
                     chapter === currentChapter && styles.chapterGridItemActive
                   ]}
                   onPress={() => selectChapter(chapter)}
+                  activeOpacity={0.7}
                 >
                   <Text style={[
                     styles.chapterGridText,
@@ -279,7 +291,7 @@ export default function BibleScreen() {
                   </Text>
                 </TouchableOpacity>
               ))}
-            </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -445,13 +457,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.light.border,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
     color: colors.light.text,
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.light.textSecondary,
+  },
+  closeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: `${colors.light.primary}10`,
   },
   modalClose: {
     fontSize: 16,
@@ -491,26 +516,37 @@ const styles = StyleSheet.create({
   chapterGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    padding: 16,
-    gap: 12,
+    padding: 20,
+    paddingTop: 16,
+    gap: 10,
   },
   chapterGridItem: {
-    width: (screenWidth - 80) / 6,
-    aspectRatio: 1,
-    borderRadius: 12,
-    backgroundColor: colors.light.background,
+    width: (screenWidth - 100) / 5,
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: colors.light.cardBackground,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.light.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   chapterGridItemActive: {
     backgroundColor: colors.light.primary,
     borderColor: colors.light.primary,
+    shadowColor: colors.light.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   chapterGridText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: colors.light.text,
   },
   chapterGridTextActive: {
