@@ -228,12 +228,18 @@ export function getTodayDailyPrayer(viewedIds: string[] = []): DailyPrayer {
   return dailyPrayers[index];
 }
 
-// Get a prayer that correlates with devotional themes
+// Get a prayer that correlates with a devotional
+// Priority: 1) Match by ID for perfect correlation, 2) Match by themes
 export function getCorrelatedDailyPrayer(
+  devotionalId: string,
   devotionalThemes: string[],
   viewedIds: string[] = []
 ): DailyPrayer {
-  // Try to match prayer with devotional themes
+  // PRIORITY 1: Perfect 1:1 correlation - match prayer by devotional ID
+  const matchedById = dailyPrayers.find(p => p.id === devotionalId);
+  if (matchedById) return matchedById;
+  
+  // PRIORITY 2: Try to match prayer with devotional themes (unviewed first)
   for (const theme of devotionalThemes) {
     const matchedPrayer = dailyPrayers.find(
       p => !viewedIds.includes(p.id) && p.themes.includes(theme)
@@ -241,12 +247,12 @@ export function getCorrelatedDailyPrayer(
     if (matchedPrayer) return matchedPrayer;
   }
   
-  // If no unviewed match, try any match regardless of viewed status
+  // PRIORITY 3: Try any theme match regardless of viewed status
   for (const theme of devotionalThemes) {
     const matchedPrayer = dailyPrayers.find(p => p.themes.includes(theme));
     if (matchedPrayer) return matchedPrayer;
   }
   
-  // Fallback to today's prayer
+  // PRIORITY 4: Fallback to today's prayer
   return getTodayDailyPrayer(viewedIds);
 }

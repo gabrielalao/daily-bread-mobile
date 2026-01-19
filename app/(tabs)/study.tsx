@@ -80,12 +80,12 @@ export default function BibleStudyScreen() {
       if (cached) return cached;
     }
     
-    // Get correlated study based on devotional theme
+    // Get correlated study based on devotional ID and theme
     if (contentHistory.currentDayDevotional) {
       const devotion = devotionals.find(d => d.id === contentHistory.currentDayDevotional);
       if (devotion) {
         const theme = getCorrelatedDevotionalTheme(devotion);
-        return getCorrelatedDailyStudy(theme, contentHistory.studies);
+        return getCorrelatedDailyStudy(devotion.id, theme, contentHistory.studies);
       }
     }
     

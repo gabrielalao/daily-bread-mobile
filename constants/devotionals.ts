@@ -291,22 +291,23 @@ export function getCorrelatedDevotionalTheme(devotional: Devotional): string[] {
   const keywords: string[] = [];
   const text = `${devotional.title} ${devotional.reflection}`.toLowerCase();
   
-  // Common spiritual themes
+  // Common spiritual themes with more specific matching to avoid false positives
   const themeMap: Record<string, string[]> = {
-    'peace': ['peace', 'anxiety', 'worry', 'calm', 'rest'],
-    'strength': ['strength', 'courage', 'power', 'strong', 'mighty'],
-    'love': ['love', 'compassion', 'kindness', 'relationship'],
+    'finances': ['money', 'wealth', 'financial', 'steward', 'provision', 'tithe', 'giving', 'rich', 'poor', 'contentment'],
+    'peace': ['peace', 'anxiety', 'worry', 'calm', 'rest', 'tranquil'],
+    'strength': ['strength', 'courage', 'power', 'strong', 'mighty', 'endure'],
     'faith': ['faith', 'trust', 'believe', 'hope'],
-    'guidance': ['guidance', 'wisdom', 'direction', 'path'],
-    'forgiveness': ['forgive', 'mercy', 'grace', 'pardon'],
-    'gratitude': ['thank', 'grateful', 'praise', 'blessing'],
-    'finances': ['money', 'wealth', 'financial', 'steward', 'provision'],
-    'health': ['health', 'body', 'physical', 'wellness'],
-    'parenting': ['parent', 'children', 'family'],
-    'career': ['work', 'career', 'job', 'profession'],
-    'purpose': ['purpose', 'calling', 'mission'],
+    'guidance': ['guidance', 'wisdom', 'direction', 'path', 'choose', 'decision'],
+    'forgiveness': ['forgive', 'mercy', 'grace', 'pardon', 'redemption'],
+    'gratitude': ['thank', 'grateful', 'praise', 'blessing', 'appreciate'],
+    'love': ['love others', 'compassion', 'kindness', 'serve others', 'care for others'],
+    'health': ['health', 'body', 'physical', 'wellness', 'healing'],
+    'parenting': ['parent', 'children', 'child', 'family'],
+    'career': ['work', 'career', 'job', 'profession', 'business'],
+    'purpose': ['purpose', 'calling', 'mission', 'identity'],
   };
   
+  // Check finances first as it's very specific
   for (const [theme, searchTerms] of Object.entries(themeMap)) {
     if (searchTerms.some(term => text.includes(term))) {
       keywords.push(theme);

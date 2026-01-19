@@ -92,12 +92,12 @@ export default function PrayerScreen() {
       if (cached) return cached;
     }
     
-    // Get correlated prayer based on devotional theme
+    // Get correlated prayer based on devotional ID and theme
     if (contentHistory.currentDayDevotional) {
       const devotion = devotionals.find(d => d.id === contentHistory.currentDayDevotional);
       if (devotion) {
         const theme = getCorrelatedDevotionalTheme(devotion);
-        return getCorrelatedDailyPrayer(theme, contentHistory.prayers);
+        return getCorrelatedDailyPrayer(devotion.id, theme, contentHistory.prayers);
       }
     }
     

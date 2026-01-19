@@ -290,12 +290,18 @@ export function getTodayDailyStudy(viewedIds: string[] = []): DailyStudy {
   return dailyStudies[index];
 }
 
-// Get a study that correlates with devotional themes
+// Get a study that correlates with a devotional
+// Priority: 1) Match by ID for perfect correlation, 2) Match by themes
 export function getCorrelatedDailyStudy(
+  devotionalId: string,
   devotionalThemes: string[],
   viewedIds: string[] = []
 ): DailyStudy {
-  // Try to match study with devotional themes
+  // PRIORITY 1: Perfect 1:1 correlation - match study by devotional ID
+  const matchedById = dailyStudies.find(s => s.id === devotionalId);
+  if (matchedById) return matchedById;
+  
+  // PRIORITY 2: Try to match study with devotional themes (unviewed first)
   for (const theme of devotionalThemes) {
     const matchedStudy = dailyStudies.find(
       s => !viewedIds.includes(s.id) && s.themes.includes(theme)
@@ -303,12 +309,12 @@ export function getCorrelatedDailyStudy(
     if (matchedStudy) return matchedStudy;
   }
   
-  // If no unviewed match, try any match regardless of viewed status
+  // PRIORITY 3: Try any theme match regardless of viewed status
   for (const theme of devotionalThemes) {
     const matchedStudy = dailyStudies.find(s => s.themes.includes(theme));
     if (matchedStudy) return matchedStudy;
   }
   
-  // Fallback to today's study
+  // PRIORITY 4: Fallback to today's study
   return getTodayDailyStudy(viewedIds);
 }
