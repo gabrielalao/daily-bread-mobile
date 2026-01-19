@@ -7,7 +7,7 @@ import { bibleVersions, getPopularVersions, getVersionById } from "@/constants/b
 import { appLanguages, getAppLanguageById } from "@/constants/app-languages";
 import { t, tParams } from "@/utils/i18n";
 import { LinearGradient } from "expo-linear-gradient";
-import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Trash2, Edit, Repeat, Share2 } from "lucide-react-native";
+import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Trash2, Edit, Repeat, Share2, X } from "lucide-react-native";
 import React, { useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
@@ -26,7 +26,12 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScheduleNextSessionModal } from "@/components/ScheduleNextSessionModal";
 
-export default function SettingsScreen() {
+interface SettingsModalProps {
+  visible: boolean;
+  onClose: () => void;
+}
+
+export function SettingsModal({ visible, onClose }: SettingsModalProps) {
   const { settings, isLoaded, enableNotifications, disableNotifications, updateNotificationTime } = useNotifications();
   const { userPreferences, setBibleVersion, setAppLanguage, setAutoTranslateContent, isLoaded: contentLoaded } = useContent();
   const tLang = userPreferences.appLanguage;
@@ -316,11 +321,25 @@ export default function SettingsScreen() {
     : appLanguages.filter(l => `${l.name} ${l.nativeName} ${l.id}`.toLowerCase().includes(normalizedLangQuery));
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={[colors.light.background, colors.light.cardBackground]}
-        style={StyleSheet.absoluteFillObject}
-      />
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <View style={styles.container}>
+        <LinearGradient
+          colors={[colors.light.background, colors.light.cardBackground]}
+          style={StyleSheet.absoluteFillObject}
+        />
+        
+        {/* Header with Close Button */}
+        <View style={[styles.modalHeader, { paddingTop: insets.top + 12 }]}>
+          <Text style={styles.modalHeaderTitle}>{t(tLang, "headers.notificationSettings")}</Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <X size={24} color={colors.light.text} />
+          </TouchableOpacity>
+        </View>
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}
@@ -849,12 +868,36 @@ export default function SettingsScreen() {
         onUpdate={handleUpdateSession}
       />
     </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    backgroundColor: colors.light.cardBackground,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.light.border,
+  },
+  modalHeaderTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.light.text,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: `${colors.light.primary}10`,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollView: {
     flex: 1,

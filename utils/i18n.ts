@@ -7,12 +7,14 @@ const en: Dict = {
   "tabs.prayer": "Prayer",
   "tabs.study": "Study",
   "tabs.therapy": "Therapy",
+  "tabs.bible": "Bible",
   "tabs.settings": "Settings",
 
   "headers.dailyBread": "Christian Daily Bread",
   "headers.prayerGuides": "Prayer Guides",
   "headers.bibleStudy": "Bible Study",
   "headers.christianTherapy": "Christian Therapy",
+  "headers.holyBible": "Holy Bible",
   "headers.notificationSettings": "Notification Settings",
 
   "settings.appLanguage": "App Language",

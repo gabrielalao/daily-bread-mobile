@@ -8,12 +8,13 @@ import { getAppLanguageById } from "@/constants/app-languages";
 import { t } from "@/utils/i18n";
 import { translateTextCached } from "@/utils/translate";
 import { LinearGradient } from "expo-linear-gradient";
-import { BookOpen, Calendar, Clock, Share2, X } from "lucide-react-native";
+import { BookOpen, Calendar, Clock, Share2, X, Settings } from "lucide-react-native";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Animated, ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Dimensions, PanResponder, Modal } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar as RNCalendar } from 'react-native-calendars';
+import { SettingsModal } from "@/components/SettingsModal";
 
 const { width: screenWidth } = Dimensions.get('window');
 const isTablet = screenWidth >= 768;
@@ -33,6 +34,8 @@ export default function HomeScreen() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewingPastContent, setViewingPastContent] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   
   // Draggable share button position
   const pan = useRef(new Animated.ValueXY({ x: screenWidth - 60, y: 100 })).current;
