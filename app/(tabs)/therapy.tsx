@@ -1966,7 +1966,7 @@ You'll receive a notification to remind you.`,
         {isCapturing ? (
           <ActivityIndicator size="small" color="#FFFFFF" />
         ) : (
-          <Share2 size={24} color="#FFFFFF" />
+          <Share2 size={18} color="#FFFFFF" />
         )}
       </TouchableOpacity>
       
@@ -3018,9 +3018,9 @@ const styles = StyleSheet.create({
     position: "absolute" as const,
     right: 20,
     bottom: 100,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.light.primary,
     alignItems: "center",
     justifyContent: "center",
