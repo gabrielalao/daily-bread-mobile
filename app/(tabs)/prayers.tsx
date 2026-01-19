@@ -29,11 +29,7 @@ import {
   Calendar,
   Clock,
   BookOpen,
-  Play,
-  Pause,
 } from "lucide-react-native";
-import * as Speech from 'expo-speech';
-import TTSManager from '@/utils/openaiTTS';
 import React, { useState, useEffect } from "react";
 import { useFocusEffect } from "expo-router";
 import {
@@ -87,9 +83,6 @@ export default function PrayerScreen() {
     prayers?: string[];
     scriptureVerses?: string[];
   } | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [ttsManager] = useState(() => new TTSManager());
   const insets = useSafeAreaInsets();
   const scrollRef = React.useRef<ScrollView>(null);
   
@@ -309,47 +302,6 @@ export default function PrayerScreen() {
     );
   }
 
-  // Text-to-Speech handlers with OpenAI
-  const handlePlayPause = async () => {
-    try {
-      if (isSpeaking) {
-        await ttsManager.stop();
-        setIsSpeaking(false);
-      } else {
-        // Read today's prayer
-        const textToRead = `${translatedDailyPrayer?.title || todayPrayer.title}. 
-        ${translatedDailyPrayer?.verse || todayPrayer.verse}. 
-        ${todayPrayer.scripture}. 
-        ${translatedDailyPrayer?.prayer || todayPrayer.prayer}`;
-        
-        setIsLoading(true);
-        setIsSpeaking(true);
-        
-        const voiceId = userPreferences.ttsVoiceId || 'EXAVITQu4vr4xnSDxMaL'; // Default to Sarah
-        
-        await ttsManager.speak(textToRead, voiceId, 0.5, 0.75);
-        
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.error('TTS Error:', error);
-      setIsSpeaking(false);
-      setIsLoading(false);
-      Alert.alert(
-        'Audio Error',
-        'Could not generate speech. Please check your internet connection.',
-        [{ text: 'OK' }]
-      );
-    }
-  };
-
-  // Cleanup TTS on unmount
-  useEffect(() => {
-    return () => {
-      ttsManager.stop();
-    };
-  }, [ttsManager]);
-
   if (selectedGuide) {
     return (
       <View style={styles.container}>
@@ -444,22 +396,6 @@ export default function PrayerScreen() {
         style={StyleSheet.absoluteFillObject}
       />
       
-      {/* Play/Pause Button - Floating Action Button */}
-      <TouchableOpacity
-        style={styles.playButton}
-        onPress={handlePlayPause}
-        activeOpacity={0.8}
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : isSpeaking ? (
-          <Pause size={24} color="#FFFFFF" />
-        ) : (
-          <Play size={24} color="#FFFFFF" />
-        )}
-      </TouchableOpacity>
-
       {/* Share Button - Floating Action Button */}
       <TouchableOpacity
         style={styles.shareButton}
@@ -856,23 +792,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.light.textSecondary,
     fontWeight: "600" as const,
-  },
-  playButton: {
-    position: "absolute" as const,
-    right: 20,
-    bottom: 170,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.light.accent,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    zIndex: 1000,
   },
   shareButton: {
     position: "absolute" as const,

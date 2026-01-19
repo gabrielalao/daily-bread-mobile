@@ -8,12 +8,11 @@ import { getAppLanguageById } from "@/constants/app-languages";
 import { t } from "@/utils/i18n";
 import { translateTextCached } from "@/utils/translate";
 import { LinearGradient } from "expo-linear-gradient";
-import { BookOpen, Calendar, Clock, Share2, Play, Pause } from "lucide-react-native";
+import { BookOpen, Calendar, Clock, Share2 } from "lucide-react-native";
 import React, { useState, useEffect, useMemo } from "react";
-import { Animated, ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Dimensions, Alert } from "react-native";
+import { Animated, ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Dimensions } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import TTSManager from '@/utils/openaiTTS';
 
 const { width: screenWidth } = Dimensions.get('window');
 const isTablet = screenWidth >= 768;
@@ -29,9 +28,6 @@ export default function HomeScreen() {
   const [translatedTitle, setTranslatedTitle] = useState<string | null>(null);
   const [translatedVerse, setTranslatedVerse] = useState<string | null>(null);
   const [translatedReflection, setTranslatedReflection] = useState<string | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [ttsManager] = useState(() => new TTSManager());
   const scrollRef = React.useRef<ScrollView>(null);
   
   const devotional = useMemo<Devotional>(() => {
@@ -138,49 +134,6 @@ export default function HomeScreen() {
     };
   }, [devotional.id, devotional.title, devotional.verse, devotional.reflection, lang, userPreferences.autoTranslateContent]);
 
-  // Text-to-Speech handlers with OpenAI
-  const handlePlayPause = async () => {
-    try {
-      if (isSpeaking) {
-        // Stop speaking
-        await ttsManager.stop();
-        setIsSpeaking(false);
-      } else {
-        // Start speaking - read title, verse, and reflection
-        const textToRead = `${translatedTitle || devotional.title}. 
-        ${devotional.scripture}. 
-        ${translatedVerse || devotional.verse}. 
-        Today's Reflection. 
-        ${translatedReflection || devotional.reflection}`;
-        
-        setIsLoading(true);
-        setIsSpeaking(true);
-        
-        const voiceId = userPreferences.ttsVoiceId || 'EXAVITQu4vr4xnSDxMaL'; // Default to Sarah (warm, compassionate)
-        
-        await ttsManager.speak(textToRead, voiceId, 0.5, 0.75);
-        
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.error('TTS Error:', error);
-      setIsSpeaking(false);
-      setIsLoading(false);
-      Alert.alert(
-        'Audio Error',
-        'Could not generate speech. Please check your internet connection.',
-        [{ text: 'OK' }]
-      );
-    }
-  };
-
-  // Cleanup TTS on unmount
-  useEffect(() => {
-    return () => {
-      ttsManager.stop();
-    };
-  }, [ttsManager]);
-
   if (!isLoaded) {
     return (
       <View style={styles.container}>
@@ -202,22 +155,6 @@ export default function HomeScreen() {
         style={StyleSheet.absoluteFillObject}
       />
       
-      {/* Play/Pause Button - Floating Action Button */}
-      <TouchableOpacity
-        style={styles.playButton}
-        onPress={handlePlayPause}
-        activeOpacity={0.8}
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : isSpeaking ? (
-          <Pause size={24} color="#FFFFFF" />
-        ) : (
-          <Play size={24} color="#FFFFFF" />
-        )}
-      </TouchableOpacity>
-
       {/* Share Button - Floating Action Button */}
       <TouchableOpacity
         style={styles.shareButton}
@@ -462,23 +399,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.light.textSecondary,
     fontWeight: "600" as const,
-  },
-  playButton: {
-    position: "absolute" as const,
-    right: 20,
-    bottom: 170, // Above the share button
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.light.accent,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    zIndex: 1000,
   },
   shareButton: {
     position: "absolute" as const,

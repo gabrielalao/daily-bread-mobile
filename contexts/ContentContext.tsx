@@ -24,8 +24,6 @@ export type UserPreferences = {
   bibleVersion: string;
   appLanguage: string;
   autoTranslateContent: boolean;
-  ttsVoiceId?: string; // Text-to-speech voice identifier
-  ttsVoiceName?: string; // Human-readable voice name
 };
 
 const CONTENT_HISTORY_KEY = '@content_history';
@@ -65,8 +63,6 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     bibleVersion: DEFAULT_BIBLE_VERSION,
     appLanguage: DEFAULT_APP_LANGUAGE,
     autoTranslateContent: false,
-    ttsVoiceId: undefined,
-    ttsVoiceName: undefined,
   });
 
   const [userId, setUserId] = useState<string>('');
@@ -323,10 +319,6 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     await updatePreferences({ autoTranslateContent: enabled });
   };
 
-  const setTtsVoice = async (voiceId: string, voiceName: string) => {
-    await updatePreferences({ ttsVoiceId: voiceId, ttsVoiceName: voiceName });
-  };
-
   return {
     contentHistory,
     userPreferences,
@@ -349,7 +341,6 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     setBibleVersion,
     setAppLanguage,
     setAutoTranslateContent,
-    setTtsVoice,
     getStudyPlanCycle,
     getStudyPlanCompletedDays,
     markStudyDayCompleted,
