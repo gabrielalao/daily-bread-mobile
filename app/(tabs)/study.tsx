@@ -1,5 +1,5 @@
 import colors from "@/constants/colors";
-import { getRecommendedStudies, BibleStudyPlan } from "@/constants/bible-studies";
+import { getRecommendedStudies, getTodayStudy, BibleStudyPlan } from "@/constants/bible-studies";
 import { getPassageProviderCode, getVersionById } from "@/constants/bible-versions";
 import { translateTextCached } from "@/utils/translate";
 import { useContent } from "@/contexts/ContentContext";
@@ -69,6 +69,7 @@ export default function BibleStudyScreen() {
   >({});
   const scrollRef = React.useRef<ScrollView>(null);
   
+  const todayStudy = getTodayStudy(contentHistory.studies);
   const recommendedStudies = getRecommendedStudies(
     contentHistory.studies,
     userPreferences.studyCategories
@@ -877,9 +878,47 @@ export default function BibleStudyScreen() {
       >
         <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
           <View style={styles.header}>
+            <Text style={styles.greeting}>{t(userPreferences.appLanguage, "study.greeting")}</Text>
             <Text style={styles.subtitle}>
               {t(userPreferences.appLanguage, "study.subtitle")}
             </Text>
+          </View>
+
+          {/* Today's Study Plan */}
+          <View style={styles.todaySection}>
+            <View style={styles.todaySectionHeader}>
+              <Text style={styles.todaySectionTitle}>📚 {t(userPreferences.appLanguage, "study.todaysStudy")}</Text>
+              <Text style={styles.todaySectionSubtitle}>{t(userPreferences.appLanguage, "study.dailyGuidance")}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.todayStudyCard}
+              onPress={() => handleSelectPlan(todayStudy)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.todayIconContainer}>
+                <Book size={32} color={colors.light.primary} />
+              </View>
+              <View style={styles.todayTextContainer}>
+                <View style={styles.todayTitleRow}>
+                  <Text style={styles.todayTitle}>{translatedPlanCards[todayStudy.id]?.title ?? todayStudy.title}</Text>
+                  <View style={styles.todayBadge}>
+                    <Text style={styles.todayBadgeText}>{translateCategory(todayStudy.category)}</Text>
+                  </View>
+                </View>
+                <Text style={styles.todayDescription} numberOfLines={2}>
+                  {translatedPlanCards[todayStudy.id]?.description ?? todayStudy.description}
+                </Text>
+                <View style={styles.todayFooter}>
+                  <Calendar size={14} color={colors.light.textSecondary} />
+                  <Text style={styles.todayDuration}>{formatDuration(todayStudy.duration)}</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* All Study Plans */}
+          <View style={styles.allStudiesHeader}>
+            <Text style={styles.allStudiesTitle}>{t(userPreferences.appLanguage, "study.allPlans")}</Text>
           </View>
 
           <View style={styles.plansContainer}>
@@ -946,16 +985,106 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   greeting: {
-    fontSize: 32,
+    fontSize: isSmallScreen ? 28 : 32,
     fontWeight: "700" as const,
     color: colors.light.text,
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 24,
-    fontWeight: "700" as const,
+    fontSize: isSmallScreen ? 14 : 16,
     color: colors.light.textSecondary,
-    lineHeight: 32,
+    lineHeight: 22,
+  },
+  todaySection: {
+    marginBottom: 32,
+  },
+  todaySectionHeader: {
+    marginBottom: 16,
+  },
+  todaySectionTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+    marginBottom: 4,
+  },
+  todaySectionSubtitle: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+  },
+  todayStudyCard: {
+    backgroundColor: colors.light.cardBackground,
+    borderRadius: isTablet ? 20 : 16,
+    padding: isTablet ? 24 : (isSmallScreen ? 16 : 20),
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 16,
+    shadowColor: colors.light.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 2,
+    borderColor: colors.light.primary,
+  },
+  todayIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: `${colors.light.primary}20`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  todayTextContainer: {
+    flex: 1,
+  },
+  todayTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+    gap: 12,
+  },
+  todayTitle: {
+    fontSize: isSmallScreen ? 18 : 20,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+    flex: 1,
+  },
+  todayBadge: {
+    backgroundColor: `${colors.light.accent}15`,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  todayBadgeText: {
+    fontSize: 11,
+    fontWeight: "600" as const,
+    color: colors.light.accent,
+    textTransform: "uppercase" as const,
+  },
+  todayDescription: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  todayFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  todayDuration: {
+    fontSize: 13,
+    color: colors.light.textSecondary,
+    fontWeight: "500" as const,
+  },
+  allStudiesHeader: {
+    marginBottom: 16,
+  },
+  allStudiesTitle: {
+    fontSize: 18,
+    fontWeight: "700" as const,
+    color: colors.light.text,
   },
   plansContainer: {
     gap: 16,

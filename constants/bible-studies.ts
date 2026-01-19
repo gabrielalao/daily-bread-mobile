@@ -686,3 +686,40 @@ export function getRecommendedStudies(viewedIds: string[], preferredCategories: 
   
   return [...unviewed, ...bibleStudyPlans.filter(s => viewedIds.includes(s.id))];
 }
+
+export function getTodayStudy(viewedIds: string[] = []): BibleStudyPlan {
+  const today = new Date();
+  const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000);
+  
+  const unviewed = bibleStudyPlans.filter(s => !viewedIds.includes(s.id));
+  
+  if (unviewed.length > 0) {
+    return unviewed[dayOfYear % unviewed.length];
+  }
+  
+  return bibleStudyPlans[dayOfYear % bibleStudyPlans.length];
+}
+
+export function getPersonalizedStudy(viewedIds: string[], preferences: string[] = []): BibleStudyPlan {
+  const unviewed = bibleStudyPlans.filter(s => !viewedIds.includes(s.id));
+  
+  if (unviewed.length === 0) {
+    return bibleStudyPlans[Math.floor(Math.random() * bibleStudyPlans.length)];
+  }
+  
+  if (preferences.length > 0) {
+    const preferredStudies = unviewed.filter(s => 
+      preferences.some(pref => 
+        s.title.toLowerCase().includes(pref.toLowerCase()) ||
+        s.description.toLowerCase().includes(pref.toLowerCase()) ||
+        s.category.toLowerCase().includes(pref.toLowerCase())
+      )
+    );
+    
+    if (preferredStudies.length > 0) {
+      return preferredStudies[Math.floor(Math.random() * preferredStudies.length)];
+    }
+  }
+  
+  return unviewed[Math.floor(Math.random() * unviewed.length)];
+}
