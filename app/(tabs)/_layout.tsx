@@ -39,38 +39,62 @@ export default function TabLayout() {
   
   const appLogo = useMemo(() => (
     <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
       marginLeft: logoMargin,
-      width: logoSize,
-      height: logoSize,
-      borderRadius: logoRadius,
-      overflow: 'hidden',
+      paddingVertical: 4,
     }}>
-      <Image 
-        source={require('@/assets/images/icon.png')}
-        style={{
-          width: logoSize,
-          height: logoSize,
-        }}
-        resizeMode="cover"
-      />
+      <View style={{
+        width: logoSize,
+        height: logoSize,
+        borderRadius: logoRadius,
+        overflow: 'hidden',
+        shadowColor: colors.light.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+      }}>
+        <Image 
+          source={require('@/assets/images/icon.png')}
+          style={{
+            width: logoSize,
+            height: logoSize,
+          }}
+          resizeMode="cover"
+        />
+      </View>
     </View>
   ), [logoSize, logoRadius, logoMargin]);
   
   const settingsButton = useMemo(() => (
-    <TouchableOpacity
-      onPress={handleOpenSettings}
-      style={{
-        marginRight: settingsMargin,
-        width: settingsSize,
-        height: settingsSize,
-        borderRadius: settingsSize / 2,
-        backgroundColor: `${colors.light.primary}10`,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Settings size={settingsIconSize} color={colors.light.primary} />
-    </TouchableOpacity>
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: settingsMargin,
+      paddingVertical: 4,
+    }}>
+      <TouchableOpacity
+        onPress={handleOpenSettings}
+        style={{
+          width: settingsSize,
+          height: settingsSize,
+          borderRadius: settingsSize / 2,
+          backgroundColor: `${colors.light.primary}10`,
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: colors.light.primary,
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.08,
+          shadowRadius: 2,
+          elevation: 2,
+        }}
+      >
+        <Settings size={settingsIconSize} color={colors.light.primary} />
+      </TouchableOpacity>
+    </View>
   ), [handleOpenSettings, settingsSize, settingsMargin, settingsIconSize]);
   
   return (
@@ -111,11 +135,26 @@ export default function TabLayout() {
             default: 56,
           }),
         },
+        headerLeftContainerStyle: {
+          paddingLeft: 0,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        headerRightContainerStyle: {
+          paddingRight: 0,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        headerTitleContainerStyle: {
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
         headerTitleStyle: {
           fontSize: headerFontSize,
           fontWeight: "700" as const,
           color: colors.light.text,
-          maxWidth: screenWidth - (logoSize + logoMargin * 2) - (settingsSize + settingsMargin * 2),
+          maxWidth: screenWidth - (logoSize + logoMargin * 2) - (settingsSize + settingsMargin * 2) - 40,
+          textAlign: 'center',
         },
         headerTitleAlign: "center",
       }}
