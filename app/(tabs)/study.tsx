@@ -1,9 +1,10 @@
 import colors from "@/constants/colors";
-import { getRecommendedStudies, getTodayStudy, BibleStudyPlan, getCorrelatedStudyVerse, type DailyStudyVerse } from "@/constants/bible-studies";
+import { dailyStudies, DailyStudy, getCorrelatedDailyStudy, getTodayDailyStudy } from "@/constants/daily-studies";
+import { getRecommendedStudies, getTodayStudy, BibleStudyPlan } from "@/constants/bible-studies";
 import { getPassageProviderCode, getVersionById } from "@/constants/bible-versions";
 import { translateTextCached } from "@/utils/translate";
 import { useContent } from "@/contexts/ContentContext";
-import { devotionals } from "@/constants/devotionals";
+import { devotionals, getCorrelatedDevotionalTheme } from "@/constants/devotionals";
 import { usePersonalization } from "@/hooks/usePersonalization";
 import { useScreenshotShare } from "@/hooks/useScreenshotShare";
 import { getStudyInsight, mergeInsightOverrides } from "@/utils/studyInsights";
@@ -46,7 +47,7 @@ type FormattedVerse = {
 };
 
 export default function BibleStudyScreen() {
-  const { contentHistory, userPreferences, markStudyViewed, addStudyCategory, isLoaded, getStudyPlanCycle, getStudyPlanCompletedDays, markStudyDayCompleted, advanceStudyPlanCycle, setCurrentDayStudyVerse, getCorrelatedDailyContent } = useContent();
+  const { contentHistory, userPreferences, markStudyViewed, addStudyCategory, isLoaded, getStudyPlanCycle, getStudyPlanCompletedDays, markStudyDayCompleted, advanceStudyPlanCycle, setCurrentDayStudy } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
   const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
   const modalViewRef = useRef<any>(null); // Separate ref for modal content
@@ -69,43 +70,41 @@ export default function BibleStudyScreen() {
   const [translatedReadings, setTranslatedReadings] = useState<
     Record<number, { focus?: string; spiritualInsight?: string; keyThemes?: string[]; practicalApplication?: string }>
   >({});
-  const [translatedStudyVerse, setTranslatedStudyVerse] = useState<{ reference?: string; text?: string } | null>(null);
+  const [translatedDailyStudy, setTranslatedDailyStudy] = useState<{ title?: string; verse?: string; insight?: string; reflection?: string } | null>(null);
   const scrollRef = React.useRef<ScrollView>(null);
   
-  // Get correlated daily content
-  const dailyContent = React.useMemo(() => getCorrelatedDailyContent(), [contentHistory.currentDayDevotional]);
-  
-  // Use the correlated study verse or create one from today's devotional
-  const todayStudyVerse = React.useMemo<DailyStudyVerse | null>(() => {
-    if (contentHistory.currentDayStudyVerse) {
-      return contentHistory.currentDayStudyVerse;
+  // Use the correlated daily study or fallback
+  const todayStudy = React.useMemo<DailyStudy>(() => {
+    if (contentHistory.currentDayStudy) {
+      const cached = dailyStudies.find(s => s.id === contentHistory.currentDayStudy);
+      if (cached) return cached;
     }
     
-    // Get correlated study verse based on devotional
-    if (dailyContent.devotional) {
-      const devotion = devotionals.find(d => d.id === dailyContent.devotional);
+    // Get correlated study based on devotional theme
+    if (contentHistory.currentDayDevotional) {
+      const devotion = devotionals.find(d => d.id === contentHistory.currentDayDevotional);
       if (devotion) {
-        return getCorrelatedStudyVerse(devotion.scripture, devotion.verse);
+        const theme = getCorrelatedDevotionalTheme(devotion);
+        return getCorrelatedDailyStudy(theme, contentHistory.studies);
       }
     }
     
-    return null;
-  }, [contentHistory.currentDayStudyVerse, dailyContent.devotional]);
+    // Fallback to daily cycle
+    return getTodayDailyStudy(contentHistory.studies);
+  }, [contentHistory.currentDayStudy, contentHistory.studies, contentHistory.currentDayDevotional]);
   
-  const todayStudy = getTodayStudy(contentHistory.studies);
+  const todayStudyPlan = getTodayStudy(contentHistory.studies);
   const recommendedStudies = getRecommendedStudies(
     contentHistory.studies,
     userPreferences.studyCategories
   );
   
-  // Save the correlated study verse to context
+  // Save the correlated study to context
   React.useEffect(() => {
-    if (isLoaded && todayStudyVerse && 
-        (!contentHistory.currentDayStudyVerse || 
-         contentHistory.currentDayStudyVerse.reference !== todayStudyVerse.reference)) {
-      setCurrentDayStudyVerse(todayStudyVerse);
+    if (isLoaded && todayStudy && contentHistory.currentDayStudy !== todayStudy.id) {
+      setCurrentDayStudy(todayStudy.id);
     }
-  }, [todayStudyVerse, isLoaded, contentHistory.currentDayStudyVerse, setCurrentDayStudyVerse]);
+  }, [todayStudy, isLoaded, contentHistory.currentDayStudy, setCurrentDayStudy]);
 
   const translateCategory = (category: string) => {
     const key = `cat.${category.toLowerCase().replace(/[^a-z]+/g, "")}`;

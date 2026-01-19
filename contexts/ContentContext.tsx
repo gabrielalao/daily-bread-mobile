@@ -11,8 +11,8 @@ export type ContentHistory = {
   therapy: string[];
   lastUpdated: string;
   currentDayDevotional?: string;
-  currentDayPrayer?: string;
-  currentDayStudyVerse?: { scripture: string; verse: string; devotionalId: string };
+  currentDayPrayer?: string; // ID of daily prayer
+  currentDayStudy?: string; // ID of daily study
   currentDayTherapy?: string;
 };
 
@@ -51,7 +51,7 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     lastUpdated: new Date().toISOString(),
     currentDayDevotional: undefined,
     currentDayPrayer: undefined,
-    currentDayStudyVerse: undefined,
+    currentDayStudy: undefined,
     currentDayTherapy: undefined,
   });
 
@@ -106,7 +106,7 @@ export const [ContentProvider, useContent] = createContextHook(() => {
             lastUpdated: now.toISOString(),
             currentDayDevotional: undefined,
             currentDayPrayer: undefined,
-            currentDayStudyVerse: undefined,
+            currentDayStudy: undefined,
             currentDayTherapy: undefined,
           };
           await AsyncStorage.setItem(CONTENT_HISTORY_KEY, JSON.stringify(resetHistory));
@@ -227,10 +227,10 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     await AsyncStorage.setItem(CONTENT_HISTORY_KEY, JSON.stringify(updated));
   };
 
-  const setCurrentDayStudyVerse = async (scripture: string, verse: string, devotionalId: string) => {
+  const setCurrentDayStudy = async (studyId: string) => {
     const updated = {
       ...contentHistory,
-      currentDayStudyVerse: { scripture, verse, devotionalId },
+      currentDayStudy: studyId,
     };
     setContentHistory(updated);
     await AsyncStorage.setItem(CONTENT_HISTORY_KEY, JSON.stringify(updated));
@@ -333,7 +333,7 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     addTherapyCategory,
     setCurrentDayDevotional,
     setCurrentDayPrayer,
-    setCurrentDayStudyVerse,
+    setCurrentDayStudy,
     setCurrentDayTherapy,
     setBibleVersion,
     setAppLanguage,

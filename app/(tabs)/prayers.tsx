@@ -1,5 +1,6 @@
 import colors from "@/constants/colors";
-import { getRecommendedPrayers, getTodayPrayer, PrayerGuide, getCorrelatedPrayer } from "@/constants/prayers";
+import { dailyPrayers, DailyPrayer, getCorrelatedDailyPrayer, getTodayDailyPrayer } from "@/constants/daily-prayers";
+import { getRecommendedPrayers, PrayerGuide } from "@/constants/prayers";
 import { useContent } from "@/contexts/ContentContext";
 import { usePersonalization } from "@/hooks/usePersonalization";
 import { devotionals, getCorrelatedDevotionalTheme } from "@/constants/devotionals";
@@ -27,6 +28,7 @@ import {
   Share2,
   Calendar,
   Clock,
+  BookOpen,
 } from "lucide-react-native";
 import React, { useState, useEffect } from "react";
 import { useFocusEffect } from "expo-router";
@@ -66,12 +68,13 @@ const isTablet = width >= 768;
 const isSmallScreen = width < 375;
 
 export default function PrayerScreen() {
-  const { contentHistory, userPreferences, markPrayerViewed, addPrayerCategory, isLoaded, setCurrentDayPrayer, getCorrelatedDailyContent } = useContent();
+  const { contentHistory, userPreferences, markPrayerViewed, addPrayerCategory, isLoaded, setCurrentDayPrayer } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
   const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
   const [selectedGuide, setSelectedGuide] = useState<PrayerGuide | null>(null);
   const [fadeAnim] = useState(new Animated.Value(1));
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [translatedDailyPrayer, setTranslatedDailyPrayer] = useState<{ title?: string; prayer?: string } | null>(null);
   const [translatedListItems, setTranslatedListItems] = useState<Record<string, { title?: string; description?: string }>>({});
   const [translatedDetail, setTranslatedDetail] = useState<{
     title?: string;
@@ -82,28 +85,25 @@ export default function PrayerScreen() {
   const insets = useSafeAreaInsets();
   const scrollRef = React.useRef<ScrollView>(null);
   
-  // Get correlated daily content
-  const dailyContent = React.useMemo(() => getCorrelatedDailyContent(), [contentHistory.currentDayDevotional]);
-  
-  // Use the correlated prayer or fallback to today's prayer
-  const todayPrayer = React.useMemo<PrayerGuide>(() => {
+  // Use the correlated daily prayer or fallback
+  const todayPrayer = React.useMemo<DailyPrayer>(() => {
     if (contentHistory.currentDayPrayer) {
-      const cached = getRecommendedPrayers([], []).find(p => p.id === contentHistory.currentDayPrayer);
+      const cached = dailyPrayers.find(p => p.id === contentHistory.currentDayPrayer);
       if (cached) return cached;
     }
     
     // Get correlated prayer based on devotional theme
-    if (dailyContent.devotional) {
-      const devotion = devotionals.find(d => d.id === dailyContent.devotional);
+    if (contentHistory.currentDayDevotional) {
+      const devotion = devotionals.find(d => d.id === contentHistory.currentDayDevotional);
       if (devotion) {
         const theme = getCorrelatedDevotionalTheme(devotion);
-        return getCorrelatedPrayer(theme, contentHistory.prayers);
+        return getCorrelatedDailyPrayer(theme, contentHistory.prayers);
       }
     }
     
     // Fallback to daily cycle
-    return getTodayPrayer(contentHistory.prayers);
-  }, [contentHistory.currentDayPrayer, contentHistory.prayers, dailyContent.devotional]);
+    return getTodayDailyPrayer(contentHistory.prayers);
+  }, [contentHistory.currentDayPrayer, contentHistory.prayers, contentHistory.currentDayDevotional]);
   
   const recommendedPrayers = getRecommendedPrayers(
     contentHistory.prayers,
@@ -116,6 +116,29 @@ export default function PrayerScreen() {
       setCurrentDayPrayer(todayPrayer.id);
     }
   }, [todayPrayer, isLoaded, contentHistory.currentDayPrayer, setCurrentDayPrayer]);
+
+  // Translate today's daily prayer when enabled
+  React.useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      setTranslatedDailyPrayer(null);
+      const lang = userPreferences.appLanguage;
+      if (!userPreferences.autoTranslateContent || !lang || lang === "en") return;
+      if (!todayPrayer) return;
+
+      const [titleRes, prayerRes] = await Promise.all([
+        translateTextCached({ text: todayPrayer.title, targetLang: lang }),
+        translateTextCached({ text: todayPrayer.prayer, targetLang: lang }),
+      ]);
+
+      if (cancelled) return;
+      setTranslatedDailyPrayer({ title: titleRes.text, prayer: prayerRes.text });
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [todayPrayer?.id, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
 
   // Update time display (only when minute changes to reduce re-renders)
   useEffect(() => {
@@ -418,29 +441,21 @@ export default function PrayerScreen() {
               <Text style={styles.todaySectionTitle}>🙏 {t(userPreferences.appLanguage, "prayers.todaysPrayer")}</Text>
               <Text style={styles.todaySectionSubtitle}>{t(userPreferences.appLanguage, "prayers.dailyGuidance")}</Text>
             </View>
-            <TouchableOpacity
-              style={styles.todayPrayerCard}
-              onPress={() => handleSelectGuide(todayPrayer)}
-              activeOpacity={0.8}
-            >
-              <View
-                style={[
-                  styles.todayIconContainer,
-                  { backgroundColor: `${colors.light.primary}20` },
-                ]}
-              >
-                {React.createElement(iconMap[todayPrayer.icon], {
-                  size: 32,
-                  color: colors.light.primary,
-                })}
+            <View style={styles.todayPrayerCard}>
+              <View style={styles.todayIconContainer}>
+                <Heart size={32} color={colors.light.primary} />
               </View>
               <View style={styles.todayTextContainer}>
-                <Text style={styles.todayTitle}>{translatedListItems[todayPrayer.id]?.title ?? todayPrayer.title}</Text>
-                <Text style={styles.todayDescription} numberOfLines={2}>
-                  {translatedListItems[todayPrayer.id]?.description ?? todayPrayer.description}
+                <Text style={styles.todayTitle}>{translatedDailyPrayer?.title ?? todayPrayer.title}</Text>
+                <Text style={styles.todayPrayerText}>
+                  {translatedDailyPrayer?.prayer ?? todayPrayer.prayer}
                 </Text>
+                <View style={styles.todayScriptureContainer}>
+                  <BookOpen size={14} color={colors.light.accent} />
+                  <Text style={styles.todayScripture}>{todayPrayer.scripture}</Text>
+                </View>
               </View>
-            </TouchableOpacity>
+            </View>
           </View>
 
           {/* All Prayer Guides */}
@@ -555,7 +570,7 @@ const styles = StyleSheet.create({
     borderRadius: isTablet ? 20 : 16,
     padding: isTablet ? 24 : (isSmallScreen ? 16 : 20),
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 16,
     shadowColor: colors.light.primary,
     shadowOffset: { width: 0, height: 4 },
@@ -569,6 +584,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
+    backgroundColor: `${colors.light.primary}20`,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -585,6 +601,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.light.textSecondary,
     lineHeight: 20,
+  },
+  todayPrayerText: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: colors.light.text,
+    fontStyle: "italic" as const,
+    marginBottom: 12,
+  },
+  todayScriptureContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  todayScripture: {
+    fontSize: 13,
+    color: colors.light.accent,
+    fontWeight: "600" as const,
   },
   allPrayersHeader: {
     marginBottom: 16,
