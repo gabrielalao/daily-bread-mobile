@@ -153,7 +153,7 @@ export default function BibleStudyScreen() {
     if (isLoaded && todayStudy && contentHistory.currentDayStudy !== todayStudy.id) {
       setCurrentDayStudy(todayStudy.id);
     }
-  }, [todayStudy, isLoaded, contentHistory.currentDayStudy, setCurrentDayStudy]);
+  }, [todayStudy, isLoaded, contentHistory.currentDayStudy]);
 
   // Translate today's daily study when enabled
   React.useEffect(() => {

@@ -169,7 +169,7 @@ export default function PrayerScreen() {
     if (isLoaded && todayPrayer && contentHistory.currentDayPrayer !== todayPrayer.id) {
       setCurrentDayPrayer(todayPrayer.id);
     }
-  }, [todayPrayer, isLoaded, contentHistory.currentDayPrayer, setCurrentDayPrayer]);
+  }, [todayPrayer, isLoaded, contentHistory.currentDayPrayer]);
 
   // Translate today's daily prayer when enabled
   React.useEffect(() => {

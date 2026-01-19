@@ -125,7 +125,7 @@ export default function HomeScreen() {
         });
       }
     }
-  }, [devotional, isLoaded, contentHistory.currentDayDevotional, contentHistory.devotionals, setCurrentDayDevotional, markDevotionalViewed, analyzeContentInteraction]);
+  }, [devotional, isLoaded, contentHistory.currentDayDevotional, contentHistory.devotionals]);
 
   useFocusEffect(
     React.useCallback(() => {
