@@ -34,7 +34,6 @@ export default function HomeScreen() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewingPastContent, setViewingPastContent] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   
   // Draggable share button position
