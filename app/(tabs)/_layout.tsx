@@ -25,16 +25,16 @@ export default function TabLayout() {
   const appLogo = useMemo(() => (
     <View style={{
       marginLeft: 16,
-      width: 36,
-      height: 36,
-      borderRadius: 8,
+      width: 44,
+      height: 44,
+      borderRadius: 10,
       overflow: 'hidden',
     }}>
       <Image 
         source={require('@/assets/images/icon.png')}
         style={{
-          width: 36,
-          height: 36,
+          width: 44,
+          height: 44,
         }}
         resizeMode="cover"
       />
