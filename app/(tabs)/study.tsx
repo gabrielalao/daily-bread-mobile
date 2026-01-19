@@ -11,7 +11,9 @@ import { getStudyInsight, mergeInsightOverrides } from "@/utils/studyInsights";
 import { t } from "@/utils/i18n";
 import { tParams } from "@/utils/i18n";
 import { LinearGradient } from "expo-linear-gradient";
-import { Book, Calendar, ChevronRight, X, Share2, ChevronDown, ChevronUp, Lightbulb, BookOpen, Heart, Clock } from "lucide-react-native";
+import { Book, Calendar, ChevronRight, X, Share2, ChevronDown, ChevronUp, Lightbulb, BookOpen, Heart, Clock, Play, Pause } from "lucide-react-native";
+import * as Speech from 'expo-speech';
+import TTSManager from '@/utils/openaiTTS';
 import React, { useState, useRef } from "react";
 import { useFocusEffect } from "expo-router";
 import {
@@ -71,6 +73,9 @@ export default function BibleStudyScreen() {
     Record<number, { focus?: string; spiritualInsight?: string; keyThemes?: string[]; practicalApplication?: string }>
   >({});
   const [translatedDailyStudy, setTranslatedDailyStudy] = useState<{ title?: string; verse?: string; insight?: string; reflection?: string } | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [ttsManager] = useState(() => new TTSManager());
   const scrollRef = React.useRef<ScrollView>(null);
   
   // Use the correlated daily study or fallback
@@ -661,6 +666,50 @@ export default function BibleStudyScreen() {
     );
   }
 
+  // Text-to-Speech handlers with OpenAI
+  const handlePlayPause = async () => {
+    try {
+      if (isSpeaking) {
+        await ttsManager.stop();
+        setIsSpeaking(false);
+      } else {
+        // Read today's study
+        const textToRead = `${translatedDailyStudy?.title || todayStudy.title}. 
+        ${todayStudy.scripture}. 
+        ${translatedDailyStudy?.verse || todayStudy.verse}. 
+        Insight. 
+        ${translatedDailyStudy?.insight || todayStudy.insight}. 
+        Reflection. 
+        ${translatedDailyStudy?.reflection || todayStudy.reflection}`;
+        
+        setIsLoading(true);
+        setIsSpeaking(true);
+        
+        const voiceId = userPreferences.ttsVoiceId || 'nova';
+        
+        await ttsManager.speak(textToRead, voiceId, 1.0);
+        
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error('TTS Error:', error);
+      setIsSpeaking(false);
+      setIsLoading(false);
+      Alert.alert(
+        'Audio Error',
+        'Could not generate speech. Please check your internet connection.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  // Cleanup TTS on unmount
+  React.useEffect(() => {
+    return () => {
+      ttsManager.stop();
+    };
+  }, [ttsManager]);
+
   if (selectedPlan) {
     return (
       <View style={styles.container}>
@@ -951,6 +1000,22 @@ export default function BibleStudyScreen() {
         style={StyleSheet.absoluteFillObject}
       />
       
+      {/* Play/Pause Button - Floating Action Button */}
+      <TouchableOpacity
+        style={styles.playButton}
+        onPress={handlePlayPause}
+        activeOpacity={0.8}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : isSpeaking ? (
+          <Pause size={24} color="#FFFFFF" />
+        ) : (
+          <Play size={24} color="#FFFFFF" />
+        )}
+      </TouchableOpacity>
+
       {/* Share Button - Floating Action Button */}
       <TouchableOpacity
         style={styles.shareButton}
@@ -1844,6 +1909,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700" as const,
     color: colors.light.cardBackground,
+  },
+  playButton: {
+    position: "absolute" as const,
+    right: 20,
+    bottom: 170,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.light.accent,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 1000,
   },
   shareButton: {
     position: "absolute" as const,

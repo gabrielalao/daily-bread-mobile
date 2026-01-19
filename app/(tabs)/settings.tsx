@@ -7,8 +7,9 @@ import { bibleVersions, getPopularVersions, getVersionById } from "@/constants/b
 import { appLanguages, getAppLanguageById } from "@/constants/app-languages";
 import { t, tParams } from "@/utils/i18n";
 import { LinearGradient } from "expo-linear-gradient";
-import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Trash2, Edit, Repeat, Share2 } from "lucide-react-native";
+import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Trash2, Edit, Repeat, Share2, Volume2 } from "lucide-react-native";
 import React, { useState } from "react";
+import { OPENAI_VOICES } from "@/utils/openaiTTS";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   Alert,
@@ -28,7 +29,7 @@ import { ScheduleNextSessionModal } from "@/components/ScheduleNextSessionModal"
 
 export default function SettingsScreen() {
   const { settings, isLoaded, enableNotifications, disableNotifications, updateNotificationTime } = useNotifications();
-  const { userPreferences, setBibleVersion, setAppLanguage, setAutoTranslateContent, isLoaded: contentLoaded } = useContent();
+  const { userPreferences, setBibleVersion, setAppLanguage, setAutoTranslateContent, setTtsVoice, isLoaded: contentLoaded } = useContent();
   const tLang = userPreferences.appLanguage;
   const { sessions, isLoaded: sessionsLoaded, cancelSession, updateSession, getNextOccurrence } = useScheduledSessions();
   const [selectedHour, setSelectedHour] = useState(parseInt(settings.time.split(':')[0]));
@@ -38,6 +39,7 @@ export default function SettingsScreen() {
   const [bibleVersionQuery, setBibleVersionQuery] = useState("");
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [languageQuery, setLanguageQuery] = useState("");
+  const [showVoicePicker, setShowVoicePicker] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [editingSession, setEditingSession] = useState<ScheduledSession | null>(null);
   const scrollRef = React.useRef<ScrollView>(null);
@@ -99,12 +101,27 @@ export default function SettingsScreen() {
   const handleLanguageChange = async (languageId: string) => {
     await setAppLanguage(languageId);
     setShowLanguagePicker(false);
-    const lang = getAppLanguageById(languageId);
+    const language = getAppLanguageById(languageId);
     Alert.alert(
-      t(tLang, "settings.languageUpdatedTitle"),
-      tParams(tLang, "settings.languageUpdatedBody", { languageName: lang?.nativeName ?? languageId }),
-      [{ text: t(tLang, "common.ok") }]
+      t(languageId, "settings.languageUpdatedTitle"),
+      tParams(languageId, "settings.languageUpdatedBody", { name: language?.name ?? languageId }),
+      [{ text: t(languageId, "common.ok") }]
     );
+  };
+
+  const handleVoiceChange = async (voiceId: string, voiceName: string) => {
+    await setTtsVoice(voiceId, voiceName);
+    setShowVoicePicker(false);
+    
+    Alert.alert(
+      'Voice Updated',
+      `Your text-to-speech voice has been updated to ${voiceName}. This voice sounds incredibly natural and human-like!`,
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handleVoicePickerOpen = () => {
+    setShowVoicePicker(true);
   };
 
   const handleDeleteSession = (sessionId: string) => {
@@ -594,6 +611,28 @@ export default function SettingsScreen() {
 
             <View style={styles.divider} />
 
+            {/* Voice Setting */}
+            <TouchableOpacity 
+              style={styles.settingRow}
+              onPress={handleVoicePickerOpen}
+              activeOpacity={0.7}
+            >
+              <View style={styles.settingLeft}>
+                <View style={styles.iconContainer}>
+                  <Volume2 size={24} color={colors.light.primary} />
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingTitle}>Voice</Text>
+                  <Text style={styles.settingDescription}>
+                    {userPreferences.ttsVoiceName || "Default System Voice"}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.changeText}>{t(tLang, "common.change")}</Text>
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
             <View style={styles.settingRow}>
               <View style={styles.settingLeft}>
                 <View style={styles.iconContainer}>
@@ -683,6 +722,89 @@ export default function SettingsScreen() {
                             </View>
                             <Text style={styles.versionName}>{lang.name}</Text>
                             <Text style={styles.versionDescription}>{lang.locale}</Text>
+                          </View>
+                        </View>
+                        {selected && (
+                          <Check size={20} color={colors.light.primary} strokeWidth={3} />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </Modal>
+
+          {/* Voice Picker Modal */}
+          <Modal
+            visible={showVoicePicker}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowVoicePicker(false)}
+          >
+            <TouchableOpacity 
+              style={styles.versionModalOverlay} 
+              activeOpacity={1}
+              onPress={() => setShowVoicePicker(false)}
+            >
+              <TouchableOpacity 
+                style={[styles.versionModal, { paddingBottom: Math.max(insets.bottom, 12) }]}
+                activeOpacity={1}
+                onPress={(e) => e.stopPropagation()}
+              >
+                <View style={styles.versionModalHeader}>
+                  <Text style={styles.versionPickerTitle}>Select Voice</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowVoicePicker(false)}
+                    activeOpacity={0.7}
+                    style={styles.versionModalClose}
+                  >
+                    <Text style={styles.versionModalCloseText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+                
+                <View style={styles.voiceInfoBanner}>
+                  <Text style={styles.voiceInfoText}>
+                    ✨ Premium AI voices that sound incredibly human and natural
+                  </Text>
+                </View>
+                
+                <ScrollView 
+                  style={styles.versionModalScroll}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {OPENAI_VOICES.map((voice) => {
+                    const selected = userPreferences.ttsVoiceId === voice.id;
+                    
+                    return (
+                      <TouchableOpacity
+                        key={voice.id}
+                        style={[
+                          styles.versionItem,
+                          selected && styles.versionItemSelected,
+                        ]}
+                        onPress={() => handleVoiceChange(voice.id, voice.name)}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.versionLeft}>
+                          <View>
+                            <View style={styles.versionTopRow}>
+                              <Text style={styles.versionAbbreviation}>{voice.name}</Text>
+                              <View style={styles.versionBadges}>
+                                <View style={[styles.versionBadgeLanguage, { 
+                                  backgroundColor: voice.gender === 'male' ? colors.light.primary : 
+                                                  voice.gender === 'female' ? '#E91E63' : 
+                                                  colors.light.accent 
+                                }]}>
+                                  <Text style={styles.versionBadgeLanguageText}>
+                                    {voice.gender === 'male' ? '♂ Male' : 
+                                     voice.gender === 'female' ? '♀ Female' : 
+                                     '⚡ Neutral'}
+                                  </Text>
+                                </View>
+                              </View>
+                            </View>
+                            <Text style={styles.versionName}>{voice.description}</Text>
                           </View>
                         </View>
                         {selected && (
@@ -1362,5 +1484,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.light.textSecondary,
     lineHeight: 20,
+  },
+  voiceInfoBanner: {
+    backgroundColor: `${colors.light.accent}15`,
+    padding: 12,
+    borderRadius: 8,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.light.accent,
+  },
+  voiceInfoText: {
+    fontSize: 14,
+    color: colors.light.text,
+    fontWeight: "600" as const,
+    textAlign: "center",
   },
 });
