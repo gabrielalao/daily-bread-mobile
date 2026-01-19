@@ -12,13 +12,21 @@ Implemented a thematically correlated daily content system where the Devotion se
 3. **Prayer Guide** is matched based on the devotion's themes
 4. **Study Verse** displays the scripture verse from the devotion
 
+## ✅ Implementation Complete
+
+### Phase 1: Backend Infrastructure ✅
+All backend functions and data structures have been implemented.
+
+### Phase 2: UI Integration ✅
+All three screens have been updated to display correlated content.
+
 ## Changes Made
 
-### 1. **Devotionals** (`constants/devotionals.ts`)
+### 1. **Devotionals** (`constants/devotionals.ts`) ✅
 
 #### Added Theme Extraction Function
 ```typescript
-export function getDevotionalThemeKeywords(devotional: Devotional): string[] {
+export function getCorrelatedDevotionalTheme(devotional: Devotional): string[] {
   const keywords: string[] = [];
   const text = `${devotional.title} ${devotional.reflection}`.toLowerCase();
   
@@ -47,18 +55,16 @@ export function getDevotionalThemeKeywords(devotional: Devotional): string[] {
 }
 ```
 
-**How it works:**
-- Analyzes the devotion's title and reflection text
-- Searches for keywords related to 12 spiritual themes
-- Returns matched themes (defaults to 'peace' if no match)
-
-### 2. **Prayers** (`constants/prayers.ts`)
+### 2. **Prayers** (`constants/prayers.ts`) ✅
 
 #### Added Correlated Prayer Function
 ```typescript
-export function getCorrelatedPrayer(devotionalThemes: string[]): PrayerGuide {
+export function getCorrelatedPrayer(
+  devotionalTheme: string[], 
+  viewedIds: string[] = []
+): PrayerGuide {
   // Try to match prayer with devotional theme
-  for (const theme of devotionalThemes) {
+  for (const theme of devotionalTheme) {
     const matchedPrayer = prayerGuides.find(p => 
       p.id.includes(theme) || 
       p.title.toLowerCase().includes(theme) ||
@@ -67,21 +73,32 @@ export function getCorrelatedPrayer(devotionalThemes: string[]): PrayerGuide {
     if (matchedPrayer) return matchedPrayer;
   }
   
-  // Default fallback
-  return prayerGuides[0]; // Peace & Anxiety
+  // If no match, cycle through all prayers
+  return getTodayPrayer(viewedIds);
 }
 ```
 
-**How it works:**
-- Takes theme keywords from the devotion
-- Searches prayer guides for matching themes in:
-  - Prayer ID
-  - Prayer title
-  - Prayer description
-- Returns the first matching prayer
-- Falls back to "Peace & Anxiety" if no match
+### 3. **Bible Studies** (`constants/bible-studies.ts`) ✅
 
-### 3. **Content Context** (`contexts/ContentContext.tsx`)
+#### Added Study Verse Type and Function
+```typescript
+export type DailyStudyVerse = {
+  reference: string;
+  text: string;
+};
+
+export function getCorrelatedStudyVerse(
+  devotionalScripture: string,
+  devotionalVerse: string
+): DailyStudyVerse {
+  return {
+    reference: devotionalScripture,
+    text: devotionalVerse,
+  };
+}
+```
+
+### 4. **Content Context** (`contexts/ContentContext.tsx`) ✅
 
 #### Updated ContentHistory Type
 ```typescript
@@ -93,17 +110,10 @@ export type ContentHistory = {
   lastUpdated: string;
   currentDayDevotional?: string;
   currentDayPrayer?: string;
-  currentDayStudyVerse?: { scripture: string; verse: string; devotionalId: string };
+  currentDayStudyVerse?: { reference: string; text: string };
   currentDayTherapy?: string;
 };
 ```
-
-**New Fields:**
-- `currentDayPrayer` - Stores today's correlated prayer ID
-- `currentDayStudyVerse` - Stores today's study verse with:
-  - `scripture` - The scripture reference (e.g., "Philippians 4:6-7")
-  - `verse` - The full verse text
-  - `devotionalId` - Links back to the source devotion
 
 #### Added New Functions
 ```typescript
@@ -116,77 +126,119 @@ const setCurrentDayPrayer = async (prayerId: string) => {
   await AsyncStorage.setItem(CONTENT_HISTORY_KEY, JSON.stringify(updated));
 };
 
-const setCurrentDayStudyVerse = async (scripture: string, verse: string, devotionalId: string) => {
+const setCurrentDayStudyVerse = async (verse: DailyStudyVerse) => {
   const updated = {
     ...contentHistory,
-    currentDayStudyVerse: { scripture, verse, devotionalId },
+    currentDayStudyVerse: verse,
   };
   setContentHistory(updated);
   await AsyncStorage.setItem(CONTENT_HISTORY_KEY, JSON.stringify(updated));
 };
+
+const getCorrelatedDailyContent = () => {
+  return {
+    devotional: contentHistory.currentDayDevotional,
+    prayer: contentHistory.currentDayPrayer,
+    studyVerse: contentHistory.currentDayStudyVerse,
+  };
+};
 ```
 
-## Implementation Plan (Next Steps)
+#### Updated loadData Function
+- Resets `currentDayPrayer` and `currentDayStudyVerse` when content cycles
+- Ensures all three pieces update together every 24 hours
 
-### 4. **Update Home Screen** (`app/(tabs)/home.tsx`)
-- When devotion is loaded, extract themes using `getDevotionalThemeKeywords()`
-- Save correlated prayer using `setCurrentDayPrayer()`
-- Save study verse using `setCurrentDayStudyVerse()`
+### 5. **Home Screen** (`app/(tabs)/home.tsx`) ✅
 
+The home screen already had the devotion logic in place. It:
+- Selects and displays the daily devotion
+- Saves it to `currentDayDevotional` via `setCurrentDayDevotional()`
+- Serves as the anchor for the correlated prayer and study
+
+### 6. **Prayer Screen** (`app/(tabs)/prayers.tsx`) ✅
+
+Updated to use correlated prayer:
 ```typescript
-useEffect(() => {
-  if (devotional && devotional.id !== contentHistory.currentDayDevotional) {
-    // Set the devotion as today's
-    setCurrentDayDevotional(devotional.id);
-    
-    // Extract themes and find correlated prayer
-    const themes = getDevotionalThemeKeywords(devotional);
-    const correlatedPrayer = getCorrelatedPrayer(themes);
-    setCurrentDayPrayer(correlatedPrayer.id);
-    
-    // Set the devotion's verse as today's study
-    setCurrentDayStudyVerse(devotional.scripture, devotional.verse, devotional.id);
-  }
-}, [devotional]);
-```
+// Get correlated daily content
+const dailyContent = React.useMemo(() => 
+  getCorrelatedDailyContent(), 
+  [contentHistory.currentDayDevotional]
+);
 
-### 5. **Update Prayer Screen** (`app/(tabs)/prayers.tsx`)
-- Instead of using `getTodayPrayer()`, use `contentHistory.currentDayPrayer`
-- Load the prayer that was correlated with today's devotion
-
-```typescript
-const todayPrayer = useMemo(() => {
+// Use the correlated prayer or fallback to today's prayer
+const todayPrayer = React.useMemo<PrayerGuide>(() => {
   if (contentHistory.currentDayPrayer) {
-    return prayerGuides.find(p => p.id === contentHistory.currentDayPrayer) || prayerGuides[0];
+    const cached = getRecommendedPrayers([], []).find(
+      p => p.id === contentHistory.currentDayPrayer
+    );
+    if (cached) return cached;
   }
-  // Fallback if not set yet
+  
+  // Get correlated prayer based on devotional theme
+  if (dailyContent.devotional) {
+    const devotion = devotionals.find(d => d.id === dailyContent.devotional);
+    if (devotion) {
+      const theme = getCorrelatedDevotionalTheme(devotion);
+      return getCorrelatedPrayer(theme, contentHistory.prayers);
+    }
+  }
+  
+  // Fallback to daily cycle
   return getTodayPrayer(contentHistory.prayers);
-}, [contentHistory.currentDayPrayer, contentHistory.prayers]);
+}, [contentHistory.currentDayPrayer, contentHistory.prayers, dailyContent.devotional]);
+
+// Save the correlated prayer to context
+React.useEffect(() => {
+  if (isLoaded && todayPrayer && contentHistory.currentDayPrayer !== todayPrayer.id) {
+    setCurrentDayPrayer(todayPrayer.id);
+  }
+}, [todayPrayer, isLoaded, contentHistory.currentDayPrayer, setCurrentDayPrayer]);
 ```
 
-### 6. **Update Study Screen** (`app/(tabs)/study.tsx`)
-- Replace "Today's Study Plan" with "Today's Study Verse"
-- Display the verse from the devotion instead of a study plan
-- Show the scripture reference and verse text
-- Optionally link back to the devotion
+### 7. **Study Screen** (`app/(tabs)/study.tsx`) ✅
 
+Updated to display correlated study verse:
 ```typescript
-const todayStudyVerse = contentHistory.currentDayStudyVerse;
+// Get correlated daily content
+const dailyContent = React.useMemo(() => 
+  getCorrelatedDailyContent(), 
+  [contentHistory.currentDayDevotional]
+);
 
-// In the UI:
-<View style={styles.todaySection}>
-  <View style={styles.todaySectionHeader}>
-    <Text style={styles.todaySectionTitle}>📖 Today's Study Verse</Text>
-    <Text style={styles.todaySectionSubtitle}>From today's devotional</Text>
-  </View>
+// Use the correlated study verse or create one from today's devotional
+const todayStudyVerse = React.useMemo<DailyStudyVerse | null>(() => {
+  if (contentHistory.currentDayStudyVerse) {
+    return contentHistory.currentDayStudyVerse;
+  }
   
-  {todayStudyVerse && (
-    <View style={styles.todayVerseCard}>
-      <Text style={styles.verseReference}>{todayStudyVerse.scripture}</Text>
-      <Text style={styles.verseText}>"{todayStudyVerse.verse}"</Text>
-    </View>
-  )}
-</View>
+  // Get correlated study verse based on devotional
+  if (dailyContent.devotional) {
+    const devotion = devotionals.find(d => d.id === dailyContent.devotional);
+    if (devotion) {
+      return getCorrelatedStudyVerse(devotion.scripture, devotion.verse);
+    }
+  }
+  
+  return null;
+}, [contentHistory.currentDayStudyVerse, dailyContent.devotional]);
+```
+
+**UI Changes:**
+- Replaced "Today's Study Plan" card with "Today's Study Verse" card
+- Shows the devotional's scripture reference and verse text
+- Added tag: "Correlated with today's devotion"
+- Tapping the verse opens the full passage modal
+- Added translation support for the verse
+
+### 8. **Internationalization** (`utils/i18n.ts`) ✅
+
+Added translation for the correlation indicator:
+```typescript
+"study.correlatedWithDevotion": "Correlated with today's devotion",
+"study.correlatedWithDevotion": "Corrélé à la dévotion d'aujourd'hui",  // French
+"study.correlatedWithDevotion": "Korreleret med dagens andagt",  // Danish
+"study.correlatedWithDevotion": "Correlacionado con la devoción de hoy",  // Spanish
+"study.correlatedWithDevotion": "Korreliert mit der heutigen Andacht",  // German
 ```
 
 ## Benefits
@@ -200,60 +252,39 @@ const todayStudyVerse = contentHistory.currentDayStudyVerse;
 - Users encounter the same theme in different formats:
   - **Devotion**: Read and reflect on the teaching
   - **Prayer**: Pray about the theme
-  - **Study**: Meditate on the biblical foundation
+  - **Study**: Meditate on the biblical foundation (same verse as devotion)
 - Multi-modal learning strengthens retention
 
 ### 3. **Simplified User Experience**
-- No need to browse multiple options
-- Clear daily direction
+- Clear daily direction with correlated content
+- Study verse directly from the devotion
 - Focused spiritual practice
 
 ### 4. **Content Synergy**
 - Leverages existing devotional structure
-- Each devotion already has:
-  - A theme (from title/reflection)
-  - A scripture reference
-  - A verse text
+- Each devotion already has a theme, scripture reference, and verse text
 - Prayers cover all major themes
 - Perfect alignment without creating new content
 
 ## Example Daily Flow
 
-### Example 1: Peace Theme
-**Devotion**: "Finding Peace in the Storm" (Philippians 4:6-7)
-- Theme: anxiety, peace, worry
-- Reflection about bringing concerns to God
+### Example: Peace Theme
+**Morning - Devotion (Home Page)**
+- Title: "Finding Peace in the Storm"
+- Scripture: Philippians 4:6-7
+- Verse: "Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God..."
+- Theme extracted: peace, anxiety
 
-**Correlated Prayer**: "Peace & Anxiety"
-- Prayers for peace and calm
-- Scriptures: 1 Peter 5:7, John 14:27
+**Midday - Prayer (Prayer Page)**
+- Title: "Peace & Anxiety"
+- Correlated prayers for peace and calm
+- Supporting scriptures: 1 Peter 5:7, John 14:27
 
-**Study Verse**: Philippians 4:6-7
-- "Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God..."
-
-### Example 2: Strength Theme
-**Devotion**: "Strength for Today" (Isaiah 40:31)
-- Theme: strength, courage, hope
-- Reflection about renewal and endurance
-
-**Correlated Prayer**: "Strength & Courage"
-- Prayers for God's power
-- Scriptures: Philippians 4:13, Joshua 1:9
-
-**Study Verse**: Isaiah 40:31
-- "But those who hope in the Lord will renew their strength. They will soar on wings like eagles..."
-
-### Example 3: Financial Theme
-**Devotion**: "The Heart of Stewardship" (Luke 16:10)
-- Theme: money, finances, stewardship
-- Reflection about faithfulness with resources
-
-**Correlated Prayer**: "Financial Wisdom"
-- Prayers for wise money management
-- Scriptures: Proverbs 3:9, Matthew 6:33
-
-**Study Verse**: Luke 16:10
-- "Whoever can be trusted with very little can also be trusted with much..."
+**Evening - Study (Study Page)**
+- Today's Study Verse: Philippians 4:6-7 (same as devotion)
+- Tag: "Correlated with today's devotion"
+- Full passage available to read
+- User can meditate on the same verse again
 
 ## 24-Hour Update Cycle
 
@@ -265,17 +296,17 @@ The content refreshes based on the existing system:
   - `currentDayStudyVerse` → cleared
 - Next time user opens the app:
   - New devotion is selected
-  - Prayer is correlated
-  - Study verse is extracted
+  - Prayer is correlated based on devotion theme
+  - Study verse is extracted from devotion
   - All three are saved together
 
 ## Technical Notes
 
-### Theme Matching Priority
+### Theme Matching Priority (Prayer)
 1. **Direct ID match** (e.g., prayer ID contains "peace")
 2. **Title match** (prayer title contains theme keyword)
 3. **Description match** (prayer description contains theme keyword)
-4. **Fallback** (defaults to "Peace & Anxiety" prayer)
+4. **Fallback** (cycles through all prayers using `getTodayPrayer()`)
 
 ### Storage
 All correlated content is stored in AsyncStorage:
@@ -284,9 +315,8 @@ All correlated content is stored in AsyncStorage:
   "currentDayDevotional": "1",
   "currentDayPrayer": "anxiety",
   "currentDayStudyVerse": {
-    "scripture": "Philippians 4:6-7",
-    "verse": "Do not be anxious about anything...",
-    "devotionalId": "1"
+    "reference": "Philippians 4:6-7",
+    "text": "Do not be anxious about anything..."
   }
 }
 ```
@@ -297,20 +327,15 @@ All correlated content is stored in AsyncStorage:
 - No performance impact on daily usage
 - Only recalculates when devotion changes
 
-## Future Enhancements
-
-1. **Theme Indicators**: Show visual connection between devotion/prayer/study
-2. **Cross-Linking**: Add "See related prayer" button in devotion
-3. **Theme Journey**: Track which themes user engages with most
-4. **Smart Suggestions**: Suggest additional prayers/studies on same theme
-5. **Theme Collections**: Group past devotions by theme for review
-
 ## Summary
+
+✅ **Phase 1 Complete**: All backend functions and data structures implemented
+✅ **Phase 2 Complete**: All three screens updated to display correlated content
 
 This correlated content system creates a unified daily spiritual experience where:
 - ✅ **Devotion sets the theme** for the day
 - ✅ **Prayer reinforces the theme** through guided prayer
-- ✅ **Study grounds the theme** in Scripture
+- ✅ **Study displays the devotion's verse** for deeper meditation
 - ✅ **All three update together** every 24 hours
 - ✅ **Content flows naturally** from one to the next
 - ✅ **Users experience deeper** thematic engagement

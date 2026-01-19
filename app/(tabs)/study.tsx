@@ -1,8 +1,9 @@
 import colors from "@/constants/colors";
-import { getRecommendedStudies, getTodayStudy, BibleStudyPlan } from "@/constants/bible-studies";
+import { getRecommendedStudies, getTodayStudy, BibleStudyPlan, getCorrelatedStudyVerse, type DailyStudyVerse } from "@/constants/bible-studies";
 import { getPassageProviderCode, getVersionById } from "@/constants/bible-versions";
 import { translateTextCached } from "@/utils/translate";
 import { useContent } from "@/contexts/ContentContext";
+import { devotionals } from "@/constants/devotionals";
 import { usePersonalization } from "@/hooks/usePersonalization";
 import { useScreenshotShare } from "@/hooks/useScreenshotShare";
 import { getStudyInsight, mergeInsightOverrides } from "@/utils/studyInsights";
@@ -45,7 +46,7 @@ type FormattedVerse = {
 };
 
 export default function BibleStudyScreen() {
-  const { contentHistory, userPreferences, markStudyViewed, addStudyCategory, isLoaded, getStudyPlanCycle, getStudyPlanCompletedDays, markStudyDayCompleted, advanceStudyPlanCycle } = useContent();
+  const { contentHistory, userPreferences, markStudyViewed, addStudyCategory, isLoaded, getStudyPlanCycle, getStudyPlanCompletedDays, markStudyDayCompleted, advanceStudyPlanCycle, setCurrentDayStudyVerse, getCorrelatedDailyContent } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
   const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
   const modalViewRef = useRef<any>(null); // Separate ref for modal content
@@ -68,13 +69,43 @@ export default function BibleStudyScreen() {
   const [translatedReadings, setTranslatedReadings] = useState<
     Record<number, { focus?: string; spiritualInsight?: string; keyThemes?: string[]; practicalApplication?: string }>
   >({});
+  const [translatedStudyVerse, setTranslatedStudyVerse] = useState<{ reference?: string; text?: string } | null>(null);
   const scrollRef = React.useRef<ScrollView>(null);
+  
+  // Get correlated daily content
+  const dailyContent = React.useMemo(() => getCorrelatedDailyContent(), [contentHistory.currentDayDevotional]);
+  
+  // Use the correlated study verse or create one from today's devotional
+  const todayStudyVerse = React.useMemo<DailyStudyVerse | null>(() => {
+    if (contentHistory.currentDayStudyVerse) {
+      return contentHistory.currentDayStudyVerse;
+    }
+    
+    // Get correlated study verse based on devotional
+    if (dailyContent.devotional) {
+      const devotion = devotionals.find(d => d.id === dailyContent.devotional);
+      if (devotion) {
+        return getCorrelatedStudyVerse(devotion.scripture, devotion.verse);
+      }
+    }
+    
+    return null;
+  }, [contentHistory.currentDayStudyVerse, dailyContent.devotional]);
   
   const todayStudy = getTodayStudy(contentHistory.studies);
   const recommendedStudies = getRecommendedStudies(
     contentHistory.studies,
     userPreferences.studyCategories
   );
+  
+  // Save the correlated study verse to context
+  React.useEffect(() => {
+    if (isLoaded && todayStudyVerse && 
+        (!contentHistory.currentDayStudyVerse || 
+         contentHistory.currentDayStudyVerse.reference !== todayStudyVerse.reference)) {
+      setCurrentDayStudyVerse(todayStudyVerse);
+    }
+  }, [todayStudyVerse, isLoaded, contentHistory.currentDayStudyVerse, setCurrentDayStudyVerse]);
 
   const translateCategory = (category: string) => {
     const key = `cat.${category.toLowerCase().replace(/[^a-z]+/g, "")}`;
@@ -150,6 +181,29 @@ export default function BibleStudyScreen() {
       cancelled = true;
     };
   }, [recommendedStudies.map(p => p.id).join("|"), userPreferences.appLanguage, userPreferences.autoTranslateContent]);
+
+  // Translate daily study verse when enabled.
+  React.useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      setTranslatedStudyVerse(null);
+      const lang = userPreferences.appLanguage;
+      if (!userPreferences.autoTranslateContent || !lang || lang === "en") return;
+      if (!todayStudyVerse) return;
+
+      const [refRes, textRes] = await Promise.all([
+        translateTextCached({ text: todayStudyVerse.reference, targetLang: lang }),
+        translateTextCached({ text: todayStudyVerse.text, targetLang: lang }),
+      ]);
+
+      if (cancelled) return;
+      setTranslatedStudyVerse({ reference: refRes.text, text: textRes.text });
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [todayStudyVerse?.reference, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
 
   // Translate selected plan reading list content progressively (focus + insights) when enabled.
   React.useEffect(() => {
@@ -929,37 +983,39 @@ export default function BibleStudyScreen() {
             </Text>
           </View>
 
-          {/* Today's Study Plan */}
-          <View style={styles.todaySection}>
-            <View style={styles.todaySectionHeader}>
-              <Text style={styles.todaySectionTitle}>📚 {t(userPreferences.appLanguage, "study.todaysStudy")}</Text>
-              <Text style={styles.todaySectionSubtitle}>{t(userPreferences.appLanguage, "study.dailyGuidance")}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.todayStudyCard}
-              onPress={() => handleSelectPlan(todayStudy)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.todayIconContainer}>
-                <Book size={32} color={colors.light.primary} />
+          {/* Today's Study Verse */}
+          {todayStudyVerse && (
+            <View style={styles.todaySection}>
+              <View style={styles.todaySectionHeader}>
+                <Text style={styles.todaySectionTitle}>📚 {t(userPreferences.appLanguage, "study.todaysStudy")}</Text>
+                <Text style={styles.todaySectionSubtitle}>{t(userPreferences.appLanguage, "study.dailyGuidance")}</Text>
               </View>
-              <View style={styles.todayTextContainer}>
-                <View style={styles.todayTitleRow}>
-                  <Text style={styles.todayTitle}>{translatedPlanCards[todayStudy.id]?.title ?? todayStudy.title}</Text>
-                  <View style={styles.todayBadge}>
-                    <Text style={styles.todayBadgeText}>{translateCategory(todayStudy.category)}</Text>
+              <TouchableOpacity
+                style={styles.todayVerseCard}
+                onPress={() => {
+                  setActiveReadingDay(0);
+                  setIsModalInsightExpanded(true);
+                  fetchVerseMutation.mutate(todayStudyVerse.reference);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={styles.todayIconContainer}>
+                  <BookOpen size={32} color={colors.light.primary} />
+                </View>
+                <View style={styles.todayTextContainer}>
+                  <Text style={styles.todayVerseReference}>
+                    {translatedStudyVerse?.reference ?? todayStudyVerse.reference}
+                  </Text>
+                  <Text style={styles.todayVerseText} numberOfLines={2}>
+                    &quot;{translatedStudyVerse?.text ?? todayStudyVerse.text}&quot;
+                  </Text>
+                  <View style={styles.todayVerseFooter}>
+                    <Text style={styles.todayVerseTag}>{t(userPreferences.appLanguage, "study.correlatedWithDevotion")}</Text>
                   </View>
                 </View>
-                <Text style={styles.todayDescription} numberOfLines={2}>
-                  {translatedPlanCards[todayStudy.id]?.description ?? todayStudy.description}
-                </Text>
-                <View style={styles.todayFooter}>
-                  <Calendar size={14} color={colors.light.textSecondary} />
-                  <Text style={styles.todayDuration}>{formatDuration(todayStudy.duration)}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          </View>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* All Study Plans */}
           <View style={styles.allStudiesHeader}>
@@ -1081,6 +1137,48 @@ const styles = StyleSheet.create({
   todaySectionSubtitle: {
     fontSize: 14,
     color: colors.light.textSecondary,
+  },
+  todayVerseCard: {
+    backgroundColor: colors.light.cardBackground,
+    borderRadius: isTablet ? 20 : 16,
+    padding: isTablet ? 24 : (isSmallScreen ? 16 : 20),
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 16,
+    shadowColor: colors.light.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 2,
+    borderColor: colors.light.primary,
+  },
+  todayVerseReference: {
+    fontSize: isSmallScreen ? 16 : 18,
+    fontWeight: "700" as const,
+    color: colors.light.primary,
+    marginBottom: 8,
+  },
+  todayVerseText: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: colors.light.text,
+    fontStyle: "italic" as const,
+    marginBottom: 12,
+  },
+  todayVerseFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  todayVerseTag: {
+    fontSize: 12,
+    color: colors.light.accent,
+    fontWeight: "600" as const,
+    backgroundColor: `${colors.light.accent}15`,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   todayStudyCard: {
     backgroundColor: colors.light.cardBackground,

@@ -1,7 +1,8 @@
 import colors from "@/constants/colors";
-import { getRecommendedPrayers, getTodayPrayer, PrayerGuide } from "@/constants/prayers";
+import { getRecommendedPrayers, getTodayPrayer, PrayerGuide, getCorrelatedPrayer } from "@/constants/prayers";
 import { useContent } from "@/contexts/ContentContext";
 import { usePersonalization } from "@/hooks/usePersonalization";
+import { devotionals, getCorrelatedDevotionalTheme } from "@/constants/devotionals";
 import { useScreenshotShare } from "@/hooks/useScreenshotShare";
 import { translateTextCached } from "@/utils/translate";
 import { t } from "@/utils/i18n";
@@ -65,7 +66,7 @@ const isTablet = width >= 768;
 const isSmallScreen = width < 375;
 
 export default function PrayerScreen() {
-  const { contentHistory, userPreferences, markPrayerViewed, addPrayerCategory, isLoaded } = useContent();
+  const { contentHistory, userPreferences, markPrayerViewed, addPrayerCategory, isLoaded, setCurrentDayPrayer, getCorrelatedDailyContent } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
   const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
   const [selectedGuide, setSelectedGuide] = useState<PrayerGuide | null>(null);
@@ -81,11 +82,40 @@ export default function PrayerScreen() {
   const insets = useSafeAreaInsets();
   const scrollRef = React.useRef<ScrollView>(null);
   
-  const todayPrayer = getTodayPrayer(contentHistory.prayers);
+  // Get correlated daily content
+  const dailyContent = React.useMemo(() => getCorrelatedDailyContent(), [contentHistory.currentDayDevotional]);
+  
+  // Use the correlated prayer or fallback to today's prayer
+  const todayPrayer = React.useMemo<PrayerGuide>(() => {
+    if (contentHistory.currentDayPrayer) {
+      const cached = getRecommendedPrayers([], []).find(p => p.id === contentHistory.currentDayPrayer);
+      if (cached) return cached;
+    }
+    
+    // Get correlated prayer based on devotional theme
+    if (dailyContent.devotional) {
+      const devotion = devotionals.find(d => d.id === dailyContent.devotional);
+      if (devotion) {
+        const theme = getCorrelatedDevotionalTheme(devotion);
+        return getCorrelatedPrayer(theme, contentHistory.prayers);
+      }
+    }
+    
+    // Fallback to daily cycle
+    return getTodayPrayer(contentHistory.prayers);
+  }, [contentHistory.currentDayPrayer, contentHistory.prayers, dailyContent.devotional]);
+  
   const recommendedPrayers = getRecommendedPrayers(
     contentHistory.prayers,
     userPreferences.prayerCategories
   );
+  
+  // Save the correlated prayer to context
+  React.useEffect(() => {
+    if (isLoaded && todayPrayer && contentHistory.currentDayPrayer !== todayPrayer.id) {
+      setCurrentDayPrayer(todayPrayer.id);
+    }
+  }, [todayPrayer, isLoaded, contentHistory.currentDayPrayer, setCurrentDayPrayer]);
 
   // Update time display (only when minute changes to reduce re-renders)
   useEffect(() => {
