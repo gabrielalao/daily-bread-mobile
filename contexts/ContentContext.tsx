@@ -113,6 +113,7 @@ export const [ContentProvider, useContent] = createContextHook(() => {
           setContentHistory(resetHistory);
         } else {
           console.log(`Content still fresh: ${hoursSinceLastUpdate.toFixed(1)} hours since last update`);
+          // Migrate old data structure to new structure
           const migratedData: ContentHistory = {
             devotionals: parsed.devotionals || [],
             prayers: parsed.prayers || [],
@@ -120,6 +121,8 @@ export const [ContentProvider, useContent] = createContextHook(() => {
             therapy: parsed.therapy || [],
             lastUpdated: parsed.lastUpdated,
             currentDayDevotional: parsed.currentDayDevotional,
+            currentDayPrayer: parsed.currentDayPrayer,
+            currentDayStudy: parsed.currentDayStudy,
             currentDayTherapy: parsed.currentDayTherapy,
           };
           setContentHistory(migratedData);
