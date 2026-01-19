@@ -43,6 +43,10 @@ const en: Dict = {
   "settings.scheduledSessions": "Scheduled Sessions",
 
   "prayers.subtitle": "Connect with God through guided prayers for life's moments",
+  "prayers.greeting": "Prayer Guides",
+  "prayers.todaysPrayer": "Today's Prayer",
+  "prayers.dailyGuidance": "Your daily prayer guidance",
+  "prayers.allPrayers": "All Prayer Guides",
 
   "study.readingPlan": "Reading Plan",
   "study.studyTips": "Study Tips",
@@ -136,6 +140,10 @@ const fr: Dict = {
   "settings.scheduledSessions": "Séances planifiées",
 
   "prayers.subtitle": "Connectez-vous à Dieu grâce à des prières guidées pour les moments de la vie",
+  "prayers.greeting": "Guides de Prière",
+  "prayers.todaysPrayer": "Prière du Jour",
+  "prayers.dailyGuidance": "Votre guidance quotidienne de prière",
+  "prayers.allPrayers": "Tous les Guides de Prière",
 
   "study.readingPlan": "Plan de lecture",
   "study.studyTips": "Conseils d’étude",
@@ -229,6 +237,10 @@ const da: Dict = {
   "settings.scheduledSessions": "Planlagte sessioner",
 
   "prayers.subtitle": "Kom nærmere Gud gennem guidede bønner til livets øjeblikke",
+  "prayers.greeting": "Bønneguider",
+  "prayers.todaysPrayer": "Dagens Bøn",
+  "prayers.dailyGuidance": "Din daglige bønnevejledning",
+  "prayers.allPrayers": "Alle Bønneguider",
 
   "study.readingPlan": "Læseplan",
   "study.studyTips": "Studietips",
@@ -322,6 +334,10 @@ const es: Dict = {
   "settings.scheduledSessions": "Sesiones programadas",
 
   "prayers.subtitle": "Conéctate con Dios a través de oraciones guiadas para los momentos de la vida",
+  "prayers.greeting": "Guías de Oración",
+  "prayers.todaysPrayer": "Oración del Día",
+  "prayers.dailyGuidance": "Tu guía diaria de oración",
+  "prayers.allPrayers": "Todas las Guías de Oración",
 
   "study.readingPlan": "Plan de lectura",
   "study.studyTips": "Consejos de estudio",
@@ -415,6 +431,10 @@ const de: Dict = {
   "settings.scheduledSessions": "Geplante Sitzungen",
 
   "prayers.subtitle": "Verbinde dich mit Gott durch geführte Gebete für die Momente des Lebens",
+  "prayers.greeting": "Gebetsanleitungen",
+  "prayers.todaysPrayer": "Heutiges Gebet",
+  "prayers.dailyGuidance": "Deine tägliche Gebetsanleitung",
+  "prayers.allPrayers": "Alle Gebetsanleitungen",
 
   "study.readingPlan": "Leseplan",
   "study.studyTips": "Studientipps",

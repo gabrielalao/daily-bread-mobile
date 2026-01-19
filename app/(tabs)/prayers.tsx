@@ -1,5 +1,5 @@
 import colors from "@/constants/colors";
-import { getRecommendedPrayers, PrayerGuide } from "@/constants/prayers";
+import { getRecommendedPrayers, getTodayPrayer, PrayerGuide } from "@/constants/prayers";
 import { useContent } from "@/contexts/ContentContext";
 import { usePersonalization } from "@/hooks/usePersonalization";
 import { useScreenshotShare } from "@/hooks/useScreenshotShare";
@@ -78,6 +78,7 @@ export default function PrayerScreen() {
   const insets = useSafeAreaInsets();
   const scrollRef = React.useRef<ScrollView>(null);
   
+  const todayPrayer = getTodayPrayer(contentHistory.prayers);
   const recommendedPrayers = getRecommendedPrayers(
     contentHistory.prayers,
     userPreferences.prayerCategories
@@ -328,9 +329,46 @@ export default function PrayerScreen() {
       >
         <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
           <View style={styles.header}>
+            <Text style={styles.greeting}>{t(userPreferences.appLanguage, "prayers.greeting")}</Text>
             <Text style={styles.subtitle}>
               {t(userPreferences.appLanguage, "prayers.subtitle")}
             </Text>
+          </View>
+
+          {/* Today's Prayer Card */}
+          <View style={styles.todaySection}>
+            <View style={styles.todaySectionHeader}>
+              <Text style={styles.todaySectionTitle}>🙏 {t(userPreferences.appLanguage, "prayers.todaysPrayer")}</Text>
+              <Text style={styles.todaySectionSubtitle}>{t(userPreferences.appLanguage, "prayers.dailyGuidance")}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.todayPrayerCard}
+              onPress={() => handleSelectGuide(todayPrayer)}
+              activeOpacity={0.8}
+            >
+              <View
+                style={[
+                  styles.todayIconContainer,
+                  { backgroundColor: `${colors.light.primary}20` },
+                ]}
+              >
+                {React.createElement(iconMap[todayPrayer.icon], {
+                  size: 32,
+                  color: colors.light.primary,
+                })}
+              </View>
+              <View style={styles.todayTextContainer}>
+                <Text style={styles.todayTitle}>{translatedListItems[todayPrayer.id]?.title ?? todayPrayer.title}</Text>
+                <Text style={styles.todayDescription} numberOfLines={2}>
+                  {translatedListItems[todayPrayer.id]?.description ?? todayPrayer.description}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* All Prayer Guides */}
+          <View style={styles.allPrayersHeader}>
+            <Text style={styles.allPrayersTitle}>{t(userPreferences.appLanguage, "prayers.allPrayers")}</Text>
           </View>
 
           <View style={styles.gridContainer}>
@@ -389,10 +427,69 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 24,
-    fontWeight: "700" as const,
+    fontSize: isSmallScreen ? 14 : 16,
     color: colors.light.textSecondary,
-    lineHeight: 32,
+    lineHeight: 22,
+  },
+  todaySection: {
+    marginBottom: 32,
+  },
+  todaySectionHeader: {
+    marginBottom: 16,
+  },
+  todaySectionTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+    marginBottom: 4,
+  },
+  todaySectionSubtitle: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+  },
+  todayPrayerCard: {
+    backgroundColor: colors.light.cardBackground,
+    borderRadius: isTablet ? 20 : 16,
+    padding: isTablet ? 24 : (isSmallScreen ? 16 : 20),
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    shadowColor: colors.light.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 2,
+    borderColor: colors.light.primary,
+  },
+  todayIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  todayTextContainer: {
+    flex: 1,
+  },
+  todayTitle: {
+    fontSize: isSmallScreen ? 18 : 20,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+    marginBottom: 6,
+  },
+  todayDescription: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    lineHeight: 20,
+  },
+  allPrayersHeader: {
+    marginBottom: 16,
+  },
+  allPrayersTitle: {
+    fontSize: 18,
+    fontWeight: "700" as const,
+    color: colors.light.text,
   },
   gridContainer: {
     gap: 16,
