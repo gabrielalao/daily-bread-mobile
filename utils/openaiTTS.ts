@@ -1,76 +1,90 @@
 import { Audio } from 'expo-av';
 
-// OpenAI TTS Voices - All sound incredibly human and natural
-export const OPENAI_VOICES = [
+// ElevenLabs Premium Voices - Sound completely human and natural
+export const ELEVENLABS_VOICES = [
   {
-    id: 'alloy',
-    name: 'Alloy',
-    description: 'Neutral, balanced, versatile voice',
-    gender: 'neutral',
-  },
-  {
-    id: 'echo',
-    name: 'Echo',
-    description: 'Male, clear, warm voice',
-    gender: 'male',
-  },
-  {
-    id: 'fable',
-    name: 'Fable',
-    description: 'Male, expressive, storytelling voice',
-    gender: 'male',
-  },
-  {
-    id: 'onyx',
-    name: 'Onyx',
-    description: 'Male, deep, authoritative voice',
-    gender: 'male',
-  },
-  {
-    id: 'nova',
-    name: 'Nova',
-    description: 'Female, warm, engaging voice',
+    id: 'EXAVITQu4vr4xnSDxMaL',
+    name: 'Sarah',
+    description: 'Warm, compassionate female voice - Perfect for prayers',
     gender: 'female',
+    category: 'conversational',
   },
   {
-    id: 'shimmer',
-    name: 'Shimmer',
-    description: 'Female, soft, gentle voice',
+    id: 'cgSgspJ2msm6clMCkdW9',
+    name: 'Jessica',
+    description: 'Gentle, soothing female voice - Ideal for devotionals',
     gender: 'female',
+    category: 'conversational',
+  },
+  {
+    id: 'FGY2WhTYpPnrIDTdsKH5',
+    name: 'Laura',
+    description: 'Clear, engaging female voice - Great for Bible study',
+    gender: 'female',
+    category: 'conversational',
+  },
+  {
+    id: 'pNInz6obpgDQGcFmaJgB',
+    name: 'Adam',
+    description: 'Deep, authoritative male voice - Strong and reassuring',
+    gender: 'male',
+    category: 'narrative',
+  },
+  {
+    id: 'ErXwobaYiN019PkySvjV',
+    name: 'Antoni',
+    description: 'Warm, friendly male voice - Engaging and natural',
+    gender: 'male',
+    category: 'narrative',
+  },
+  {
+    id: 'VR6AewLTigWG4xSOukaG',
+    name: 'Arnold',
+    description: 'Rich, resonant male voice - Perfect for scripture reading',
+    gender: 'male',
+    category: 'narrative',
   },
 ];
 
 const TOOLKIT_URL = process.env.EXPO_PUBLIC_TOOLKIT_URL || 'https://toolkit.rork.com';
 
 /**
- * Generate speech audio using OpenAI's TTS API via Rork Toolkit
+ * Generate speech audio using ElevenLabs TTS API via Rork Toolkit
  * @param text - The text to convert to speech
- * @param voiceId - The OpenAI voice ID (alloy, echo, fable, onyx, nova, shimmer)
- * @param speed - Speed of speech (0.25 to 4.0, default 1.0)
+ * @param voiceId - The ElevenLabs voice ID
+ * @param stability - Voice stability (0-1, default 0.5) - Higher = more consistent
+ * @param similarityBoost - Voice clarity (0-1, default 0.75) - Higher = more similar to original
  * @returns Audio Sound object ready to play
  */
 export async function generateSpeech(
   text: string,
-  voiceId: string = 'nova',
-  speed: number = 1.0
+  voiceId: string = 'EXAVITQu4vr4xnSDxMaL', // Default to Sarah
+  stability: number = 0.5,
+  similarityBoost: number = 0.75
 ): Promise<Audio.Sound> {
   try {
-    // Call Rork Toolkit to generate speech
-    const response = await fetch(`${TOOLKIT_URL}/v1/audio/speech`, {
+    // Call Rork Toolkit to generate speech with ElevenLabs
+    const response = await fetch(`${TOOLKIT_URL}/v1/audio/elevenlabs/speech`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'tts-1-hd', // High-quality model
-        input: text,
-        voice: voiceId,
-        speed: speed,
-        response_format: 'mp3',
+        text: text,
+        voice_id: voiceId,
+        model_id: 'eleven_multilingual_v2', // Most natural, supports multiple languages
+        voice_settings: {
+          stability: stability,
+          similarity_boost: similarityBoost,
+          style: 0.0, // Natural speaking style
+          use_speaker_boost: true, // Enhance clarity
+        },
       }),
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('ElevenLabs API error:', response.status, errorText);
       throw new Error(`TTS API error: ${response.status} ${response.statusText}`);
     }
 
@@ -96,7 +110,7 @@ export async function generateSpeech(
 
     return sound;
   } catch (error) {
-    console.error('OpenAI TTS Error:', error);
+    console.error('ElevenLabs TTS Error:', error);
     throw error;
   }
 }
@@ -108,7 +122,7 @@ export class TTSManager {
   private sound: Audio.Sound | null = null;
   private isPlaying: boolean = false;
 
-  async speak(text: string, voiceId: string, speed: number = 1.0): Promise<void> {
+  async speak(text: string, voiceId: string, stability: number = 0.5, similarityBoost: number = 0.75): Promise<void> {
     try {
       // Stop any existing playback
       await this.stop();
@@ -122,7 +136,7 @@ export class TTSManager {
       });
 
       // Generate and load audio
-      this.sound = await generateSpeech(text, voiceId, speed);
+      this.sound = await generateSpeech(text, voiceId, stability, similarityBoost);
       
       // Set up completion callback
       this.sound.setOnPlaybackStatusUpdate((status) => {

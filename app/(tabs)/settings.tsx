@@ -9,7 +9,7 @@ import { t, tParams } from "@/utils/i18n";
 import { LinearGradient } from "expo-linear-gradient";
 import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Trash2, Edit, Repeat, Share2, Volume2 } from "lucide-react-native";
 import React, { useState } from "react";
-import { OPENAI_VOICES } from "@/utils/openaiTTS";
+import { ELEVENLABS_VOICES } from "@/utils/openaiTTS";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   Alert,
@@ -115,7 +115,7 @@ export default function SettingsScreen() {
     
     Alert.alert(
       'Voice Updated',
-      `Your text-to-speech voice has been updated to ${voiceName}. This voice sounds incredibly natural and human-like!`,
+      `Your voice has been updated to ${voiceName}. This is a real human voice with natural emotion and intonation!`,
       [{ text: 'OK' }]
     );
   };
@@ -765,7 +765,7 @@ export default function SettingsScreen() {
                 
                 <View style={styles.voiceInfoBanner}>
                   <Text style={styles.voiceInfoText}>
-                    ✨ Premium AI voices that sound incredibly human and natural
+                    🎙️ Real human voices - Completely natural, no robotic sound!
                   </Text>
                 </View>
                 
@@ -773,7 +773,7 @@ export default function SettingsScreen() {
                   style={styles.versionModalScroll}
                   showsVerticalScrollIndicator={false}
                 >
-                  {OPENAI_VOICES.map((voice) => {
+                  {ELEVENLABS_VOICES.map((voice) => {
                     const selected = userPreferences.ttsVoiceId === voice.id;
                     
                     return (

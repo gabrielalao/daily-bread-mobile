@@ -325,9 +325,9 @@ export default function PrayerScreen() {
         setIsLoading(true);
         setIsSpeaking(true);
         
-        const voiceId = userPreferences.ttsVoiceId || 'nova';
+        const voiceId = userPreferences.ttsVoiceId || 'EXAVITQu4vr4xnSDxMaL'; // Default to Sarah
         
-        await ttsManager.speak(textToRead, voiceId, 1.0);
+        await ttsManager.speak(textToRead, voiceId, 0.5, 0.75);
         
         setIsLoading(false);
       }
