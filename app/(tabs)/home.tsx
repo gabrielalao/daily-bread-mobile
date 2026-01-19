@@ -216,7 +216,7 @@ export default function HomeScreen() {
       >
         <TouchableOpacity
           style={styles.shareButtonInner}
-          onPress={() => captureAndShare("Share today's devotional from Daily Bread")}
+          onPress={() => captureAndShare("Share today's devotional from Christian Daily Bread")}
           disabled={isCapturing}
           activeOpacity={0.8}
         >

@@ -721,7 +721,7 @@ export default function BibleStudyScreen() {
         {/* Share Button - Floating Action Button */}
         <TouchableOpacity
           style={styles.shareButton}
-          onPress={() => captureAndShare(`Share this Bible study from Daily Bread: ${selectedPlan.title}`)}
+          onPress={() => captureAndShare(`Share this Bible study from Christian Daily Bread: ${selectedPlan.title}`)}
           disabled={isCapturing}
           activeOpacity={0.8}
         >
@@ -1012,7 +1012,7 @@ export default function BibleStudyScreen() {
       >
         <TouchableOpacity
           style={styles.shareButtonInner}
-          onPress={() => captureAndShare("Share this Bible study from Daily Bread")}
+          onPress={() => captureAndShare("Share this Bible study from Christian Daily Bread")}
           disabled={isCapturing}
           activeOpacity={0.8}
         >

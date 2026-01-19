@@ -33,9 +33,9 @@ export default function PrivacyScreen() {
       const base = {
         title: "Privacy Policy",
         subtitle: "Protecting Your Data",
-        intro: "At Daily Bread, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data.",
+        intro: "At Christian Daily Bread, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data.",
         s1t: "Data Collection",
-        s1b: "We collect minimal data to improve our services. No personal data is required to use Daily Bread.",
+        s1b: "We collect minimal data to improve our services. No personal data is required to use Christian Daily Bread.",
         s2t: "Data Use",
         s2b: "We use data to improve our services and personalize your experience.",
         s3t: "Data Protection",
@@ -80,13 +80,13 @@ export default function PrivacyScreen() {
 
           <View style={styles.card}>
             <Text style={styles.intro}>
-              {tr.intro ?? "At Daily Bread, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data."}
+              {tr.intro ?? "At Christian Daily Bread, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data."}
             </Text>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{tr.s1t ?? "Data Collection"}</Text>
               <Text style={styles.sectionText}>
-                {tr.s1b ?? "We collect minimal data to improve our services. No personal data is required to use Daily Bread."}
+                {tr.s1b ?? "We collect minimal data to improve our services. No personal data is required to use Christian Daily Bread."}
               </Text>
             </View>
 

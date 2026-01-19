@@ -37,13 +37,13 @@ export default function TermsScreen() {
         subtitle: "User Agreement & Guidelines",
         lastUpdated: `Last updated: ${new Date().toLocaleDateString(lang)}`,
         intro:
-          `Welcome to Daily Bread! These Terms of Service ("Terms") govern your use of our mobile application, website, and services. By using Daily Bread, you agree to be bound by these Terms. Please read them carefully.`,
+          `Welcome to Christian Daily Bread! These Terms of Service ("Terms") govern your use of our mobile application, website, and services. By using Christian Daily Bread, you agree to be bound by these Terms. Please read them carefully.`,
         s1t: "Use of Service",
-        s1b: "Daily Bread is available for personal, non-commercial use. You are responsible for complying with these Terms.",
+        s1b: "Christian Daily Bread is available for personal, non-commercial use. You are responsible for complying with these Terms.",
         s2t: "Intellectual Property",
-        s2b: "Daily Bread and its content are protected by intellectual property laws. You may not copy, reproduce, or distribute any content from Daily Bread without our prior written consent.",
+        s2b: "Christian Daily Bread and its content are protected by intellectual property laws. You may not copy, reproduce, or distribute any content from Christian Daily Bread without our prior written consent.",
         s3t: "Disclaimer of Warranties",
-        s3b: 'Daily Bread is provided on an "AS IS" and "AS AVAILABLE" basis. We disclaim all warranties, express or implied.',
+        s3b: 'Christian Daily Bread is provided on an "AS IS" and "AS AVAILABLE" basis. We disclaim all warranties, express or implied.',
       };
 
       const entries = await Promise.all(
@@ -86,27 +86,27 @@ export default function TermsScreen() {
             <Text style={styles.lastUpdated}>{tr.lastUpdated ?? `Last updated: ${new Date().toLocaleDateString(lang)}`}</Text>
 
             <Text style={styles.intro}>
-              {tr.intro ?? `Welcome to Daily Bread! These Terms of Service ("Terms") govern your use of our mobile application, website, and services. By using Daily Bread, you agree to be bound by these Terms. Please read them carefully.`}
+              {tr.intro ?? `Welcome to Christian Daily Bread! These Terms of Service ("Terms") govern your use of our mobile application, website, and services. By using Christian Daily Bread, you agree to be bound by these Terms. Please read them carefully.`}
             </Text>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{tr.s1t ?? "Use of Service"}</Text>
               <Text style={styles.sectionText}>
-                {tr.s1b ?? "Daily Bread is available for personal, non-commercial use. You are responsible for complying with these Terms."}
+                {tr.s1b ?? "Christian Daily Bread is available for personal, non-commercial use. You are responsible for complying with these Terms."}
               </Text>
             </View>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{tr.s2t ?? "Intellectual Property"}</Text>
               <Text style={styles.sectionText}>
-                {tr.s2b ?? "Daily Bread and its content are protected by intellectual property laws. You may not copy, reproduce, or distribute any content from Daily Bread without our prior written consent."}
+                {tr.s2b ?? "Christian Daily Bread and its content are protected by intellectual property laws. You may not copy, reproduce, or distribute any content from Christian Daily Bread without our prior written consent."}
               </Text>
             </View>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{tr.s3t ?? "Disclaimer of Warranties"}</Text>
               <Text style={styles.sectionText}>
-                {tr.s3b ?? 'Daily Bread is provided on an "AS IS" and "AS AVAILABLE" basis. We disclaim all warranties, express or implied.'}
+                {tr.s3b ?? 'Christian Daily Bread is provided on an "AS IS" and "AS AVAILABLE" basis. We disclaim all warranties, express or implied.'}
               </Text>
             </View>
           </View>

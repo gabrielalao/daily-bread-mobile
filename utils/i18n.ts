@@ -9,7 +9,7 @@ const en: Dict = {
   "tabs.therapy": "Therapy",
   "tabs.settings": "Settings",
 
-  "headers.dailyBread": "Daily Bread",
+  "headers.dailyBread": "Christian Daily Bread",
   "headers.prayerGuides": "Prayer Guides",
   "headers.bibleStudy": "Bible Study",
   "headers.christianTherapy": "Christian Therapy",

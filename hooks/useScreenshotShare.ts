@@ -188,7 +188,7 @@ export const useScreenshotShare = () => {
         // Share via native share sheet
         await Sharing.shareAsync(uri, {
           mimeType: 'image/png',
-          dialogTitle: customMessage || 'Share from Daily Bread',
+          dialogTitle: customMessage || 'Share from Christian Daily Bread',
           UTI: 'public.png',
         });
       }

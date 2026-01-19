@@ -366,7 +366,7 @@ export default function PrayerScreen() {
         {/* Share Button - Floating Action Button */}
         <TouchableOpacity
           style={styles.shareButton}
-          onPress={() => captureAndShare(`Share this prayer guide from Daily Bread: ${selectedGuide.title}`)}
+          onPress={() => captureAndShare(`Share this prayer guide from Christian Daily Bread: ${selectedGuide.title}`)}
           disabled={isCapturing}
           activeOpacity={0.8}
         >
@@ -461,7 +461,7 @@ export default function PrayerScreen() {
       >
         <TouchableOpacity
           style={styles.shareButtonInner}
-          onPress={() => captureAndShare("Share prayer guides from Daily Bread")}
+          onPress={() => captureAndShare("Share prayer guides from Christian Daily Bread")}
           disabled={isCapturing}
           activeOpacity={0.8}
         >

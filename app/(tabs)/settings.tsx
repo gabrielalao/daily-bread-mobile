@@ -176,11 +176,11 @@ export default function SettingsScreen() {
 
   const handleShareApp = async () => {
     try {
-      const message = `Check out Daily Bread - Christian Therapy! 🙏\n\nGet daily spiritual guidance, Bible studies, prayers, and AI-powered Christian therapy sessions.\n\n📱 Download Links:\n\n🍎 App Store:\nhttps://apps.apple.com/us/app/daily-bread-christian-therapy/id6755737219\n\n🤖 Google Play:\nhttps://play.google.com/store/apps/details?id=app.rork.daily_bread_app_mp9wlbr\n\nAvailable on both iOS and Android!`;
+      const message = `Check out Christian Daily Bread - Christian Therapy! 🙏\n\nGet daily spiritual guidance, Bible studies, prayers, and AI-powered Christian therapy sessions.\n\n📱 Download Links:\n\n🍎 App Store:\nhttps://apps.apple.com/us/app/daily-bread-christian-therapy/id6755737219\n\n🤖 Google Play:\nhttps://play.google.com/store/apps/details?id=app.rork.daily_bread_app_mp9wlbr\n\nAvailable on both iOS and Android!`;
 
       const result = await Share.share({
         message,
-        title: 'Daily Bread - Christian Therapy',
+        title: 'Christian Daily Bread - Christian Therapy',
       });
 
       if (result.action === Share.sharedAction) {
@@ -813,7 +813,7 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionHeaderText}>Share Daily Bread</Text>
+            <Text style={styles.sectionHeaderText}>Share Christian Daily Bread</Text>
           </View>
 
           <View style={styles.card}>
@@ -829,7 +829,7 @@ export default function SettingsScreen() {
                 <View style={styles.shareTextContainer}>
                   <Text style={styles.shareTitle}>Share with Friends</Text>
                   <Text style={styles.shareDescription}>
-                    Help others discover Daily Bread and grow in their faith journey
+                    Help others discover Christian Daily Bread and grow in their faith journey
                   </Text>
                 </View>
               </View>
