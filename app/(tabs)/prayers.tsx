@@ -74,7 +74,7 @@ export default function PrayerScreen() {
   const [selectedGuide, setSelectedGuide] = useState<PrayerGuide | null>(null);
   const [fadeAnim] = useState(new Animated.Value(1));
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [translatedDailyPrayer, setTranslatedDailyPrayer] = useState<{ title?: string; prayer?: string } | null>(null);
+  const [translatedDailyPrayer, setTranslatedDailyPrayer] = useState<{ title?: string; prayer?: string; verse?: string } | null>(null);
   const [translatedListItems, setTranslatedListItems] = useState<Record<string, { title?: string; description?: string }>>({});
   const [translatedDetail, setTranslatedDetail] = useState<{
     title?: string;
@@ -126,13 +126,14 @@ export default function PrayerScreen() {
       if (!userPreferences.autoTranslateContent || !lang || lang === "en") return;
       if (!todayPrayer) return;
 
-      const [titleRes, prayerRes] = await Promise.all([
+      const [titleRes, prayerRes, verseRes] = await Promise.all([
         translateTextCached({ text: todayPrayer.title, targetLang: lang }),
         translateTextCached({ text: todayPrayer.prayer, targetLang: lang }),
+        translateTextCached({ text: todayPrayer.verse, targetLang: lang }),
       ]);
 
       if (cancelled) return;
-      setTranslatedDailyPrayer({ title: titleRes.text, prayer: prayerRes.text });
+      setTranslatedDailyPrayer({ title: titleRes.text, prayer: prayerRes.text, verse: verseRes.text });
     };
     run();
     return () => {
@@ -450,9 +451,16 @@ export default function PrayerScreen() {
                 <Text style={styles.todayPrayerText}>
                   {translatedDailyPrayer?.prayer ?? todayPrayer.prayer}
                 </Text>
-                <View style={styles.todayScriptureContainer}>
-                  <BookOpen size={14} color={colors.light.accent} />
-                  <Text style={styles.todayScripture}>{todayPrayer.scripture}</Text>
+                
+                {/* Bible Verse */}
+                <View style={styles.todayVerseCard}>
+                  <Text style={styles.todayVerse}>
+                    &quot;{translatedDailyPrayer?.verse ?? todayPrayer.verse}&quot;
+                  </Text>
+                  <View style={styles.todayScriptureContainer}>
+                    <BookOpen size={14} color={colors.light.accent} />
+                    <Text style={styles.todayScripture}>{todayPrayer.scripture}</Text>
+                  </View>
                 </View>
               </View>
             </View>
@@ -613,6 +621,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+  },
+  todayVerseCard: {
+    backgroundColor: `${colors.light.accent}10`,
+    borderRadius: 12,
+    padding: isSmallScreen ? 14 : 16,
+    marginBottom: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.light.accent,
+  },
+  todayVerse: {
+    fontSize: isSmallScreen ? 14 : 15,
+    lineHeight: isSmallScreen ? 22 : 24,
+    color: colors.light.text,
+    marginBottom: 8,
+    fontStyle: "italic" as const,
   },
   todayScripture: {
     fontSize: 13,
