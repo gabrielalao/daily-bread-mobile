@@ -9,8 +9,8 @@ import { t } from "@/utils/i18n";
 import { translateTextCached } from "@/utils/translate";
 import { LinearGradient } from "expo-linear-gradient";
 import { BookOpen, Calendar, Clock, Share2 } from "lucide-react-native";
-import React, { useState, useEffect, useMemo } from "react";
-import { Animated, ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Dimensions } from "react-native";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { Animated, ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Dimensions, PanResponder } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -29,6 +29,40 @@ export default function HomeScreen() {
   const [translatedVerse, setTranslatedVerse] = useState<string | null>(null);
   const [translatedReflection, setTranslatedReflection] = useState<string | null>(null);
   const scrollRef = React.useRef<ScrollView>(null);
+  
+  // Draggable share button position
+  const pan = useRef(new Animated.ValueXY({ x: screenWidth - 76, y: 100 })).current;
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        pan.setOffset({
+          x: (pan.x as any)._value,
+          y: (pan.y as any)._value,
+        });
+        pan.setValue({ x: 0, y: 0 });
+      },
+      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
+        useNativeDriver: false,
+      }),
+      onPanResponderRelease: () => {
+        pan.flattenOffset();
+        
+        // Optional: Keep button within screen bounds
+        const maxX = screenWidth - 76;
+        const maxY = 800; // Adjust based on your needs
+        
+        Animated.spring(pan, {
+          toValue: {
+            x: Math.max(20, Math.min((pan.x as any)._value, maxX)),
+            y: Math.max(20, Math.min((pan.y as any)._value, maxY)),
+          },
+          useNativeDriver: false,
+        }).start();
+      },
+    })
+  ).current;
   
   const devotional = useMemo<Devotional>(() => {
     if (contentHistory.currentDayDevotional) {
@@ -155,19 +189,29 @@ export default function HomeScreen() {
         style={StyleSheet.absoluteFillObject}
       />
       
-      {/* Share Button - Floating Action Button */}
-      <TouchableOpacity
-        style={styles.shareButton}
-        onPress={() => captureAndShare("Share today's devotional from Daily Bread")}
-        disabled={isCapturing}
-        activeOpacity={0.8}
+      {/* Share Button - Draggable Floating Action Button */}
+      <Animated.View
+        style={[
+          styles.shareButton,
+          {
+            transform: [{ translateX: pan.x }, { translateY: pan.y }],
+          },
+        ]}
+        {...panResponder.panHandlers}
       >
-        {isCapturing ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : (
-          <Share2 size={24} color="#FFFFFF" />
-        )}
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.shareButtonInner}
+          onPress={() => captureAndShare("Share today's devotional from Daily Bread")}
+          disabled={isCapturing}
+          activeOpacity={0.8}
+        >
+          {isCapturing ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Share2 size={24} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
+      </Animated.View>
 
       <ScrollView
         ref={scrollRef}
@@ -402,8 +446,11 @@ const styles = StyleSheet.create({
   },
   shareButton: {
     position: "absolute" as const,
-    right: 20,
-    bottom: 100,
+    width: 56,
+    height: 56,
+    zIndex: 1000,
+  },
+  shareButtonInner: {
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -415,6 +462,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-    zIndex: 1000,
   },
 });

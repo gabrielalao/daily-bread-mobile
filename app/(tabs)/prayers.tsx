@@ -30,7 +30,7 @@ import {
   Clock,
   BookOpen,
 } from "lucide-react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useFocusEffect } from "expo-router";
 import {
   Animated,
@@ -42,8 +42,11 @@ import {
   Dimensions,
   ActivityIndicator,
   Alert,
+  PanResponder,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const screenWidth = Dimensions.get('window').width;
 
 const iconMap: Record<string, React.ComponentType<{ size: number; color: string }>> = {
   heart: Heart,
@@ -84,6 +87,39 @@ export default function PrayerScreen() {
     scriptureVerses?: string[];
   } | null>(null);
   const insets = useSafeAreaInsets();
+  
+  // Draggable share button position
+  const pan = useRef(new Animated.ValueXY({ x: screenWidth - 76, y: 100 })).current;
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        pan.setOffset({
+          x: (pan.x as any)._value,
+          y: (pan.y as any)._value,
+        });
+        pan.setValue({ x: 0, y: 0 });
+      },
+      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
+        useNativeDriver: false,
+      }),
+      onPanResponderRelease: () => {
+        pan.flattenOffset();
+        
+        const maxX = screenWidth - 76;
+        const maxY = 800;
+        
+        Animated.spring(pan, {
+          toValue: {
+            x: Math.max(20, Math.min((pan.x as any)._value, maxX)),
+            y: Math.max(20, Math.min((pan.y as any)._value, maxY)),
+          },
+          useNativeDriver: false,
+        }).start();
+      },
+    })
+  ).current;
   const scrollRef = React.useRef<ScrollView>(null);
   
   // Use the correlated daily prayer or fallback
@@ -396,20 +432,30 @@ export default function PrayerScreen() {
         style={StyleSheet.absoluteFillObject}
       />
       
-      {/* Share Button - Floating Action Button */}
-      <TouchableOpacity
-        style={styles.shareButton}
-        onPress={() => captureAndShare("Share prayer guides from Daily Bread")}
-        disabled={isCapturing}
-        activeOpacity={0.8}
+      {/* Share Button - Draggable Floating Action Button */}
+      <Animated.View
+        style={[
+          styles.shareButton,
+          {
+            transform: [{ translateX: pan.x }, { translateY: pan.y }],
+          },
+        ]}
+        {...panResponder.panHandlers}
       >
-        {isCapturing ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : (
-          <Share2 size={24} color="#FFFFFF" />
-        )}
-      </TouchableOpacity>
-      
+        <TouchableOpacity
+          style={styles.shareButtonInner}
+          onPress={() => captureAndShare("Share prayer guides from Daily Bread")}
+          disabled={isCapturing}
+          activeOpacity={0.8}
+        >
+          {isCapturing ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Share2 size={24} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
+      </Animated.View>
+
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}
@@ -795,8 +841,11 @@ const styles = StyleSheet.create({
   },
   shareButton: {
     position: "absolute" as const,
-    right: 20,
-    bottom: 100,
+    width: 56,
+    height: 56,
+    zIndex: 1000,
+  },
+  shareButtonInner: {
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -808,6 +857,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-    zIndex: 1000,
   },
 });
