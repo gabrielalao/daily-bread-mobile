@@ -1,0 +1,182 @@
+export type DailyPrayer = {
+  id: string;
+  title: string;
+  prayer: string;
+  scripture: string;
+  themes: string[]; // peace, strength, love, faith, guidance, forgiveness, gratitude, finances, health, parenting, career, purpose
+};
+
+export const dailyPrayers: DailyPrayer[] = [
+  {
+    id: "1",
+    title: "Prayer for Peace in Anxiety",
+    prayer: "Heavenly Father, I come to You with a heavy heart, carrying worries that feel too big to bear. Your Word says to cast all my anxieties on You because You care for me. Today, I choose to trust You with everything that troubles me - my relationships, my finances, my health, my future. Fill me with Your supernatural peace that transcends all understanding. Guard my heart and mind in Christ Jesus. Help me to remember that You are in control, and I can rest in Your loving care. In Jesus' name, Amen.",
+    scripture: "1 Peter 5:7",
+    themes: ["peace", "anxiety", "trust"],
+  },
+  {
+    id: "2",
+    title: "Prayer for Strength and Renewal",
+    prayer: "Lord, I feel weak and weary today. My strength is failing, and I don't know how much longer I can keep going. But Your Word promises that those who hope in You will renew their strength. I place my hope in You alone. Lift me up on wings like eagles. Give me strength to soar above my circumstances, energy to run through challenges, and endurance to simply take the next step. Be my strength when I have none left. In Jesus' name, Amen.",
+    scripture: "Isaiah 40:29",
+    themes: ["strength", "courage", "hope"],
+  },
+  {
+    id: "3",
+    title: "Prayer for Love and Compassion",
+    prayer: "Father of love, You first loved me when I was unlovable. Teach me to love others the way You love me - with patience, kindness, and compassion. Help me move beyond words to actions that demonstrate Your love. Show me opportunities today to serve someone, encourage someone, or simply be present for someone who needs Your love through me. Fill my heart with genuine care for others, and let Your love overflow from my life. In Jesus' name, Amen.",
+    scripture: "1 Corinthians 13:4-7",
+    themes: ["love", "compassion", "kindness"],
+  },
+  {
+    id: "4",
+    title: "Prayer for Financial Wisdom",
+    prayer: "Lord, You are my provider, and everything I have comes from Your hand. Help me to be a faithful steward of the resources You've entrusted to me. Give me wisdom to make sound financial decisions, discipline to live within my means, and generosity to give cheerfully. Teach me to honor You with my firstfruits, not my leftovers. Help me remember that true wealth is found in knowing You, not in earthly possessions. Provide for my needs and help me trust You completely. In Jesus' name, Amen.",
+    scripture: "Matthew 6:33",
+    themes: ["finances", "stewardship", "provision"],
+  },
+  {
+    id: "5",
+    title: "Prayer for Generous Giving",
+    prayer: "Gracious Father, You gave everything for me through Jesus. Soften my heart toward generosity. Break the grip of materialism and the love of money in my life. Help me see my possessions as tools for Your kingdom, not treasures to hoard. Give me joy in giving, whether it's my tithe, an offering, or helping someone in need. Remind me that I cannot out-give You, and that when I give, I'm investing in eternity. In Jesus' name, Amen.",
+    scripture: "2 Corinthians 9:7",
+    themes: ["finances", "generosity", "stewardship"],
+  },
+  {
+    id: "6",
+    title: "Prayer for Faith and Trust",
+    prayer: "Father, increase my faith. When doubts creep in and circumstances seem impossible, remind me that You are the God of the impossible. Help me trust You even when I can't see the way forward. Strengthen my belief in Your goodness, Your power, and Your faithfulness. Like Abraham, help me believe Your promises even when they seem unlikely. Let my faith move mountains and bring glory to Your name. In Jesus' name, Amen.",
+    scripture: "Hebrews 11:1",
+    themes: ["faith", "trust", "belief"],
+  },
+  {
+    id: "7",
+    title: "Prayer for Guidance and Direction",
+    prayer: "Lord, I need Your wisdom and direction. I don't know which path to take or what decision to make. Your Word says that if I lack wisdom, I should ask You, and You'll give it generously. I'm asking now. Show me Your will clearly. Open the right doors and close the wrong ones. Give me discernment to recognize Your voice above all others. Lead me in Your truth and teach me, for You are the God of my salvation. In Jesus' name, Amen.",
+    scripture: "Proverbs 3:5-6",
+    themes: ["guidance", "wisdom", "direction"],
+  },
+  {
+    id: "8",
+    title: "Prayer for Forgiveness and Mercy",
+    prayer: "Merciful Father, I come to You burdened by guilt and shame. I've sinned against You and against others. But Your Word promises that if I confess my sins, You are faithful and just to forgive me and cleanse me from all unrighteousness. I confess my failures and shortcomings. Thank You for the blood of Jesus that washes me clean. Help me also to forgive those who have hurt me, releasing them from my judgment just as You've released me from Yours. In Jesus' name, Amen.",
+    scripture: "1 John 1:9",
+    themes: ["forgiveness", "mercy", "grace"],
+  },
+  {
+    id: "9",
+    title: "Prayer of Gratitude and Thanksgiving",
+    prayer: "Heavenly Father, today I choose gratitude. Even in the midst of challenges, I thank You for Your countless blessings. Thank You for life, breath, and health. Thank You for family, friends, and community. Thank You for provision, protection, and purpose. Most of all, thank You for Jesus and the salvation He brought. Help me cultivate a grateful heart that sees Your goodness in every season. Let thanksgiving be my continual sacrifice of praise. In Jesus' name, Amen.",
+    scripture: "1 Thessalonians 5:18",
+    themes: ["gratitude", "thanksgiving", "praise"],
+  },
+  {
+    id: "10",
+    title: "Prayer for Health and Healing",
+    prayer: "Great Physician, You are the healer of body, mind, and soul. I bring my health concerns before You today. Whether physical pain, mental struggles, or emotional wounds, I ask for Your healing touch. Restore what is broken, strengthen what is weak, and renew what is worn out. Give wisdom to healthcare providers and guide treatment decisions. Help me steward my body as Your temple through healthy choices. Even if healing doesn't come as I hope, help me trust that Your grace is sufficient. In Jesus' name, Amen.",
+    scripture: "Jeremiah 17:14",
+    themes: ["health", "healing", "wellness"],
+  },
+  {
+    id: "11",
+    title: "Prayer for Parenting Wisdom",
+    prayer: "Loving Father, You've entrusted me with the precious responsibility of raising children. I feel inadequate for this task, but Your Word promises that You give wisdom generously. Help me parent with grace and truth, discipline and love, firmness and compassion. Give me patience when I'm frustrated, wisdom when I'm uncertain, and love when I'm exhausted. Help me model Christ to my children and point them toward You in everything. Protect them, guide them, and draw their hearts to Yourself. In Jesus' name, Amen.",
+    scripture: "Proverbs 22:6",
+    themes: ["parenting", "family", "children"],
+  },
+  {
+    id: "12",
+    title: "Prayer for Career and Work",
+    prayer: "Lord, You've called me to work as unto You, not merely for human approval. Help me excel in my job while maintaining godly character. Give me integrity in business dealings, diligence in my tasks, and wisdom in workplace relationships. Whether I'm seeking employment, facing workplace challenges, or pursuing advancement, I trust You with my career. Help me see my work as ministry and my workplace as a mission field. Use me to bring Your light into my professional world. In Jesus' name, Amen.",
+    scripture: "Colossians 3:23",
+    themes: ["career", "work", "profession"],
+  },
+  {
+    id: "13",
+    title: "Prayer for Purpose and Calling",
+    prayer: "Father, You created me with purpose and intention. You prepared good works in advance for me to do. Help me discover and walk in my calling. Show me how to use my unique gifts, talents, and experiences for Your kingdom. Remove any confusion about my purpose and replace it with clarity and confidence. Whether my calling is in ministry, marketplace, or home, help me steward it faithfully. Let my life count for eternity. In Jesus' name, Amen.",
+    scripture: "Ephesians 2:10",
+    themes: ["purpose", "calling", "mission"],
+  },
+  {
+    id: "14",
+    title: "Prayer for Overcoming Fear",
+    prayer: "God of courage, Your Word tells me 365 times not to fear - one for every day of the year. Yet fear still grips my heart. Whether it's fear of failure, rejection, the future, or the unknown, I bring it all to You. You have not given me a spirit of fear, but of power, love, and a sound mind. Replace my fear with faith, my anxiety with peace, and my worry with trust. Help me remember that You are with me always, and I need not be afraid. In Jesus' name, Amen.",
+    scripture: "2 Timothy 1:7",
+    themes: ["courage", "fear", "strength"],
+  },
+  {
+    id: "15",
+    title: "Prayer for Relationships and Unity",
+    prayer: "Lord of peace, You've called me to live at peace with everyone as much as it depends on me. I lift up my relationships to You - my marriage, family, friendships, and community. Heal broken relationships, restore trust where it's been damaged, and help me forgive those who've hurt me. Give me wisdom in conflicts, patience with difficult people, and love for those who are hard to love. Help me be a peacemaker, reflecting Your reconciling love. In Jesus' name, Amen.",
+    scripture: "Romans 12:18",
+    themes: ["relationships", "love", "peace"],
+  },
+  {
+    id: "16",
+    title: "Prayer for Contentment",
+    prayer: "Satisfying God, in a world that constantly tells me I need more, help me find contentment in You. Teach me that godliness with contentment is great gain. Help me be grateful for what I have rather than envious of what others possess. Free me from the comparison trap and the consumer mentality. Whether I have little or much, help me say with Paul that I've learned the secret of being content in any and every situation. You are enough. In Jesus' name, Amen.",
+    scripture: "Philippians 4:11-13",
+    themes: ["contentment", "gratitude", "peace"],
+  },
+  {
+    id: "17",
+    title: "Prayer for Patience and Perseverance",
+    prayer: "Patient Father, I'm tired of waiting. The situation I've been praying about seems unchanged, and I'm losing hope. Help me remember that Your timing is perfect, even when it doesn't match mine. Give me patience to wait on You and perseverance to keep pressing forward. Strengthen my resolve to not give up or give in. Help me run with endurance the race marked out for me, keeping my eyes fixed on Jesus. In His name, Amen.",
+    scripture: "James 1:2-4",
+    themes: ["patience", "perseverance", "hope"],
+  },
+  {
+    id: "18",
+    title: "Prayer for Self-Control and Discipline",
+    prayer: "Holy Spirit, produce in me the fruit of self-control. I struggle with habits, appetites, and impulses that don't honor You. Whether it's what I eat, watch, say, or think, I need Your help to discipline myself. Give me strength to say no to ungodliness and worldly passions, and to live self-controlled, upright, and godly lives. Help me bring every thought captive to the obedience of Christ. In Jesus' name, Amen.",
+    scripture: "Galatians 5:22-23",
+    themes: ["self-control", "discipline", "holiness"],
+  },
+  {
+    id: "19",
+    title: "Prayer for Joy Despite Circumstances",
+    prayer: "God of all joy, my circumstances are difficult, but Your Word says to count it all joy when I face trials. Help me find supernatural joy that doesn't depend on my situation but rests in Your unchanging character. Remind me that the joy of the Lord is my strength. Even in sorrow, plant seeds of joy deep in my heart. Let my life overflow with joy that testifies to Your goodness regardless of what I'm going through. In Jesus' name, Amen.",
+    scripture: "Nehemiah 8:10",
+    themes: ["joy", "hope", "strength"],
+  },
+  {
+    id: "20",
+    title: "Prayer for Humility and Servanthood",
+    prayer: "Humble Savior, You came not to be served but to serve, washing Your disciples' feet as an example for me. Pride so easily creeps into my heart, making me think I'm better than others or deserve special treatment. Humble me, Lord. Help me consider others better than myself and look not only to my own interests but also to the interests of others. Give me the heart of a servant, ready to help, encourage, and support. In Jesus' name, Amen.",
+    scripture: "Philippians 2:3-4",
+    themes: ["humility", "servanthood", "love"],
+  },
+];
+
+// Get today's prayer based on day cycling
+export function getTodayDailyPrayer(viewedIds: string[] = []): DailyPrayer {
+  const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+  const today = new Date();
+  const dayOfYear = Math.floor((today.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+  const index = dayOfYear % dailyPrayers.length;
+  return dailyPrayers[index];
+}
+
+// Get a prayer that correlates with devotional themes
+export function getCorrelatedDailyPrayer(
+  devotionalThemes: string[],
+  viewedIds: string[] = []
+): DailyPrayer {
+  // Try to match prayer with devotional themes
+  for (const theme of devotionalThemes) {
+    const matchedPrayer = dailyPrayers.find(
+      p => !viewedIds.includes(p.id) && p.themes.includes(theme)
+    );
+    if (matchedPrayer) return matchedPrayer;
+  }
+  
+  // If no unviewed match, try any match regardless of viewed status
+  for (const theme of devotionalThemes) {
+    const matchedPrayer = dailyPrayers.find(p => p.themes.includes(theme));
+    if (matchedPrayer) return matchedPrayer;
+  }
+  
+  // Fallback to today's prayer
+  return getTodayDailyPrayer(viewedIds);
+}
