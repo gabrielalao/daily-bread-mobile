@@ -10,13 +10,19 @@ import { translateTextCached } from "@/utils/translate";
 import { LinearGradient } from "expo-linear-gradient";
 import { BookOpen, Calendar, Clock, Share2 } from "lucide-react-native";
 import React, { useState, useEffect, useMemo } from "react";
-import { Animated, ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator } from "react-native";
+import { Animated, ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Dimensions } from "react-native";
 import { useFocusEffect } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const { width: screenWidth } = Dimensions.get('window');
+const isTablet = screenWidth >= 768;
+const isSmallScreen = screenWidth < 375;
 
 export default function HomeScreen() {
   const { contentHistory, userPreferences, markDevotionalViewed, isLoaded, setCurrentDayDevotional } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
   const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
+  const insets = useSafeAreaInsets();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [currentTime, setCurrentTime] = useState(new Date());
   const [translatedTitle, setTranslatedTitle] = useState<string | null>(null);
@@ -166,7 +172,7 @@ export default function HomeScreen() {
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 32, 120) }]}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
@@ -232,10 +238,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 32,
+    // paddingBottom handled dynamically
   },
   content: {
-    padding: 20,
+    padding: isTablet ? 32 : (isSmallScreen ? 16 : 20),
   },
   header: {
     marginBottom: 24,
@@ -282,8 +288,8 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.light.cardBackground,
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: isTablet ? 24 : 20,
+    padding: isTablet ? 32 : (isSmallScreen ? 20 : 24),
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,

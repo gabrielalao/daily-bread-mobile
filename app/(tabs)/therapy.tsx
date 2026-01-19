@@ -14,10 +14,11 @@ import { useRorkAgent, generateObject } from "@rork-ai/toolkit-sdk";
 import { LinearGradient } from "expo-linear-gradient";
 import { Brain, Check, Heart, Sparkles, MessageCircle, AlertTriangle, X, Send, ArrowLeft, Mic, MicOff, Volume2, VolumeX, Settings, Plus, Minus, Calendar, Share2 } from "lucide-react-native";
 import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
-import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, Platform, FlatList, Alert } from "react-native";
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, Platform, FlatList, Alert, Dimensions } from "react-native";
 import { Audio } from "expo-av";
 import * as Speech from "expo-speech";
 import { z } from "zod";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const therapySchema = z.object({
   title: z.string(),
@@ -31,8 +32,11 @@ const therapySchema = z.object({
   prayerPrompt: z.string(),
 });
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isTablet = screenWidth >= 768;
+const isSmallScreen = screenWidth < 375;
+
 const FOCUS_AREAS = [
-  { id: "anxiety", label: "Anxiety & Worry", icon: "🌊" },
   { id: "depression", label: "Depression & Sadness", icon: "🌧️" },
   { id: "relationships", label: "Relationships", icon: "💕" },
   { id: "trauma", label: "Past Wounds & Trauma", icon: "🩹" },
@@ -64,6 +68,7 @@ export default function TherapyScreen() {
   const { isOffline, isOnline } = useNetworkStatus();
   const { scheduleSession, getNextSession } = useScheduledSessions();
   const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
+  const insets = useSafeAreaInsets();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [showMainMenu, setShowMainMenu] = useState(true);
   const [showFocusSelection, setShowFocusSelection] = useState(false);
@@ -359,15 +364,25 @@ export default function TherapyScreen() {
     }
 
     setIsGenerating(true);
-    try {
-      // Log configuration for debugging
-      const toolkitUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_TOOLKIT_URL || process.env.EXPO_PUBLIC_TOOLKIT_URL;
-      console.log('=== THERAPY GENERATION START ===');
-      console.log('Toolkit URL (Constants):', Constants.expoConfig?.extra?.EXPO_PUBLIC_TOOLKIT_URL);
-      console.log('Toolkit URL (process.env):', process.env.EXPO_PUBLIC_TOOLKIT_URL);
-      console.log('Resolved Toolkit URL:', toolkitUrl);
-      console.log('Platform:', Platform.OS);
-      console.log('===============================');
+    let attemptCount = 0;
+    const maxAttempts = 2; // Try twice with different strategies
+    
+    while (attemptCount < maxAttempts) {
+      attemptCount++;
+      
+      try {
+        // Log configuration for debugging
+        if (attemptCount === 1) {
+          const toolkitUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_TOOLKIT_URL || process.env.EXPO_PUBLIC_TOOLKIT_URL;
+          console.log('=== THERAPY GENERATION START ===');
+          console.log('Toolkit URL (Constants):', Constants.expoConfig?.extra?.EXPO_PUBLIC_TOOLKIT_URL);
+          console.log('Toolkit URL (process.env):', process.env.EXPO_PUBLIC_TOOLKIT_URL);
+          console.log('Resolved Toolkit URL:', toolkitUrl);
+          console.log('Platform:', Platform.OS);
+          console.log('===============================');
+        }
+        
+        console.log(`Attempt ${attemptCount}/${maxAttempts}`);
 
       const focusLabels = selectedFocus.map(
         (id) => FOCUS_AREAS.find((f) => f.id === id)?.label || id
@@ -375,11 +390,14 @@ export default function TherapyScreen() {
       const moodLabel = MOODS.find((m) => m.id === selectedMood)?.label || selectedMood;
 
       console.log('Calling generateObject with SDK...');
-      const result = await generateObject({
-        messages: [
-          {
-            role: "user",
-            content: `Generate a Christian-based therapy session for someone who is feeling ${moodLabel} and wants to focus on: ${focusLabels}.
+      
+      let result;
+      try {
+        result = await generateObject({
+          messages: [
+            {
+              role: "user",
+              content: `Generate a Christian-based therapy session for someone who is feeling ${moodLabel} and wants to focus on: ${focusLabels}.
 
 Provide:
 - A compelling title
@@ -391,10 +409,50 @@ Provide:
 - A prayer prompt for healing
 
 Make it personal, compassionate, and practical. Focus on hope, healing, and God's presence in their specific struggles.`,
-          },
-        ],
-        schema: therapySchema as z.ZodType,
-      }) as z.infer<typeof therapySchema>;
+            },
+          ],
+          schema: therapySchema as z.ZodType,
+        }) as z.infer<typeof therapySchema>;
+        
+        console.log('Raw SDK response received');
+        console.log('Response type:', typeof result);
+        console.log('Response is null?', result === null);
+        console.log('Response is undefined?', result === undefined);
+        
+      } catch (sdkError: any) {
+        console.error('=== SDK ERROR CAUGHT ===');
+        console.error('SDK Error type:', sdkError?.constructor?.name);
+        console.error('SDK Error message:', sdkError instanceof Error ? sdkError.message : String(sdkError));
+        console.error('SDK Error:', sdkError);
+        console.error('=======================');
+        
+        // If it's a JSON parse error and we have attempts left, try with a more explicit prompt
+        if (sdkError?.message?.includes('JSON Parse') && attemptCount < maxAttempts) {
+          console.log('JSON parse error detected, will retry with modified prompt...');
+          continue; // Retry loop
+        }
+        
+        throw sdkError;
+      }
+
+      // Validate result before proceeding
+      console.log('Validating result...');
+      if (!result || typeof result !== 'object') {
+        console.error('Validation failed: Invalid result type');
+        throw new Error('Invalid response: Expected an object but received ' + typeof result);
+      }
+      
+      // Validate required fields
+      const requiredFields = ['title', 'category', 'topic', 'scripture', 'verse', 'therapeuticFocus', 'practicalSteps', 'reflection', 'prayerPrompt'];
+      for (const field of requiredFields) {
+        if (!result[field as keyof typeof result]) {
+          throw new Error(`Invalid response: Missing field "${field}"`);
+        }
+      }
+      
+      if (!Array.isArray(result.practicalSteps) || result.practicalSteps.length === 0) {
+        throw new Error('Invalid response: practicalSteps must be a non-empty array');
+      }
 
       const generated: TherapyContent & { isGenerated: boolean } = {
         id: `generated-${Date.now()}`,
@@ -418,16 +476,87 @@ Make it personal, compassionate, and practical. Focus on hope, healing, and God'
         type: 'therapy',
         content: `Generated therapy for ${focusLabels} while feeling ${moodLabel}`,
       });
+      
+      // Success - break out of retry loop
+      break;
+      
     } catch (error) {
       console.error('Therapy generation error details:', error);
-      // Show alert with option to view details
+      
+      // Extract useful error message
+      let errorMessage = 'Unable to generate personalized session. Please try again or select a different focus area.';
+      let showRetry = true;
+      
+      if (error instanceof Error) {
+        if (error.message.includes('JSON Parse')) {
+          errorMessage = 'The AI response was invalid. This sometimes happens - please try generating again or choose the daily session instead.';
+        } else if (error.message.includes('network') || error.message.includes('fetch') || error.message.includes('Failed to fetch')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'The request took too long. Please try again.';
+        } else if (error.message.includes('401') || error.message.includes('403')) {
+          errorMessage = 'Authentication error. Please contact support if this persists.';
+          showRetry = false;
+        } else if (error.message.includes('500') || error.message.includes('502') || error.message.includes('503')) {
+          errorMessage = 'Server error. The AI service may be temporarily unavailable. Please try again in a moment.';
+        } else if (error.message.includes('Invalid response')) {
+          errorMessage = `The AI returned an incomplete response. ${error.message}`;
+        }
+      }
+      
+      // Check if error is empty object (SDK issue)
+      if (error && typeof error === 'object' && Object.keys(error).length === 0) {
+        errorMessage = 'The AI service returned an unexpected response. This may be a temporary issue. Please try again or choose the daily session.';
+      }
+      
+      // Build alert buttons
+      const buttons: any[] = [];
+      if (showRetry) {
+        buttons.push({ text: 'Try Again', onPress: () => generatePersonalizedTherapy() });
+      }
+      buttons.push({
+        text: 'View Daily Session',
+        onPress: () => {
+          setShowFocusSelection(false);
+          setShowMainMenu(false);
+        }
+      });
+      buttons.push({ text: 'Cancel', style: 'cancel' });
+      
+      // Show user-friendly alert
       Alert.alert(
         'Generation Error',
-        String(error),
+        errorMessage,
+        buttons
       );
-    } finally {
-      setIsGenerating(false);
+      
+      // Log full error for debugging
+      if (__DEV__) {
+        console.error('=== FULL ERROR DETAILS ===');
+        console.error('Error type:', error?.constructor?.name || typeof error);
+        console.error('Error message:', error instanceof Error ? error.message : String(error));
+        console.error('Error stack:', error instanceof Error ? error.stack : 'N/A');
+        if (error && typeof error === 'object') {
+          console.error('Error keys:', Object.keys(error));
+          console.error('Error object:', error);
+          // Try to stringify with custom replacer
+          try {
+            const serialized = JSON.stringify(error, Object.getOwnPropertyNames(error), 2);
+            console.error('Serialized error:', serialized);
+          } catch (e) {
+            console.error('Could not serialize error');
+          }
+        }
+        console.error('========================');
+      }
+      
+      // If all retries failed, exit loop
+      break;
     }
+    } // End of while loop
+    
+    // Always reset loading state
+    setIsGenerating(false);
   };
 
   const toggleFocus = (focusId: string) => {
@@ -1240,7 +1369,7 @@ You'll receive a notification to remind you.`,
           onRequestClose={() => setShowDisclaimerModal(false)}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
+            <View style={[styles.modalContent, { paddingBottom: Math.max(insets.bottom + 12, 24) }]}>
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setShowDisclaimerModal(false)}
@@ -1256,7 +1385,7 @@ You'll receive a notification to remind you.`,
               </View>
 
               <ScrollView
-                style={styles.modalScroll}
+                style={[styles.modalScroll, { minHeight: 300 }]}
                 showsVerticalScrollIndicator={false}
               >
                 <View style={styles.disclaimerContent}>
@@ -1324,7 +1453,7 @@ You'll receive a notification to remind you.`,
           onRequestClose={() => setErrorDetails(null)}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
+            <View style={[styles.modalContent, { paddingBottom: Math.max(insets.bottom + 12, 24) }]}>
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setErrorDetails(null)}
@@ -1341,7 +1470,7 @@ You'll receive a notification to remind you.`,
               </View>
 
               <ScrollView
-                style={styles.modalScroll}
+                style={[styles.modalScroll, { minHeight: 300 }]}
                 showsVerticalScrollIndicator={true}
               >
                 <View style={styles.errorDetailsContent}>
@@ -1737,7 +1866,7 @@ You'll receive a notification to remind you.`,
             </View>
           )}
 
-          <View style={styles.inputContainer}>
+          <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom + 12, 32) }]}>
             {!isRecording && !isTranscribing && !isSpeaking && (
               <View style={styles.voiceButtonWrapper}>
                 <TouchableOpacity
@@ -1843,7 +1972,7 @@ You'll receive a notification to remind you.`,
       
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 32, 120) }]}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
@@ -1940,7 +2069,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   content: {
-    padding: 20,
+    padding: isTablet ? 32 : (isSmallScreen ? 16 : 20),
   },
   header: {
     marginBottom: 24,
@@ -2310,8 +2439,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.light.cardBackground,
     borderRadius: 24,
     width: "100%",
-    maxWidth: 500,
-    maxHeight: "85%",
+    maxWidth: isTablet ? 600 : 500,
+    minHeight: isTablet ? "60%" : "50%",
+    maxHeight: "90%",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
@@ -2353,7 +2483,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   modalScroll: {
-    maxHeight: 400,
+    maxHeight: isTablet ? 500 : 400,
+    minHeight: 300,
   },
   disclaimerContent: {
     paddingHorizontal: 24,
@@ -2515,9 +2646,9 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
-    paddingHorizontal: 16,
+    paddingHorizontal: isTablet ? 24 : 16,
     paddingTop: 12,
-    paddingBottom: 32,
+    // paddingBottom handled dynamically
     backgroundColor: colors.light.cardBackground,
     borderTopWidth: 1,
     borderTopColor: colors.light.border,

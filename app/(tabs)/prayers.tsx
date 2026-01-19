@@ -59,6 +59,7 @@ const iconMap: Record<string, React.ComponentType<{ size: number; color: string 
 };
 
 const { width } = Dimensions.get('window');
+const isTablet = width >= 768;
 const isSmallScreen = width < 375;
 
 export default function PrayerScreen() {
@@ -376,7 +377,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   content: {
-    padding: isSmallScreen ? 16 : 20,
+    padding: isTablet ? 32 : (isSmallScreen ? 16 : 20),
   },
   header: {
     marginBottom: isSmallScreen ? 20 : 24,
@@ -398,8 +399,8 @@ const styles = StyleSheet.create({
   },
   guideCard: {
     backgroundColor: colors.light.cardBackground,
-    borderRadius: 16,
-    padding: isSmallScreen ? 16 : 20,
+    borderRadius: isTablet ? 20 : 16,
+    padding: isTablet ? 28 : (isSmallScreen ? 16 : 20),
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,

@@ -23,15 +23,21 @@ import {
   Modal,
   Platform,
   Alert,
+  Dimensions,
 } from "react-native";
 import { useMutation } from "@tanstack/react-query";
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type BibleVerse = {
   reference: string;
   text: string;
 };
+
+const { width: screenWidth } = Dimensions.get('window');
+const isTablet = screenWidth >= 768;
+const isSmallScreen = screenWidth < 375;
 
 type FormattedVerse = {
   number: number;
@@ -43,6 +49,7 @@ export default function BibleStudyScreen() {
   const { analyzeContentInteraction } = usePersonalization();
   const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
   const modalViewRef = useRef<any>(null); // Separate ref for modal content
+  const insets = useSafeAreaInsets();
   const [selectedPlan, setSelectedPlan] = useState<BibleStudyPlan | null>(null);
   const [fadeAnim] = useState(new Animated.Value(1));
   const [selectedVerse, setSelectedVerse] = useState<BibleVerse | null>(null);
@@ -738,7 +745,7 @@ export default function BibleStudyScreen() {
           onRequestClose={handleCloseVerse}
         >
           <View style={styles.modalOverlay}>
-            <View ref={modalViewRef} collapsable={false} style={styles.modalContent}>
+            <View ref={modalViewRef} collapsable={false} style={[styles.modalContent, { paddingBottom: Math.max(insets.bottom + 12, 24) }]}>
               
               {fetchVerseMutation.isPending ? (
                 <View style={styles.loadingVerseContainer}>
@@ -797,7 +804,7 @@ export default function BibleStudyScreen() {
                   )}
 
                   <ScrollView 
-                    style={styles.verseScrollView}
+                    style={[styles.verseScrollView, { minHeight: isTablet ? 400 : 300 }]}
                     contentContainerStyle={[styles.verseScrollContent, { paddingBottom: 80 }]}
                     showsVerticalScrollIndicator={false}
                   >
@@ -865,7 +872,7 @@ export default function BibleStudyScreen() {
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 32, 120) }]}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
@@ -933,7 +940,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   content: {
-    padding: 20,
+    padding: isTablet ? 32 : (isSmallScreen ? 16 : 20),
   },
   header: {
     marginBottom: 24,
@@ -955,8 +962,8 @@ const styles = StyleSheet.create({
   },
   planCard: {
     backgroundColor: colors.light.cardBackground,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: isTablet ? 20 : 16,
+    padding: isTablet ? 28 : (isSmallScreen ? 16 : 20),
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -1279,9 +1286,11 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: colors.light.cardBackground,
     borderRadius: 20,
-    padding: 24,
+    padding: isTablet ? 32 : 24,
     width: "100%",
-    maxHeight: "80%",
+    maxWidth: isTablet ? 700 : undefined,
+    minHeight: isTablet ? "60%" : "50%",
+    maxHeight: "90%",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -1368,7 +1377,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   verseScrollView: {
-    maxHeight: 400,
+    maxHeight: isTablet ? 500 : 400,
+    minHeight: isTablet ? 400 : 300,
   },
   verseScrollContent: {
     paddingBottom: 8,

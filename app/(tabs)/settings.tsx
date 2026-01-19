@@ -7,7 +7,7 @@ import { bibleVersions, getPopularVersions, getVersionById } from "@/constants/b
 import { appLanguages, getAppLanguageById } from "@/constants/app-languages";
 import { t, tParams } from "@/utils/i18n";
 import { LinearGradient } from "expo-linear-gradient";
-import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Trash2, Edit, Repeat } from "lucide-react-native";
+import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Trash2, Edit, Repeat, Share2 } from "lucide-react-native";
 import React, { useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
@@ -21,7 +21,9 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Share,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScheduleNextSessionModal } from "@/components/ScheduleNextSessionModal";
 
 export default function SettingsScreen() {
@@ -40,6 +42,7 @@ export default function SettingsScreen() {
   const [editingSession, setEditingSession] = useState<ScheduledSession | null>(null);
   const scrollRef = React.useRef<ScrollView>(null);
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const handleToggleNotifications = async (value: boolean) => {
     if (Platform.OS === 'web') {
@@ -169,6 +172,32 @@ export default function SettingsScreen() {
       [{ text: 'OK' }]
     );
     setShowScheduleModal(false);
+  };
+
+  const handleShareApp = async () => {
+    try {
+      const message = `Check out Daily Bread - Christian Therapy! 🙏\n\nGet daily spiritual guidance, Bible studies, prayers, and AI-powered Christian therapy sessions.\n\n📱 Download Links:\n\n🍎 App Store:\nhttps://apps.apple.com/us/app/daily-bread-christian-therapy/id6755737219\n\n🤖 Google Play:\nhttps://play.google.com/store/apps/details?id=app.rork.daily_bread_app_mp9wlbr\n\nAvailable on both iOS and Android!`;
+
+      const result = await Share.share({
+        message,
+        title: 'Daily Bread - Christian Therapy',
+      });
+
+      if (result.action === Share.sharedAction) {
+        if (__DEV__) {
+          console.log('App shared successfully');
+        }
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Error sharing app:', error);
+      }
+      Alert.alert(
+        'Sharing Failed',
+        'Unable to share the app. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   const formatSessionDate = (date: Date) => {
@@ -475,8 +504,16 @@ export default function SettingsScreen() {
             animationType="slide"
             onRequestClose={() => setShowBibleVersionPicker(false)}
           >
-            <View style={styles.versionModalOverlay}>
-              <View style={styles.versionModal}>
+            <TouchableOpacity 
+              style={styles.versionModalOverlay} 
+              activeOpacity={1}
+              onPress={() => setShowBibleVersionPicker(false)}
+            >
+              <TouchableOpacity 
+                style={[styles.versionModal, { paddingBottom: Math.max(insets.bottom, 12) }]}
+                activeOpacity={1}
+                onPress={(e) => e.stopPropagation()}
+              >
                 <View style={styles.versionModalHeader}>
                   <Text style={styles.versionPickerTitle}>Select Bible Version</Text>
                   <TouchableOpacity
@@ -527,8 +564,8 @@ export default function SettingsScreen() {
 
                   <View style={{ height: 24 }} />
                 </ScrollView>
-              </View>
-            </View>
+              </TouchableOpacity>
+            </TouchableOpacity>
           </Modal>
 
           <View style={styles.sectionHeader}>
@@ -586,8 +623,16 @@ export default function SettingsScreen() {
             animationType="slide"
             onRequestClose={() => setShowLanguagePicker(false)}
           >
-            <View style={styles.versionModalOverlay}>
-              <View style={styles.versionModal}>
+            <TouchableOpacity 
+              style={styles.versionModalOverlay} 
+              activeOpacity={1}
+              onPress={() => setShowLanguagePicker(false)}
+            >
+              <TouchableOpacity 
+                style={[styles.versionModal, { paddingBottom: Math.max(insets.bottom, 12) }]}
+                activeOpacity={1}
+                onPress={(e) => e.stopPropagation()}
+              >
                 <View style={styles.versionModalHeader}>
                   <Text style={styles.versionPickerTitle}>{t(tLang, "settings.selectAppLanguage")}</Text>
                   <TouchableOpacity
@@ -647,8 +692,8 @@ export default function SettingsScreen() {
                     );
                   })}
                 </ScrollView>
-              </View>
-            </View>
+              </TouchableOpacity>
+            </TouchableOpacity>
           </Modal>
 
           <View style={styles.sectionHeader}>
@@ -764,6 +809,30 @@ export default function SettingsScreen() {
                 <Text style={styles.linkTitle}>{t(tLang, "settings.support")}</Text>
               </View>
               <ChevronRight size={20} color={colors.light.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionHeaderText}>Share Daily Bread</Text>
+          </View>
+
+          <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.shareRow}
+              onPress={handleShareApp}
+              activeOpacity={0.7}
+            >
+              <View style={styles.shareContent}>
+                <View style={styles.shareIconContainer}>
+                  <Share2 size={28} color="#fff" />
+                </View>
+                <View style={styles.shareTextContainer}>
+                  <Text style={styles.shareTitle}>Share with Friends</Text>
+                  <Text style={styles.shareDescription}>
+                    Help others discover Daily Bread and grow in their faith journey
+                  </Text>
+                </View>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -1018,7 +1087,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 12,
-    maxHeight: "90%",
+    maxHeight: "95%",
+    minHeight: "75%",
   },
   versionModalHeader: {
     flexDirection: "row",
@@ -1076,6 +1146,7 @@ const styles = StyleSheet.create({
   },
   versionModalScroll: {
     flex: 1,
+    minHeight: 300,
   },
   versionModalScrollContent: {
     paddingBottom: 16,
@@ -1256,5 +1327,40 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: colors.light.border,
+  },
+  shareRow: {
+    paddingVertical: 4,
+  },
+  shareContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  shareIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.light.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: colors.light.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  shareTextContainer: {
+    flex: 1,
+  },
+  shareTitle: {
+    fontSize: 18,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+    marginBottom: 4,
+  },
+  shareDescription: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    lineHeight: 20,
   },
 });
