@@ -237,3 +237,33 @@ export function getPersonalizedDevotional(viewedIds: string[], preferences: stri
   
   return unviewed[Math.floor(Math.random() * unviewed.length)];
 }
+
+// Get theme keywords from devotional to match with prayer and study
+export function getDevotionalThemeKeywords(devotional: Devotional): string[] {
+  const keywords: string[] = [];
+  const text = `${devotional.title} ${devotional.reflection}`.toLowerCase();
+  
+  // Common spiritual themes
+  const themeMap: Record<string, string[]> = {
+    'peace': ['peace', 'anxiety', 'worry', 'calm', 'rest'],
+    'strength': ['strength', 'courage', 'power', 'strong', 'mighty'],
+    'love': ['love', 'compassion', 'kindness', 'relationship'],
+    'faith': ['faith', 'trust', 'believe', 'hope'],
+    'guidance': ['guidance', 'wisdom', 'direction', 'path'],
+    'forgiveness': ['forgive', 'mercy', 'grace', 'pardon'],
+    'gratitude': ['thank', 'grateful', 'praise', 'blessing'],
+    'finances': ['money', 'wealth', 'financial', 'steward', 'provision'],
+    'health': ['health', 'body', 'physical', 'wellness'],
+    'parenting': ['parent', 'children', 'family'],
+    'career': ['work', 'career', 'job', 'profession'],
+    'purpose': ['purpose', 'calling', 'mission'],
+  };
+  
+  for (const [theme, searchTerms] of Object.entries(themeMap)) {
+    if (searchTerms.some(term => text.includes(term))) {
+      keywords.push(theme);
+    }
+  }
+  
+  return keywords.length > 0 ? keywords : ['peace']; // Default to peace if no match
+}

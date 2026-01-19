@@ -11,6 +11,8 @@ export type ContentHistory = {
   therapy: string[];
   lastUpdated: string;
   currentDayDevotional?: string;
+  currentDayPrayer?: string;
+  currentDayStudyVerse?: { scripture: string; verse: string; devotionalId: string };
   currentDayTherapy?: string;
 };
 
@@ -48,6 +50,8 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     therapy: [],
     lastUpdated: new Date().toISOString(),
     currentDayDevotional: undefined,
+    currentDayPrayer: undefined,
+    currentDayStudyVerse: undefined,
     currentDayTherapy: undefined,
   });
 
@@ -101,6 +105,8 @@ export const [ContentProvider, useContent] = createContextHook(() => {
             therapy: [],
             lastUpdated: now.toISOString(),
             currentDayDevotional: undefined,
+            currentDayPrayer: undefined,
+            currentDayStudyVerse: undefined,
             currentDayTherapy: undefined,
           };
           await AsyncStorage.setItem(CONTENT_HISTORY_KEY, JSON.stringify(resetHistory));
@@ -212,6 +218,24 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     await AsyncStorage.setItem(CONTENT_HISTORY_KEY, JSON.stringify(updated));
   };
 
+  const setCurrentDayPrayer = async (prayerId: string) => {
+    const updated = {
+      ...contentHistory,
+      currentDayPrayer: prayerId,
+    };
+    setContentHistory(updated);
+    await AsyncStorage.setItem(CONTENT_HISTORY_KEY, JSON.stringify(updated));
+  };
+
+  const setCurrentDayStudyVerse = async (scripture: string, verse: string, devotionalId: string) => {
+    const updated = {
+      ...contentHistory,
+      currentDayStudyVerse: { scripture, verse, devotionalId },
+    };
+    setContentHistory(updated);
+    await AsyncStorage.setItem(CONTENT_HISTORY_KEY, JSON.stringify(updated));
+  };
+
   const markPrayerViewed = async (prayerId: string) => {
     const updated = {
       ...contentHistory,
@@ -308,6 +332,8 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     addStudyCategory,
     addTherapyCategory,
     setCurrentDayDevotional,
+    setCurrentDayPrayer,
+    setCurrentDayStudyVerse,
     setCurrentDayTherapy,
     setBibleVersion,
     setAppLanguage,

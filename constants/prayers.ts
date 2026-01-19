@@ -389,6 +389,22 @@ export function getTodayPrayer(viewedIds: string[] = []): PrayerGuide {
   return prayerGuides[dayOfYear % prayerGuides.length];
 }
 
+// Get prayer that matches devotional theme
+export function getCorrelatedPrayer(devotionalThemes: string[]): PrayerGuide {
+  // Try to match prayer with devotional theme
+  for (const theme of devotionalThemes) {
+    const matchedPrayer = prayerGuides.find(p => 
+      p.id.includes(theme) || 
+      p.title.toLowerCase().includes(theme) ||
+      p.description.toLowerCase().includes(theme)
+    );
+    if (matchedPrayer) return matchedPrayer;
+  }
+  
+  // Default fallback
+  return prayerGuides[0]; // Peace & Anxiety
+}
+
 export function getPersonalizedPrayer(viewedIds: string[], preferences: string[] = []): PrayerGuide {
   const unviewed = prayerGuides.filter(p => !viewedIds.includes(p.id));
   
