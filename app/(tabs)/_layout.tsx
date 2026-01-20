@@ -2,7 +2,7 @@ import colors from "@/constants/colors";
 import { Tabs } from "expo-router";
 import { BookOpen, BookMarked, Brain, HandHeart, Book, Settings } from "lucide-react-native";
 import React, { useState, useCallback, useMemo } from "react";
-import { Platform, TouchableOpacity } from "react-native";
+import { Platform, TouchableOpacity, View, Image, Dimensions, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useContent } from "@/contexts/ContentContext";
 import { t } from "@/utils/i18n";
@@ -13,6 +13,21 @@ export default function TabLayout() {
   const { userPreferences } = useContent();
   const lang = userPreferences.appLanguage;
   const [showSettings, setShowSettings] = useState(false);
+  const { width: screenWidth } = useWindowDimensions();
+  
+  // Responsive sizing based on screen width
+  const isSmallDevice = screenWidth < 375;
+  const isMediumDevice = screenWidth >= 375 && screenWidth < 768;
+  const isLargeDevice = screenWidth >= 768;
+  
+  // Dynamic sizes
+  const logoSize = isSmallDevice ? 38 : isMediumDevice ? 44 : 48;
+  const logoRadius = isSmallDevice ? 9 : isMediumDevice ? 10 : 12;
+  const logoMargin = isSmallDevice ? 12 : 16;
+  const settingsSize = isSmallDevice ? 34 : 36;
+  const settingsMargin = isSmallDevice ? 12 : 16;
+  const settingsIconSize = isSmallDevice ? 18 : 20;
+  const headerFontSize = isSmallDevice ? 16 : isMediumDevice ? 18 : 20;
   
   const handleOpenSettings = useCallback(() => {
     setShowSettings(true);
@@ -22,22 +37,65 @@ export default function TabLayout() {
     setShowSettings(false);
   }, []);
   
+  const appLogo = useMemo(() => (
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: logoMargin,
+      paddingVertical: 4,
+    }}>
+      <View style={{
+        width: logoSize,
+        height: logoSize,
+        borderRadius: logoRadius,
+        overflow: 'hidden',
+        shadowColor: colors.light.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+      }}>
+        <Image 
+          source={require('@/assets/images/icon.png')}
+          style={{
+            width: logoSize,
+            height: logoSize,
+          }}
+          resizeMode="cover"
+        />
+      </View>
+    </View>
+  ), [logoSize, logoRadius, logoMargin]);
+  
   const settingsButton = useMemo(() => (
-    <TouchableOpacity
-      onPress={handleOpenSettings}
-      style={{
-        marginRight: 16,
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: `${colors.light.primary}10`,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Settings size={20} color={colors.light.primary} />
-    </TouchableOpacity>
-  ), [handleOpenSettings]);
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: settingsMargin,
+      paddingVertical: 4,
+    }}>
+      <TouchableOpacity
+        onPress={handleOpenSettings}
+        style={{
+          width: settingsSize,
+          height: settingsSize,
+          borderRadius: settingsSize / 2,
+          backgroundColor: `${colors.light.primary}10`,
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: colors.light.primary,
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.08,
+          shadowRadius: 2,
+          elevation: 2,
+        }}
+      >
+        <Settings size={settingsIconSize} color={colors.light.primary} />
+      </TouchableOpacity>
+    </View>
+  ), [handleOpenSettings, settingsSize, settingsMargin, settingsIconSize]);
   
   return (
     <>
@@ -58,7 +116,7 @@ export default function TabLayout() {
           height: 60 + Math.max(insets.bottom, 0),
         },
         tabBarLabelStyle: {
-          fontSize: 10,
+          fontSize: isSmallDevice ? 9 : 10,
           fontWeight: "600" as const,
           marginTop: 2,
         },
@@ -71,11 +129,32 @@ export default function TabLayout() {
           shadowOpacity: 0,
           borderBottomWidth: 1,
           borderBottomColor: colors.light.border,
+          height: Platform.select({
+            ios: 44 + insets.top,
+            android: 56,
+            default: 56,
+          }),
+        },
+        headerLeftContainerStyle: {
+          paddingLeft: 0,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        headerRightContainerStyle: {
+          paddingRight: 0,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        headerTitleContainerStyle: {
+          alignItems: 'center',
+          justifyContent: 'center',
         },
         headerTitleStyle: {
-          fontSize: 20,
+          fontSize: headerFontSize,
           fontWeight: "700" as const,
           color: colors.light.text,
+          maxWidth: screenWidth - (logoSize + logoMargin * 2) - (settingsSize + settingsMargin * 2) - 40,
+          textAlign: 'center',
         },
         headerTitleAlign: "center",
       }}
@@ -86,6 +165,7 @@ export default function TabLayout() {
           title: t(lang, "tabs.home"),
           headerTitle: t(lang, "headers.dailyBread"),
           tabBarIcon: ({ color }) => <BookOpen size={22} color={color} />,
+          headerLeft: () => appLogo,
           headerRight: () => settingsButton,
         }}
       />
@@ -95,6 +175,8 @@ export default function TabLayout() {
           title: t(lang, "tabs.prayer"),
           headerTitle: t(lang, "headers.prayerGuides"),
           tabBarIcon: ({ color }) => <HandHeart size={22} color={color} />,
+          headerLeft: () => appLogo,
+          headerRight: () => settingsButton,
         }}
       />
       <Tabs.Screen
@@ -103,6 +185,8 @@ export default function TabLayout() {
           title: t(lang, "tabs.study"),
           headerTitle: t(lang, "headers.bibleStudy"),
           tabBarIcon: ({ color }) => <BookMarked size={22} color={color} />,
+          headerLeft: () => appLogo,
+          headerRight: () => settingsButton,
         }}
       />
       <Tabs.Screen
@@ -111,6 +195,8 @@ export default function TabLayout() {
           title: t(lang, "tabs.therapy"),
           headerTitle: t(lang, "headers.christianTherapy"),
           tabBarIcon: ({ color }) => <Brain size={22} color={color} />,
+          headerLeft: () => appLogo,
+          headerRight: () => settingsButton,
         }}
       />
       <Tabs.Screen
@@ -119,6 +205,8 @@ export default function TabLayout() {
           title: t(lang, "tabs.bible"),
           headerTitle: t(lang, "headers.holyBible"),
           tabBarIcon: ({ color }) => <Book size={22} color={color} />,
+          headerLeft: () => appLogo,
+          headerRight: () => settingsButton,
         }}
       />
     </Tabs>
