@@ -1,8 +1,23 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Notifications from 'expo-notifications';
 import createContextHook from '@nkzw/create-context-hook';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+
+// Check if we're in Expo Go BEFORE importing
+const isExpoGo = Constants.appOwnership === 'expo';
+
+// Dynamically import notifications with error handling
+let Notifications: any = null;
+
+// Only import notifications if not in Expo Go on Android
+if (!(isExpoGo && Platform.OS === 'android')) {
+  try {
+    Notifications = require('expo-notifications');
+  } catch (error) {
+    console.log('expo-notifications not available, scheduled sessions notifications disabled');
+  }
+}
 
 export type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly';
 
@@ -22,20 +37,32 @@ const SCHEDULED_SESSIONS_KEY = '@scheduled_therapy_sessions';
 
 // Configure notification channel for Android with alarm-like behavior
 const setupNotificationChannel = async () => {
+  if (!Notifications) return;
+  
+  // Skip in Expo Go on Android
+  if (isExpoGo && Platform.OS === 'android') {
+    console.log('Scheduled sessions notifications require a development build on Android.');
+    return;
+  }
+
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('therapy-sessions', {
-      name: 'Therapy Session Reminders',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250], // Vibrate pattern
-      sound: 'default', // Use default notification sound
-      enableVibrate: true,
-      enableLights: true,
-      lightColor: '#6366f1',
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-      bypassDnd: false, // Don't bypass Do Not Disturb
-      description: 'Reminders for your scheduled therapy sessions with sound and vibration',
-    });
-    console.log('Therapy notification channel configured');
+    try {
+      await Notifications.setNotificationChannelAsync('therapy-sessions', {
+        name: 'Therapy Session Reminders',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250], // Vibrate pattern
+        sound: 'default', // Use default notification sound
+        enableVibrate: true,
+        enableLights: true,
+        lightColor: '#6366f1',
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+        bypassDnd: false, // Don't bypass Do Not Disturb
+        description: 'Reminders for your scheduled therapy sessions with sound and vibration',
+      });
+      console.log('Therapy notification channel configured');
+    } catch (error) {
+      console.warn('Error setting up notification channel:', error);
+    }
   }
 };
 

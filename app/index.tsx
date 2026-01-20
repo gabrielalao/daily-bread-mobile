@@ -98,11 +98,6 @@ export default function LandingPage() {
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={[colors.light.background, colors.light.cardBackground, colors.light.background]}
-        style={StyleSheet.absoluteFillObject}
-      />
-      
       <Animated.ScrollView
         style={[styles.scrollView, { opacity: fadeAnim }]}
         contentContainerStyle={styles.scrollContent}
@@ -194,15 +189,10 @@ export default function LandingPage() {
               }
             }}
           >
-            <LinearGradient
-              colors={[colors.light.primary, colors.light.secondary]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.ctaGradient}
-            >
+            <View style={styles.ctaGradient}>
               <Text style={styles.ctaText}>Begin Your Journey</Text>
               <ArrowRight size={20} color="#FFFFFF" strokeWidth={2.5} />
-            </LinearGradient>
+            </View>
           </Pressable>
 
           <Text style={styles.footer}>
@@ -223,6 +213,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    backgroundColor: colors.light.background,
   },
   scrollView: {
     flex: 1,
@@ -245,11 +236,11 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: `${colors.light.primary}15`,
+    backgroundColor: `${colors.light.primary}20`,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,
-    borderColor: `${colors.light.primary}30`,
+    borderColor: `${colors.light.primary}40`,
   },
   appName: {
     fontSize: 42,
@@ -269,7 +260,7 @@ const styles = StyleSheet.create({
   verse: {
     fontSize: 16,
     lineHeight: 26,
-    color: colors.light.text,
+    color: colors.light.textSecondary,
     fontStyle: "italic" as const,
     textAlign: "center",
     paddingHorizontal: 30,
@@ -278,7 +269,7 @@ const styles = StyleSheet.create({
   verseReference: {
     fontSize: 14,
     fontWeight: "600" as const,
-    color: colors.light.textSecondary,
+    color: colors.light.primary,
     textAlign: "center",
   },
   featuresSection: {
@@ -306,13 +297,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.light.cardBackground,
     borderRadius: 20,
     padding: 24,
-    borderWidth: 1,
-    borderColor: colors.light.border,
+    borderWidth: 0,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
   featureIconContainer: {
     width: 56,
@@ -334,12 +324,12 @@ const styles = StyleSheet.create({
     color: colors.light.textSecondary,
   },
   benefitsSection: {
-    backgroundColor: `${colors.light.accent}10`,
+    backgroundColor: colors.light.cardBackgroundSecondary,
     borderRadius: 20,
     padding: 24,
     marginBottom: 32,
     borderWidth: 1,
-    borderColor: `${colors.light.accent}30`,
+    borderColor: colors.light.borderLight,
   },
   benefitItem: {
     flexDirection: "row",
@@ -351,11 +341,11 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.light.success,
+    backgroundColor: colors.light.primary,
   },
   benefitText: {
     fontSize: 15,
-    color: colors.light.text,
+    color: colors.light.textSecondary,
     fontWeight: "500" as const,
     flex: 1,
   },
@@ -363,10 +353,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: "hidden",
     shadowColor: colors.light.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 8,
     marginBottom: 20,
   },
   ctaButtonPressed: {
@@ -380,6 +370,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     paddingHorizontal: 32,
     gap: 8,
+    backgroundColor: colors.light.primary,
   },
   ctaText: {
     fontSize: 18,
@@ -389,7 +380,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     fontSize: 14,
-    color: colors.light.textSecondary,
+    color: colors.light.textTertiary,
     textAlign: "center",
     fontWeight: "500" as const,
   },

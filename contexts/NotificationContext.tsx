@@ -1,9 +1,23 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
-import * as Notifications from 'expo-notifications';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+
+// Check if we're in Expo Go BEFORE importing
+const isExpoGo = Constants.appOwnership === 'expo';
+
+// Dynamically import notifications with error handling
+let Notifications: any = null;
+
+// Only import notifications if not in Expo Go on Android
+if (!(isExpoGo && Platform.OS === 'android')) {
+  try {
+    Notifications = require('expo-notifications');
+  } catch (error) {
+    console.log('expo-notifications not available, notifications disabled');
+  }
+}
 
 export type NotificationSettings = {
   enabled: boolean;
@@ -14,20 +28,21 @@ export type NotificationSettings = {
 const NOTIFICATION_SETTINGS_KEY = '@notification_settings';
 const DEFAULT_TIME = '07:00';
 
-// Check if we're in Expo Go
-const isExpoGo = Constants.appOwnership === 'expo';
-
-// Only set notification handler if not in Expo Go or on iOS
-if (!isExpoGo || Platform.OS === 'ios') {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
+// Only set notification handler if notifications are available and conditions are met
+if (Notifications && (!isExpoGo || Platform.OS === 'ios')) {
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+  } catch (error) {
+    console.log('Could not set notification handler:', error);
+  }
 }
 
 export const [NotificationProvider, useNotifications] = createContextHook(() => {
@@ -58,7 +73,7 @@ export const [NotificationProvider, useNotifications] = createContextHook(() => 
   };
 
   const checkPermission = async () => {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === 'web' || !Notifications) {
       setSettings(prev => ({ ...prev, permissionGranted: false }));
       return;
     }
@@ -81,8 +96,8 @@ export const [NotificationProvider, useNotifications] = createContextHook(() => 
   };
 
   const requestPermission = async (): Promise<boolean> => {
-    if (Platform.OS === 'web') {
-      console.log('Notifications not supported on web');
+    if (Platform.OS === 'web' || !Notifications) {
+      console.log('Notifications not supported');
       return false;
     }
 
@@ -104,8 +119,8 @@ export const [NotificationProvider, useNotifications] = createContextHook(() => 
   };
 
   const scheduleDailyNotification = async (time: string) => {
-    if (Platform.OS === 'web') {
-      console.log('Cannot schedule notifications on web');
+    if (Platform.OS === 'web' || !Notifications) {
+      console.log('Cannot schedule notifications');
       return;
     }
 
@@ -168,8 +183,16 @@ export const [NotificationProvider, useNotifications] = createContextHook(() => 
   };
 
   const disableNotifications = async () => {
-    if (Platform.OS !== 'web') {
-      await Notifications.cancelAllScheduledNotificationsAsync();
+    // Cancel scheduled notifications if available
+    if (Platform.OS !== 'web' && Notifications) {
+      // Skip in Expo Go on Android
+      if (!(isExpoGo && Platform.OS === 'android')) {
+        try {
+          await Notifications.cancelAllScheduledNotificationsAsync();
+        } catch (error) {
+          console.warn('Error canceling notifications:', error);
+        }
+      }
     }
 
     const updated: NotificationSettings = {

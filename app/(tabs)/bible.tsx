@@ -9,9 +9,13 @@ import {
   Modal,
   FlatList,
   Dimensions,
+  TextInput,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, ChevronRight, BookOpen, List } from 'lucide-react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react-native';
 import colors from '@/constants/colors';
 import { BIBLE_BOOKS, BibleBook } from '@/constants/bibleBooks';
 import { fetchBibleChapter, BibleChapter, getBibleAPITranslation } from '@/utils/bibleAPI';
@@ -37,6 +41,13 @@ export default function BibleScreen() {
   const [loading, setLoading] = useState(true);
   const [showBookPicker, setShowBookPicker] = useState(false);
   const [showChapterPicker, setShowChapterPicker] = useState(false);
+  
+  // Search state
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchStep, setSearchStep] = useState<'book' | 'chapter'>('book');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSearchBook, setSelectedSearchBook] = useState<BibleBook | null>(null);
+  const [filteredBooks, setFilteredBooks] = useState<BibleBook[]>(BIBLE_BOOKS);
 
   // Load saved reading position on mount
   useEffect(() => {
@@ -130,36 +141,94 @@ export default function BibleScreen() {
            BIBLE_BOOKS.findIndex(b => b.id === currentBook.id) < BIBLE_BOOKS.length - 1;
   };
 
-  return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      {/* Navigation Header */}
-      <View style={styles.navigationBar}>
-        <TouchableOpacity
-          style={[styles.navButton, !hasPrevious() && styles.navButtonDisabled]}
-          onPress={goToPreviousChapter}
-          disabled={!hasPrevious()}
-        >
-          <ChevronLeft size={24} color={hasPrevious() ? colors.light.primary : colors.light.border} />
-        </TouchableOpacity>
+  // Search functionality
+  const openSearch = () => {
+    setShowSearch(true);
+    setSearchStep('book');
+    setSearchQuery('');
+    setSelectedSearchBook(null);
+    setFilteredBooks(BIBLE_BOOKS);
+  };
 
-        <View style={styles.navigationCenter}>
-          <TouchableOpacity style={styles.bookButton} onPress={() => setShowBookPicker(true)}>
-            <BookOpen size={18} color={colors.light.primary} />
-            <Text style={styles.bookButtonText}>{currentBook.name}</Text>
+  const closeSearch = () => {
+    setShowSearch(false);
+    setSearchQuery('');
+    setSearchStep('book');
+    setSelectedSearchBook(null);
+    Keyboard.dismiss();
+  };
+
+  const handleSearchQueryChange = (text: string) => {
+    setSearchQuery(text);
+    
+    if (searchStep === 'book') {
+      // Filter books by name
+      const filtered = BIBLE_BOOKS.filter(book =>
+        book.name.toLowerCase().includes(text.toLowerCase())
+      );
+      setFilteredBooks(filtered);
+    }
+  };
+
+  const handleBookSelect = (book: BibleBook) => {
+    setSelectedSearchBook(book);
+    setSearchStep('chapter');
+    setSearchQuery('');
+  };
+
+  const handleChapterSelect = (chapter: number) => {
+    if (selectedSearchBook) {
+      setCurrentBook(selectedSearchBook);
+      setCurrentChapter(chapter);
+      closeSearch();
+    }
+  };
+
+  const getFilteredChapters = () => {
+    if (!selectedSearchBook) return [];
+    
+    const allChapters = Array.from({ length: selectedSearchBook.chapters }, (_, i) => i + 1);
+    
+    if (!searchQuery) return allChapters;
+    
+    // Filter chapters that start with the search query
+    return allChapters.filter(ch => ch.toString().startsWith(searchQuery));
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Top Navigation Bar */}
+      <View style={styles.topBar}>
+        <View style={styles.topBarLeft}>
+          <TouchableOpacity 
+            style={styles.topPillButton} 
+            onPress={() => setShowBookPicker(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.topPillText}>
+              {currentBook.name} {currentChapter}
+            </Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.chapterButton} onPress={() => setShowChapterPicker(true)}>
-            <List size={16} color={colors.light.textSecondary} />
-            <Text style={styles.chapterButtonText}>Chapter {currentChapter}</Text>
+
+          <TouchableOpacity 
+            style={styles.chapterPillButton} 
+            onPress={() => setShowChapterPicker(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.chapterPillText}>
+              {chapterData && 
+               chapterData.verses.length > 0 && 
+               chapterData.chapter === currentChapter &&
+               chapterData.book === currentBook.id
+                ? `1-${chapterData.verses[chapterData.verses.length - 1].verse}`
+                : loading ? '...' : '...'
+              }
+            </Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={[styles.navButton, !hasNext() && styles.navButtonDisabled]}
-          onPress={goToNextChapter}
-          disabled={!hasNext()}
-        >
-          <ChevronRight size={24} color={hasNext() ? colors.light.primary : colors.light.border} />
+        <TouchableOpacity style={styles.searchButton} activeOpacity={0.7} onPress={openSearch}>
+          <Search size={24} color={colors.light.text} />
         </TouchableOpacity>
       </View>
 
@@ -172,11 +241,6 @@ export default function BibleScreen() {
           </View>
         ) : chapterData ? (
           <View style={styles.chapterContainer}>
-            <Text style={styles.chapterTitle}>
-              {currentBook.name} {currentChapter}
-            </Text>
-            <Text style={styles.versionBadge}>{userPreferences.bibleVersion.toUpperCase()}</Text>
-            
             <View style={styles.versesContainer}>
               {chapterData.verses.map((verse) => (
                 <View key={verse.verse} style={styles.verseRow}>
@@ -196,6 +260,37 @@ export default function BibleScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Floating Navigation Arrows */}
+      {!loading && chapterData && (
+        <View style={styles.floatingNav}>
+          <TouchableOpacity
+            style={[styles.floatingNavButton, styles.floatingNavLeft, !hasPrevious() && styles.floatingNavDisabled]}
+            onPress={goToPreviousChapter}
+            disabled={!hasPrevious()}
+            activeOpacity={0.7}
+          >
+            <ChevronLeft 
+              size={36} 
+              color={hasPrevious() ? '#FFFFFF' : 'rgba(255, 255, 255, 0.3)'} 
+              strokeWidth={3}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.floatingNavButton, styles.floatingNavRight, !hasNext() && styles.floatingNavDisabled]}
+            onPress={goToNextChapter}
+            disabled={!hasNext()}
+            activeOpacity={0.7}
+          >
+            <ChevronRight 
+              size={36} 
+              color={hasNext() ? '#FFFFFF' : 'rgba(255, 255, 255, 0.3)'} 
+              strokeWidth={3}
+            />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Book Picker Modal */}
       <Modal
@@ -295,6 +390,119 @@ export default function BibleScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Search Modal */}
+      <Modal
+        visible={showSearch}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={closeSearch}
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.searchModalOverlay}
+        >
+          <TouchableOpacity 
+            style={{ flex: 1 }} 
+            activeOpacity={1} 
+            onPress={Keyboard.dismiss}
+          />
+          <View style={styles.searchModalContent}>
+            {/* Search Header */}
+            <View style={styles.searchHeader}>
+              <Text style={styles.searchTitle}>
+                {searchStep === 'book' ? 'Search Book' : `${selectedSearchBook?.name} - Select Chapter`}
+              </Text>
+              <TouchableOpacity onPress={closeSearch} style={styles.searchCloseButton}>
+                <X size={24} color={colors.light.text} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Search Input */}
+            <View style={styles.searchInputContainer}>
+              <Search size={20} color={colors.light.textSecondary} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder={searchStep === 'book' ? 'Type book name...' : 'Type chapter number...'}
+                placeholderTextColor={colors.light.textSecondary}
+                value={searchQuery}
+                onChangeText={handleSearchQueryChange}
+                autoFocus
+                keyboardType={searchStep === 'chapter' ? 'numeric' : 'default'}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <X size={20} color={colors.light.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Step Indicator */}
+            {searchStep === 'chapter' && (
+              <TouchableOpacity 
+                style={styles.backToBookButton}
+                onPress={() => {
+                  setSearchStep('book');
+                  setSearchQuery('');
+                  setSelectedSearchBook(null);
+                }}
+              >
+                <Text style={styles.backToBookText}>← Back to book selection</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Results */}
+            <ScrollView 
+              style={styles.searchResults}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={true}
+            >
+              {searchStep === 'book' ? (
+                // Book Results
+                filteredBooks.length > 0 ? (
+                  filteredBooks.map((book) => (
+                    <TouchableOpacity
+                      key={book.id}
+                      style={styles.searchResultItem}
+                      onPress={() => handleBookSelect(book)}
+                    >
+                      <View>
+                        <Text style={styles.searchResultName}>{book.name}</Text>
+                        <Text style={styles.searchResultDetails}>
+                          {book.testament === 'OT' ? 'Old Testament' : 'New Testament'} • {book.chapters} chapters
+                        </Text>
+                      </View>
+                      <ChevronRight size={20} color={colors.light.textSecondary} />
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <View style={styles.noResults}>
+                    <Text style={styles.noResultsText}>No books found</Text>
+                  </View>
+                )
+              ) : (
+                // Chapter Results
+                <View style={styles.chapterSearchGrid}>
+                  {getFilteredChapters().map((chapter) => (
+                    <TouchableOpacity
+                      key={chapter}
+                      style={styles.chapterSearchItem}
+                      onPress={() => handleChapterSelect(chapter)}
+                    >
+                      <Text style={styles.chapterSearchText}>{chapter}</Text>
+                    </TouchableOpacity>
+                  ))}
+                  {getFilteredChapters().length === 0 && (
+                    <View style={styles.noResults}>
+                      <Text style={styles.noResultsText}>No chapters found</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -304,61 +512,120 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.light.background,
   },
-  navigationBar: {
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: colors.light.cardBackground,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.light.border,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: colors.light.background,
   },
-  navButton: {
+  topBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  topPillButton: {
+    backgroundColor: colors.light.cardBackground,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+  },
+  topPillText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.light.text,
+  },
+  chapterPillButton: {
+    backgroundColor: colors.light.cardBackground,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  chapterPillText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.light.text,
+  },
+  searchButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: `${colors.light.primary}10`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  bottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    backgroundColor: colors.light.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.light.border,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  bottomNavButton: {
+    width: 60,
+    height: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 30,
+    backgroundColor: colors.light.cardBackground,
+  },
+  bottomNavButtonDisabled: {
+    opacity: 0.3,
+  },
+  // Floating Navigation
+  floatingNav: {
+    position: 'absolute',
+    bottom: 15, // 15px from the bottom
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    pointerEvents: 'box-none', // Allow touches to pass through empty space
+    height: 80,
+    alignItems: 'center',
+  },
+  floatingNavButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: 'rgba(30, 30, 30, 0.90)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  navButtonDisabled: {
-    backgroundColor: colors.light.border,
-    opacity: 0.3,
+  floatingNavLeft: {
+    // Left button specific styles if needed
   },
-  navigationCenter: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 8,
+  floatingNavRight: {
+    // Right button specific styles if needed
   },
-  bookButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: `${colors.light.primary}15`,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  bookButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.light.primary,
-  },
-  chapterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  chapterButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.light.textSecondary,
+  floatingNavDisabled: {
+    backgroundColor: 'rgba(60, 60, 60, 0.4)',
+    opacity: 0.5,
   },
   scrollView: {
     flex: 1,
+    marginBottom: 100, // Reserve space for navigation arrows
+    marginTop: 10, // Optimized space at top for reading
   },
   scrollContent: {
     padding: isTablet ? 32 : (isSmallScreen ? 16 : 20),
+    paddingTop: 10, // Reduced top padding for better reading area
+    paddingBottom: 40,
   },
   loadingContainer: {
     alignItems: 'center',
@@ -371,44 +638,29 @@ const styles = StyleSheet.create({
     color: colors.light.textSecondary,
   },
   chapterContainer: {
-    gap: 16,
-  },
-  chapterTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.light.text,
-    marginBottom: 4,
-  },
-  versionBadge: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.light.accent,
-    backgroundColor: `${colors.light.accent}15`,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginBottom: 8,
+    flex: 1,
   },
   versesContainer: {
-    gap: 12,
+    gap: 16,
   },
   verseRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
     alignItems: 'flex-start',
   },
   verseNumber: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.light.accent,
-    minWidth: 32,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.light.textSecondary,
+    minWidth: 28,
+    paddingTop: 2,
   },
   verseText: {
     flex: 1,
-    fontSize: 17,
-    lineHeight: 28,
+    fontSize: 18,
+    lineHeight: 30,
     color: colors.light.text,
+    fontWeight: '400',
   },
   errorContainer: {
     alignItems: 'center',
@@ -551,5 +803,120 @@ const styles = StyleSheet.create({
   },
   chapterGridTextActive: {
     color: '#FFFFFF',
+  },
+  // Search Modal Styles
+  searchModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'flex-end',
+  },
+  searchModalContent: {
+    backgroundColor: colors.light.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    height: '75%',
+    paddingBottom: 20,
+  },
+  searchHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.light.border,
+  },
+  searchTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.light.text,
+    flex: 1,
+  },
+  searchCloseButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.light.cardBackground,
+    marginHorizontal: 20,
+    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+    gap: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.light.text,
+    padding: 0,
+  },
+  backToBookButton: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    paddingVertical: 8,
+  },
+  backToBookText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.light.primary,
+  },
+  searchResults: {
+    flex: 1,
+    marginTop: 16,
+  },
+  searchResultItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.light.border,
+  },
+  searchResultName: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.light.text,
+    marginBottom: 4,
+  },
+  searchResultDetails: {
+    fontSize: 13,
+    color: colors.light.textSecondary,
+  },
+  chapterSearchGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 20,
+    gap: 10,
+  },
+  chapterSearchItem: {
+    width: (screenWidth - 90) / 5,
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: colors.light.cardBackground,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.light.border,
+  },
+  chapterSearchText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.light.text,
+  },
+  noResults: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  noResultsText: {
+    fontSize: 16,
+    color: colors.light.textSecondary,
   },
 });

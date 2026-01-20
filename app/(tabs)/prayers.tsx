@@ -46,7 +46,7 @@ import {
   PanResponder,
   Modal,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar as RNCalendar } from 'react-native-calendars';
 
 const screenWidth = Dimensions.get('window').width;
@@ -343,40 +343,17 @@ export default function PrayerScreen() {
 
   if (!isLoaded) {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={[colors.light.background, colors.light.cardBackground]}
-          style={StyleSheet.absoluteFillObject}
-        />
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>{t(userPreferences.appLanguage, "common.loading")}</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (selectedGuide) {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={[colors.light.background, colors.light.cardBackground]}
-          style={StyleSheet.absoluteFillObject}
-        />
-        
-        {/* Share Button - Floating Action Button */}
-        <TouchableOpacity
-          style={styles.shareButton}
-          onPress={() => captureAndShare(`Share this prayer guide from Christian Daily Bread: ${selectedGuide.title}`)}
-          disabled={isCapturing}
-          activeOpacity={0.8}
-        >
-          {isCapturing ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Share2 size={18} color="#FFFFFF" />
-          )}
-        </TouchableOpacity>
-        
+      <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView
           ref={scrollRef}
           style={styles.scrollView}
@@ -438,30 +415,11 @@ export default function PrayerScreen() {
             </View>
           </Animated.View>
         </ScrollView>
-      </View>
-    );
-  }
 
-  return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={[colors.light.background, colors.light.cardBackground]}
-        style={StyleSheet.absoluteFillObject}
-      />
-      
-      {/* Share Button - Draggable Floating Action Button */}
-      <Animated.View
-        style={[
-          styles.shareButton,
-          {
-            transform: [{ translateX: pan.x }, { translateY: pan.y }],
-          },
-        ]}
-        {...panResponder.panHandlers}
-      >
+        {/* Share Button - Floating Action Button */}
         <TouchableOpacity
-          style={styles.shareButtonInner}
-          onPress={() => captureAndShare("Share prayer guides from Christian Daily Bread")}
+          style={styles.shareButton}
+          onPress={() => captureAndShare(`Share this prayer guide from Christian Daily Bread: ${selectedGuide.title}`)}
           disabled={isCapturing}
           activeOpacity={0.8}
         >
@@ -471,8 +429,12 @@ export default function PrayerScreen() {
             <Share2 size={18} color="#FFFFFF" />
           )}
         </TouchableOpacity>
-      </Animated.View>
+      </SafeAreaView>
+    );
+  }
 
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}
@@ -661,13 +623,38 @@ export default function PrayerScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+
+      {/* Share Button - Draggable Floating Action Button */}
+      <Animated.View
+        style={[
+          styles.shareButton,
+          {
+            transform: [{ translateX: pan.x }, { translateY: pan.y }],
+          },
+        ]}
+        {...panResponder.panHandlers}
+      >
+        <TouchableOpacity
+          style={styles.shareButtonInner}
+          onPress={() => captureAndShare("Share prayer guides from Christian Daily Bread")}
+          disabled={isCapturing}
+          activeOpacity={0.8}
+        >
+          {isCapturing ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Share2 size={18} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
+      </Animated.View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.light.background,
   },
   scrollView: {
     flex: 1,
@@ -677,6 +664,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: isTablet ? 32 : (isSmallScreen ? 16 : 20),
+    paddingTop: 16, // Consistent top padding for all devices
   },
   dateTimeContainer: {
     flexDirection: "row",
@@ -688,20 +676,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    backgroundColor: colors.light.cardBackground,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   dateText: {
-    fontSize: 14,
-    color: colors.light.textSecondary,
+    fontSize: 13,
+    color: colors.light.textTertiary,
     fontWeight: "500" as const,
   },
   timeRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    backgroundColor: colors.light.cardBackground,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   timeText: {
-    fontSize: 14,
-    color: colors.light.textSecondary,
+    fontSize: 13,
+    color: colors.light.textTertiary,
     fontWeight: "500" as const,
   },
   header: {
@@ -715,7 +711,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: isSmallScreen ? 14 : 16,
-    color: colors.light.textSecondary,
+    color: colors.light.textTertiary,
     lineHeight: 22,
   },
   todaySection: {
@@ -732,19 +728,18 @@ const styles = StyleSheet.create({
   },
   todaySectionSubtitle: {
     fontSize: 14,
-    color: colors.light.textSecondary,
+    color: colors.light.textTertiary,
   },
   todayPrayerCard: {
     backgroundColor: colors.light.cardBackground,
     borderRadius: isTablet ? 24 : 20,
     padding: isTablet ? 32 : (isSmallScreen ? 20 : 24),
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: colors.light.border,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 0,
   },
   cardHeader: {
     flexDirection: "row",
@@ -756,7 +751,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: `${colors.light.primary}15`,
+    backgroundColor: `${colors.light.primary}20`,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -776,9 +771,10 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   scripture: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.light.textSecondary,
     fontWeight: "600" as const,
+    opacity: 0.9,
   },
   verseContainer: {
     position: "relative" as const,
@@ -792,20 +788,21 @@ const styles = StyleSheet.create({
   },
   quoteMark: {
     fontSize: 48,
-    color: colors.light.accent,
+    color: colors.light.primary,
     fontWeight: "700" as const,
-    opacity: 0.3,
+    opacity: 0.25,
   },
   verse: {
     fontSize: 17,
     lineHeight: 28,
-    color: colors.light.text,
+    color: colors.light.textSecondary,
     fontStyle: "italic" as const,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.light.border,
+    backgroundColor: colors.light.borderLight,
     marginVertical: 20,
+    opacity: 0.2,
   },
   reflectionContainer: {
     gap: 12,
@@ -829,7 +826,7 @@ const styles = StyleSheet.create({
   todayPrayerText: {
     fontSize: 15,
     lineHeight: 24,
-    color: colors.light.text,
+    color: colors.light.textSecondary,
     fontStyle: "italic" as const,
     marginBottom: 12,
   },
@@ -839,23 +836,23 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   todayVerseCard: {
-    backgroundColor: `${colors.light.accent}10`,
+    backgroundColor: colors.light.cardBackgroundSecondary,
     borderRadius: 12,
     padding: isSmallScreen ? 14 : 16,
     marginBottom: 12,
     borderLeftWidth: 3,
-    borderLeftColor: colors.light.accent,
+    borderLeftColor: colors.light.primary,
   },
   todayVerse: {
     fontSize: isSmallScreen ? 14 : 15,
     lineHeight: isSmallScreen ? 22 : 24,
-    color: colors.light.text,
+    color: colors.light.textSecondary,
     marginBottom: 8,
     fontStyle: "italic" as const,
   },
   todayScripture: {
     fontSize: 13,
-    color: colors.light.accent,
+    color: colors.light.primary,
     fontWeight: "600" as const,
   },
   allPrayersHeader: {

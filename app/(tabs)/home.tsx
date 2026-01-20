@@ -12,9 +12,8 @@ import { BookOpen, Calendar, Clock, Share2, X, Settings } from "lucide-react-nat
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Animated, ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Dimensions, PanResponder, Modal } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar as RNCalendar } from 'react-native-calendars';
-import { SettingsModal } from "@/components/SettingsModal";
 
 const { width: screenWidth } = Dimensions.get('window');
 const isTablet = screenWidth >= 768;
@@ -34,7 +33,6 @@ export default function HomeScreen() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewingPastContent, setViewingPastContent] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const hasSetInitialDevotional = useRef(false);
   
   // Draggable share button position
@@ -189,49 +187,16 @@ export default function HomeScreen() {
 
   if (!isLoaded) {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={[colors.light.background, colors.light.cardBackground]}
-          style={StyleSheet.absoluteFillObject}
-        />
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>{t(lang, "common.loading")}</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={[colors.light.background, colors.light.cardBackground]}
-        style={StyleSheet.absoluteFillObject}
-      />
-      
-      {/* Share Button - Draggable Floating Action Button */}
-      <Animated.View
-        style={[
-          styles.shareButton,
-          {
-            transform: [{ translateX: pan.x }, { translateY: pan.y }],
-          },
-        ]}
-        {...panResponder.panHandlers}
-      >
-        <TouchableOpacity
-          style={styles.shareButtonInner}
-          onPress={() => captureAndShare("Share today's devotional from Christian Daily Bread")}
-          disabled={isCapturing}
-          activeOpacity={0.8}
-        >
-          {isCapturing ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Share2 size={18} color="#FFFFFF" />
-          )}
-        </TouchableOpacity>
-      </Animated.View>
-
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}
@@ -310,6 +275,30 @@ export default function HomeScreen() {
         </Animated.View>
       </ScrollView>
 
+      {/* Share Button - Draggable Floating Action Button */}
+      <Animated.View
+        style={[
+          styles.shareButton,
+          {
+            transform: [{ translateX: pan.x }, { translateY: pan.y }],
+          },
+        ]}
+        {...panResponder.panHandlers}
+      >
+        <TouchableOpacity
+          style={styles.shareButtonInner}
+          onPress={() => captureAndShare("Share today's devotional from Christian Daily Bread")}
+          disabled={isCapturing}
+          activeOpacity={0.8}
+        >
+          {isCapturing ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Share2 size={18} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
+      </Animated.View>
+
       {/* Calendar Modal */}
       <Modal
         visible={showCalendar}
@@ -344,16 +333,16 @@ export default function HomeScreen() {
               }}
               maxDate={new Date().toISOString().split('T')[0]}
               theme={{
-                backgroundColor: colors.light.cardBackground,
-                calendarBackground: colors.light.cardBackground,
-                textSectionTitleColor: colors.light.textSecondary,
+                backgroundColor: colors.light.cardBackgroundSecondary,
+                calendarBackground: colors.light.cardBackgroundSecondary,
+                textSectionTitleColor: colors.light.textTertiary,
                 selectedDayBackgroundColor: colors.light.primary,
-                selectedDayTextColor: '#ffffff',
+                selectedDayTextColor: '#FFFFFF',
                 todayTextColor: colors.light.primary,
                 dayTextColor: colors.light.text,
-                textDisabledColor: colors.light.textSecondary,
+                textDisabledColor: colors.light.textLight,
                 dotColor: colors.light.primary,
-                selectedDotColor: '#ffffff',
+                selectedDotColor: '#FFFFFF',
                 arrowColor: colors.light.primary,
                 monthTextColor: colors.light.text,
                 indicatorColor: colors.light.primary,
@@ -396,13 +385,14 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.light.background,
   },
   scrollView: {
     flex: 1,
@@ -412,6 +402,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: isTablet ? 32 : (isSmallScreen ? 16 : 20),
+    paddingTop: 16, // Consistent top padding for all devices
   },
   header: {
     marginBottom: 24,
@@ -420,28 +411,36 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: 16,
     flexWrap: "wrap",
     gap: 12,
   },
   dateContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
+    backgroundColor: colors.light.cardBackground,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   dateText: {
-    fontSize: 14,
-    color: colors.light.textSecondary,
+    fontSize: 13,
+    color: colors.light.textTertiary,
     fontWeight: "500" as const,
   },
   timeContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
+    backgroundColor: colors.light.cardBackground,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   timeText: {
-    fontSize: 14,
-    color: colors.light.textSecondary,
+    fontSize: 13,
+    color: colors.light.textTertiary,
     fontWeight: "500" as const,
   },
   greeting: {
@@ -451,22 +450,21 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 24,
-    fontWeight: "700" as const,
-    color: colors.light.textSecondary,
-    lineHeight: 32,
+    fontSize: 20,
+    fontWeight: "600" as const,
+    color: colors.light.textTertiary,
+    lineHeight: 28,
   },
   card: {
-    backgroundColor: colors.light.cardBackground,
+    backgroundColor: colors.light.verseCard,
     borderRadius: isTablet ? 24 : 20,
     padding: isTablet ? 32 : (isSmallScreen ? 20 : 24),
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: colors.light.border,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 0,
   },
   cardHeader: {
     flexDirection: "row",
@@ -478,7 +476,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: `${colors.light.primary}15`,
+    backgroundColor: `${colors.light.primary}20`,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -489,15 +487,16 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700" as const,
     color: colors.light.text,
-    marginBottom: 4,
+    marginBottom: 6,
     lineHeight: 28,
     flexWrap: "wrap",
     flexShrink: 1,
   },
   scripture: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.light.textSecondary,
     fontWeight: "600" as const,
+    opacity: 0.9,
   },
   verseContainer: {
     position: "relative" as const,
@@ -511,20 +510,21 @@ const styles = StyleSheet.create({
   },
   quoteMark: {
     fontSize: 48,
-    color: colors.light.accent,
+    color: colors.light.primary,
     fontWeight: "700" as const,
-    opacity: 0.3,
+    opacity: 0.25,
   },
   verse: {
     fontSize: 17,
     lineHeight: 28,
-    color: colors.light.text,
+    color: colors.light.textSecondary,
     fontStyle: "italic" as const,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.light.border,
+    backgroundColor: colors.light.borderLight,
     marginVertical: 20,
+    opacity: 0.2,
   },
   reflectionContainer: {
     gap: 12,
@@ -542,11 +542,11 @@ const styles = StyleSheet.create({
   },
   prayerPrompt: {
     marginTop: 20,
-    backgroundColor: `${colors.light.success}15`,
+    backgroundColor: colors.light.cardBackgroundSecondary,
     borderRadius: 16,
     padding: 20,
     borderLeftWidth: 4,
-    borderLeftColor: colors.light.success,
+    borderLeftColor: colors.light.primary,
   },
   prayerPromptTitle: {
     fontSize: 16,
@@ -564,11 +564,13 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: colors.light.background,
   },
   loadingText: {
     fontSize: 16,
-    color: colors.light.textSecondary,
+    color: colors.light.textTertiary,
     fontWeight: "600" as const,
+    marginTop: 12,
   },
   shareButton: {
     position: "absolute" as const,
@@ -583,46 +585,46 @@ const styles = StyleSheet.create({
     backgroundColor: colors.light.primary,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
+    shadowColor: colors.light.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 10,
   },
   pastDateText: {
     color: colors.light.primary,
     fontWeight: "600" as const,
   },
   todayButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     backgroundColor: colors.light.primary,
-    borderRadius: 12,
+    borderRadius: 14,
     marginLeft: 8,
   },
   todayButtonText: {
     color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "600" as const,
+    fontSize: 11,
+    fontWeight: "700" as const,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: colors.light.overlay,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
   },
   calendarModal: {
-    backgroundColor: colors.light.cardBackground,
-    borderRadius: 20,
-    padding: 20,
+    backgroundColor: colors.light.cardBackgroundSecondary,
+    borderRadius: 24,
+    padding: 24,
     width: "100%",
     maxWidth: 400,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.6,
+    shadowRadius: 24,
+    elevation: 12,
   },
   calendarHeader: {
     flexDirection: "row" as const,
@@ -631,24 +633,31 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   calendarTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700" as const,
     color: colors.light.text,
   },
   closeButton: {
-    padding: 4,
+    padding: 8,
+    backgroundColor: colors.light.cardBackgroundTertiary,
+    borderRadius: 20,
   },
   todayButtonInModal: {
     backgroundColor: colors.light.primary,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 28,
+    borderRadius: 14,
     alignItems: "center",
     marginTop: 20,
+    shadowColor: colors.light.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
   },
   todayButtonInModalText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600" as const,
+    fontSize: 17,
+    fontWeight: "700" as const,
   },
 });
