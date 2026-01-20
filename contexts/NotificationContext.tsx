@@ -3,6 +3,7 @@ import createContextHook from '@nkzw/create-context-hook';
 import * as Notifications from 'expo-notifications';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 export type NotificationSettings = {
   enabled: boolean;
@@ -13,15 +14,21 @@ export type NotificationSettings = {
 const NOTIFICATION_SETTINGS_KEY = '@notification_settings';
 const DEFAULT_TIME = '07:00';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Check if we're in Expo Go
+const isExpoGo = Constants.appOwnership === 'expo';
+
+// Only set notification handler if not in Expo Go or on iOS
+if (!isExpoGo || Platform.OS === 'ios') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
 
 export const [NotificationProvider, useNotifications] = createContextHook(() => {
   const [settings, setSettings] = useState<NotificationSettings>({
@@ -56,14 +63,32 @@ export const [NotificationProvider, useNotifications] = createContextHook(() => 
       return;
     }
 
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    const granted = existingStatus === 'granted';
-    setSettings(prev => ({ ...prev, permissionGranted: granted }));
+    // Skip permission check in Expo Go on Android (SDK 53+)
+    if (isExpoGo && Platform.OS === 'android') {
+      console.log('Notifications not available in Expo Go on Android. Use a development build.');
+      setSettings(prev => ({ ...prev, permissionGranted: false }));
+      return;
+    }
+
+    try {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      const granted = existingStatus === 'granted';
+      setSettings(prev => ({ ...prev, permissionGranted: granted }));
+    } catch (error) {
+      console.warn('Error checking notification permissions:', error);
+      setSettings(prev => ({ ...prev, permissionGranted: false }));
+    }
   };
 
   const requestPermission = async (): Promise<boolean> => {
     if (Platform.OS === 'web') {
       console.log('Notifications not supported on web');
+      return false;
+    }
+
+    // Skip in Expo Go on Android
+    if (isExpoGo && Platform.OS === 'android') {
+      console.log('Notifications require a development build on Android.');
       return false;
     }
 
@@ -81,6 +106,12 @@ export const [NotificationProvider, useNotifications] = createContextHook(() => 
   const scheduleDailyNotification = async (time: string) => {
     if (Platform.OS === 'web') {
       console.log('Cannot schedule notifications on web');
+      return;
+    }
+
+    // Skip in Expo Go on Android
+    if (isExpoGo && Platform.OS === 'android') {
+      console.log('Notification scheduling requires a development build on Android.');
       return;
     }
 

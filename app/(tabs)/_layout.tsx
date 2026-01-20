@@ -25,17 +25,17 @@ export default function TabLayout() {
   
   // Dynamic sizes - smaller for Android to fit better
   const logoSize = Platform.OS === 'android' 
-    ? (isSmallDevice ? 36 : 40) 
+    ? (isSmallDevice ? 32 : 36) 
     : (isSmallDevice ? 38 : isMediumDevice ? 44 : 48);
   const logoRadius = Platform.OS === 'android'
-    ? (isSmallDevice ? 8 : 9)
+    ? (isSmallDevice ? 7 : 8)
     : (isSmallDevice ? 9 : isMediumDevice ? 10 : 12);
-  const logoMargin = Platform.OS === 'android' ? 8 : (isSmallDevice ? 12 : 16);
+  const logoMargin = Platform.OS === 'android' ? 6 : (isSmallDevice ? 12 : 16);
   const settingsSize = Platform.OS === 'android' ? 32 : (isSmallDevice ? 34 : 36);
-  const settingsMargin = Platform.OS === 'android' ? 8 : (isSmallDevice ? 12 : 16);
+  const settingsMargin = Platform.OS === 'android' ? 6 : (isSmallDevice ? 12 : 16);
   const settingsIconSize = Platform.OS === 'android' ? 18 : (isSmallDevice ? 18 : 20);
   const headerFontSize = Platform.OS === 'android'
-    ? (isSmallDevice ? 16 : 18)
+    ? (isSmallDevice ? 15 : 17)
     : (isSmallDevice ? 16 : isMediumDevice ? 18 : 20);
   
   const handleOpenSettings = useCallback(() => {
@@ -167,8 +167,9 @@ export default function TabLayout() {
           fontSize: headerFontSize,
           fontWeight: "700" as const,
           color: colors.light.text,
-          maxWidth: screenWidth - (logoSize + logoMargin * 2) - (settingsSize + settingsMargin * 2) - (Platform.OS === 'android' ? 20 : 40),
+          maxWidth: screenWidth - (logoSize + logoMargin * 3) - (settingsSize + settingsMargin * 3) - (Platform.OS === 'android' ? 60 : 40),
           textAlign: 'center',
+          paddingHorizontal: Platform.OS === 'android' ? 8 : 0,
         },
         headerTitleAlign: "center",
       }}
