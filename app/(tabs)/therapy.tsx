@@ -4,7 +4,7 @@ import { useContent } from "@/contexts/ContentContext";
 import { usePersonalization } from "@/hooks/usePersonalization";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useScheduledSessions } from "@/contexts/ScheduledSessionsContext";
-import { useScreenshotShare } from "@/hooks/useScreenshotShare";
+import { useCardShare } from "@/hooks/useCardShare";
 import { getAppLanguageById } from "@/constants/app-languages";
 import { getVersionById } from "@/constants/bible-versions";
 import { translateTextCached } from "@/utils/translate";
@@ -12,7 +12,7 @@ import { TypingIndicator } from "@/components/TypingIndicator";
 import { ScheduleNextSessionModal } from "@/components/ScheduleNextSessionModal";
 import { useRorkAgent, generateObject } from "@rork-ai/toolkit-sdk";
 import { LinearGradient } from "expo-linear-gradient";
-import { Brain, Check, Heart, Sparkles, MessageCircle, AlertTriangle, X, Send, ArrowLeft, Mic, MicOff, Volume2, VolumeX, Settings, Plus, Minus, Calendar, Share2 } from "lucide-react-native";
+import { Brain, Check, Heart, Sparkles, MessageCircle, AlertTriangle, X, Send, ArrowLeft, Mic, MicOff, Volume2, VolumeX, Settings, Plus, Minus, Calendar, Upload } from "lucide-react-native";
 import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, Platform, FlatList, Alert, Dimensions } from "react-native";
 import { Audio } from "expo-av";
@@ -67,8 +67,13 @@ export default function TherapyScreen() {
   const { analyzeContentInteraction } = usePersonalization();
   const { isOffline, isOnline } = useNetworkStatus();
   const { scheduleSession, getNextSession } = useScheduledSessions();
-  const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
   const insets = useSafeAreaInsets();
+  
+  // Card-level sharing hooks
+  const scriptureCard = useCardShare();
+  const reflectionCard = useCardShare();
+  const prayerCard = useCardShare();
+  
   const [fadeAnim] = useState(new Animated.Value(0));
   const [showMainMenu, setShowMainMenu] = useState(true);
   const [showFocusSelection, setShowFocusSelection] = useState(false);
@@ -83,6 +88,8 @@ export default function TherapyScreen() {
   const [showChatInterface, setShowChatInterface] = useState(false);
   const [showChatOnboarding, setShowChatOnboarding] = useState(false);
   const [chatInput, setChatInput] = useState("");
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [activeCardType, setActiveCardType] = useState<'scripture' | 'reflection' | 'prayer' | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
@@ -132,6 +139,24 @@ export default function TherapyScreen() {
 
   const bibleVersion = getVersionById(userPreferences.bibleVersion);
   const lang = userPreferences.appLanguage;
+
+  const handleCardPress = (cardType: 'scripture' | 'reflection' | 'prayer') => {
+    setActiveCardType(cardType);
+    setShowShareMenu(true);
+  };
+
+  const handleShare = () => {
+    setShowShareMenu(false);
+    setTimeout(() => {
+      if (activeCardType === 'scripture') {
+        scriptureCard.shareCard("Share today's scripture from Christian Daily Bread");
+      } else if (activeCardType === 'reflection') {
+        reflectionCard.shareCard("Share today's reflection from Christian Daily Bread");
+      } else if (activeCardType === 'prayer') {
+        prayerCard.shareCard("Share today's prayer from Christian Daily Bread");
+      }
+    }, 300);
+  };
 
   // ---- UI text auto-translation (so Therapy UI is fully localized) ----
   const [uiTr, setUiTr] = useState<Record<string, string>>({});
@@ -1125,7 +1150,7 @@ You'll receive a notification to remind you.`,
 
             <View style={styles.menuOptions}>
               <TouchableOpacity
-                style={styles.menuCard}
+                style={[styles.menuCard, styles.menuCardPersonalized]}
                 onPress={() => {
                   if (isOffline) {
                     Alert.alert(
@@ -1141,7 +1166,7 @@ You'll receive a notification to remind you.`,
               >
                 <View style={styles.menuCardHeader}>
                   <View style={styles.menuIconContainer}>
-                    <Sparkles size={28} color={colors.light.primary} />
+                    <Sparkles size={28} color="#FFFFFF" />
                   </View>
                   <Text style={styles.menuCardTitle}>{tr("Personalized Session")}</Text>
                   {isOffline && (
@@ -1155,15 +1180,15 @@ You'll receive a notification to remind you.`,
                 </Text>
                 <View style={styles.menuCardFeatures}>
                   <View style={styles.featureRow}>
-                    <Check size={16} color={colors.light.success} />
+                    <Check size={16} color="#FFFFFF" />
                     <Text style={styles.featureText}>{tr("Biblical guidance")}</Text>
                   </View>
                   <View style={styles.featureRow}>
-                    <Check size={16} color={colors.light.success} />
+                    <Check size={16} color="#FFFFFF" />
                     <Text style={styles.featureText}>{tr("Practical action steps")}</Text>
                   </View>
                   <View style={styles.featureRow}>
-                    <Check size={16} color={colors.light.success} />
+                    <Check size={16} color="#FFFFFF" />
                     <Text style={styles.featureText}>{tr("Prayer prompts")}</Text>
                   </View>
                 </View>
@@ -1176,7 +1201,7 @@ You'll receive a notification to remind you.`,
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.menuCard}
+                style={[styles.menuCard, styles.menuCardConversation]}
                 onPress={() => {
                   if (isOffline) {
                     Alert.alert(
@@ -1192,7 +1217,7 @@ You'll receive a notification to remind you.`,
               >
                 <View style={styles.menuCardHeader}>
                   <View style={[styles.menuIconContainer, styles.menuIconContainerAlt]}>
-                    <MessageCircle size={28} color={colors.light.accent} />
+                    <MessageCircle size={28} color="#FFFFFF" />
                   </View>
                   <Text style={styles.menuCardTitle}>{tr("Supportive Conversation")}</Text>
                   {isOffline && (
@@ -1206,15 +1231,15 @@ You'll receive a notification to remind you.`,
                 </Text>
                 <View style={styles.menuCardFeatures}>
                   <View style={styles.featureRow}>
-                    <Check size={16} color={colors.light.success} />
+                    <Check size={16} color="#FFFFFF" />
                     <Text style={styles.featureText}>{tr("Real-time responses")}</Text>
                   </View>
                   <View style={styles.featureRow}>
-                    <Check size={16} color={colors.light.success} />
+                    <Check size={16} color="#FFFFFF" />
                     <Text style={styles.featureText}>{tr("Empathetic listening")}</Text>
                   </View>
                   <View style={styles.featureRow}>
-                    <Check size={16} color={colors.light.success} />
+                    <Check size={16} color="#FFFFFF" />
                     <Text style={styles.featureText}>{tr("Faith-based guidance")}</Text>
                   </View>
                 </View>
@@ -1264,7 +1289,7 @@ You'll receive a notification to remind you.`,
             </TouchableOpacity>
 
             <View style={styles.selectionHeader}>
-              <MessageCircle size={32} color={colors.light.accent} />
+              <MessageCircle size={32} color="#2B9F98" />
               <Text style={styles.selectionTitle}>{tr("Let's understand how you're feeling")}</Text>
               <Text style={styles.selectionSubtitle}>
                 {tr("This helps me provide better support tailored to your needs")}
@@ -1298,7 +1323,7 @@ You'll receive a notification to remind you.`,
                   </Text>
                   {chatFocus.includes(focus.id) && (
                     <View style={styles.checkmark}>
-                      <Check size={16} color="#FFFFFF" />
+                      <Check size={16} color="#2A9D8F" />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -1334,6 +1359,7 @@ You'll receive a notification to remind you.`,
             <TouchableOpacity
               style={[
                 styles.generateButton,
+                styles.conversationButton,
                 (chatFocus.length === 0 || !chatMood) &&
                 styles.generateButtonDisabled,
               ]}
@@ -1543,7 +1569,7 @@ You'll receive a notification to remind you.`,
             </TouchableOpacity>
 
             <View style={styles.selectionHeader}>
-              <Sparkles size={32} color={colors.light.primary} />
+              <Sparkles size={32} color="#6A4C93" />
               <Text style={styles.selectionTitle}>{tr("What do you want to focus on today?")}</Text>
               <Text style={styles.selectionSubtitle}>
                 Choose areas where you&apos;re seeking healing and biblical guidance
@@ -1571,7 +1597,7 @@ You'll receive a notification to remind you.`,
                   </Text>
                   {selectedFocus.includes(focus.id) && (
                     <View style={styles.checkmark}>
-                      <Check size={16} color="#FFFFFF" />
+                      <Check size={16} color="#6A4C93" />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -1865,7 +1891,7 @@ You'll receive a notification to remind you.`,
                   style={styles.voiceButton}
                   onPress={startRecording}
                 >
-                  <Mic size={20} color={colors.light.primary} />
+                  <Mic size={20} color="#FFFFFF" />
                 </TouchableOpacity>
                 {messages.length <= 2 && (
                   <View style={styles.voiceHintBubble}>
@@ -1884,7 +1910,7 @@ You'll receive a notification to remind you.`,
             )}
             {isTranscribing && (
               <View style={styles.voiceButton}>
-                <ActivityIndicator size="small" color={colors.light.primary} />
+                <ActivityIndicator size="small" color="#FFFFFF" />
               </View>
             )}
             {isSpeaking && (
@@ -1948,26 +1974,12 @@ You'll receive a notification to remind you.`,
         style={StyleSheet.absoluteFillObject}
       />
       
-      {/* Share Button - Floating Action Button */}
-      <TouchableOpacity
-        style={styles.shareButton}
-        onPress={() => captureAndShare(tr("Share this therapy session from Christian Daily Bread"))}
-        disabled={isCapturing}
-        activeOpacity={0.8}
-      >
-        {isCapturing ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : (
-          <Share2 size={18} color="#FFFFFF" />
-        )}
-      </TouchableOpacity>
-      
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 32, 120) }]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
+        <Animated.View collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
           <View style={styles.actionBar}>
             <TouchableOpacity style={styles.actionButton} onPress={resetToDaily}>
               <Text style={styles.actionButtonText}>{tr("← New Session")}</Text>
@@ -1983,10 +1995,16 @@ You'll receive a notification to remind you.`,
             <Text style={styles.topic}>{displayTherapy.topic}</Text>
           </View>
 
-          <View style={styles.card}>
+          <TouchableOpacity 
+            ref={scriptureCard.cardRef} 
+            collapsable={false} 
+            style={styles.card}
+            onPress={() => handleCardPress('scripture')}
+            activeOpacity={0.9}
+          >
             <View style={styles.cardHeader}>
               <View style={styles.iconContainer}>
-                <Heart size={24} color={colors.light.accent} />
+                <Heart size={24} color="#FFFFFF" />
               </View>
               <View style={styles.cardTitleContainer}>
                 <Text style={styles.cardTitle}>{tr("Scripture Foundation")}</Text>
@@ -2002,7 +2020,7 @@ You'll receive a notification to remind you.`,
               </View>
               <Text style={styles.verse}>{displayTherapy.verse}</Text>
             </View>
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{tr("Therapeutic Focus")}</Text>
@@ -2026,18 +2044,30 @@ You'll receive a notification to remind you.`,
             </View>
           </View>
 
-          <View style={styles.reflectionCard}>
+          <TouchableOpacity 
+            ref={reflectionCard.cardRef} 
+            collapsable={false} 
+            style={styles.reflectionCard}
+            onPress={() => handleCardPress('reflection')}
+            activeOpacity={0.9}
+          >
             <Text style={styles.reflectionTitle}>{tr("Reflection")}</Text>
             <Text style={styles.reflectionText}>{displayTherapy.reflection}</Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.prayerPrompt}>
+          <TouchableOpacity 
+            ref={prayerCard.cardRef} 
+            collapsable={false} 
+            style={styles.prayerPrompt}
+            onPress={() => handleCardPress('prayer')}
+            activeOpacity={0.9}
+          >
             <View style={styles.prayerHeader}>
-              <Check size={20} color={colors.light.success} />
+              <Check size={20} color="#FFFFFF" />
               <Text style={styles.prayerPromptTitle}>{tr("Prayer for Healing")}</Text>
             </View>
             <Text style={styles.prayerPromptText}>{displayTherapy.prayerPrompt}</Text>
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.disclaimer}>
             <Text style={styles.disclaimerText}>
@@ -2046,6 +2076,41 @@ You'll receive a notification to remind you.`,
           </View>
         </Animated.View>
       </ScrollView>
+
+      {/* Share Menu Modal */}
+      <Modal
+        visible={showShareMenu}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowShareMenu(false)}
+      >
+        <TouchableOpacity 
+          style={styles.shareMenuOverlay}
+          activeOpacity={1}
+          onPress={() => setShowShareMenu(false)}
+        >
+          <View style={styles.shareMenuContainer}>
+            <TouchableOpacity
+              style={styles.shareMenuItem}
+              onPress={handleShare}
+              activeOpacity={0.7}
+            >
+              <Upload size={22} color={colors.light.text} />
+              <Text style={styles.shareMenuText}>Create Image</Text>
+            </TouchableOpacity>
+
+            <View style={styles.shareMenuDivider} />
+
+            <TouchableOpacity
+              style={styles.shareMenuItem}
+              onPress={() => setShowShareMenu(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.shareMenuCancel}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -2097,17 +2162,16 @@ const styles = StyleSheet.create({
     fontWeight: "600" as const,
   },
   card: {
-    backgroundColor: colors.light.cardBackground,
+    backgroundColor: '#D9896A', // Coral/Pink
     borderRadius: 20,
     padding: 24,
     marginBottom: 24,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: colors.light.border,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 0,
   },
   cardHeader: {
     flexDirection: "row",
@@ -2129,12 +2193,12 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: "700" as const,
-    color: colors.light.text,
+    color: '#FFFFFF',
     marginBottom: 4,
   },
   scripture: {
     fontSize: 14,
-    color: colors.light.textSecondary,
+    color: 'rgba(255, 255, 255, 0.85)',
     fontWeight: "600" as const,
   },
   verseContainer: {
@@ -2155,7 +2219,7 @@ const styles = StyleSheet.create({
   verse: {
     fontSize: 17,
     lineHeight: 28,
-    color: colors.light.text,
+    color: '#FFFFFF',
     fontStyle: "italic" as const,
   },
   section: {
@@ -2204,31 +2268,39 @@ const styles = StyleSheet.create({
     color: colors.light.text,
   },
   reflectionCard: {
-    backgroundColor: `${colors.light.accent}08`,
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: '#2B9F98', // Teal
+    borderRadius: 20,
+    padding: 24,
     marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.light.accent,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 0,
   },
   reflectionTitle: {
     fontSize: 16,
     fontWeight: "700" as const,
-    color: colors.light.text,
+    color: '#FFFFFF',
     marginBottom: 8,
   },
   reflectionText: {
     fontSize: 15,
     lineHeight: 24,
-    color: colors.light.textSecondary,
+    color: '#FFFFFF',
   },
   prayerPrompt: {
-    backgroundColor: `${colors.light.success}15`,
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: '#6A4C93', // Deep Purple
+    borderRadius: 20,
+    padding: 24,
     marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.light.success,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 0,
   },
   prayerHeader: {
     flexDirection: "row",
@@ -2239,12 +2311,12 @@ const styles = StyleSheet.create({
   prayerPromptTitle: {
     fontSize: 16,
     fontWeight: "700" as const,
-    color: colors.light.text,
+    color: '#FFFFFF',
   },
   prayerPromptText: {
     fontSize: 15,
     lineHeight: 24,
-    color: colors.light.textSecondary,
+    color: '#FFFFFF',
     fontStyle: "italic" as const,
   },
   disclaimer: {
@@ -2319,8 +2391,8 @@ const styles = StyleSheet.create({
     borderColor: colors.light.border,
   },
   optionCardSelected: {
-    borderColor: colors.light.primary,
-    backgroundColor: `${colors.light.primary}08`,
+    borderColor: '#2A9D8F',
+    backgroundColor: '#2A9D8F', // Vibrant teal
   },
   optionEmoji: {
     fontSize: 24,
@@ -2333,14 +2405,14 @@ const styles = StyleSheet.create({
     color: colors.light.text,
   },
   optionLabelSelected: {
-    color: colors.light.primary,
+    color: '#FFFFFF',
     fontWeight: "700" as const,
   },
   checkmark: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: colors.light.primary,
+    backgroundColor: '#FFFFFF',
     alignItems: "center",
     justifyContent: "center",
   },
@@ -2371,8 +2443,8 @@ const styles = StyleSheet.create({
     minWidth: 100,
   },
   moodCardSelected: {
-    borderColor: colors.light.accent,
-    backgroundColor: `${colors.light.accent}08`,
+    borderColor: '#D9896A', // Coral/Pink for mood selection
+    backgroundColor: '#D9896A',
   },
   moodEmoji: {
     fontSize: 32,
@@ -2384,11 +2456,11 @@ const styles = StyleSheet.create({
     color: colors.light.text,
   },
   moodLabelSelected: {
-    color: colors.light.accent,
+    color: '#FFFFFF',
     fontWeight: "700" as const,
   },
   generateButton: {
-    backgroundColor: colors.light.primary,
+    backgroundColor: '#6A4C93', // Deep purple for generate button
     paddingVertical: 16,
     borderRadius: 12,
     flexDirection: "row",
@@ -2396,6 +2468,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     marginTop: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  conversationButton: {
+    backgroundColor: '#2B9F98', // Teal for conversation button
   },
   generateButtonDisabled: {
     opacity: 0.5,
@@ -2553,7 +2633,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: colors.light.cardBackground,
+    backgroundColor: '#1A1A1C', // Darker header for contrast
     borderBottomWidth: 1,
     borderBottomColor: colors.light.border,
     gap: 12,
@@ -2587,16 +2667,15 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   userMessage: {
-    backgroundColor: colors.light.primary,
+    backgroundColor: '#2B9F98', // Teal for user messages
     alignSelf: "flex-end",
     borderBottomRightRadius: 4,
   },
   aiMessage: {
-    backgroundColor: colors.light.cardBackground,
+    backgroundColor: '#3A3A3D', // Lighter grey for AI messages
     alignSelf: "flex-start",
     borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: colors.light.border,
+    borderWidth: 0,
   },
   messageText: {
     fontSize: 15,
@@ -2624,18 +2703,17 @@ const styles = StyleSheet.create({
     borderTopColor: colors.light.border,
   },
   suggestionChip: {
-    backgroundColor: colors.light.cardBackground,
+    backgroundColor: '#2B9F98', // Teal for suggestion chips
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     marginRight: 8,
-    borderWidth: 1,
-    borderColor: colors.light.border,
+    borderWidth: 0,
   },
   suggestionText: {
     fontSize: 13,
-    color: colors.light.text,
-    fontWeight: "600" as const,
+    color: '#FFFFFF',
+    fontWeight: '600' as const,
   },
   inputContainer: {
     flexDirection: "row",
@@ -2664,7 +2742,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.light.primary,
+    backgroundColor: '#2B9F98', // Teal for send button
     alignItems: "center",
     justifyContent: "center",
   },
@@ -2675,19 +2753,18 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.light.cardBackground,
+    backgroundColor: '#2B9F98', // Teal for voice button
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.light.border,
+    borderWidth: 0,
   },
   voiceButtonActive: {
-    backgroundColor: colors.light.error,
-    borderColor: colors.light.error,
+    backgroundColor: '#D9896A', // Coral when recording
+    borderColor: '#D9896A',
   },
   voiceButtonSpeaking: {
-    backgroundColor: colors.light.primary,
-    borderColor: colors.light.primary,
+    backgroundColor: '#6A4C93', // Purple when speaking
+    borderColor: '#6A4C93',
   },
   voiceModeToggle: {
     padding: 8,
@@ -2798,7 +2875,7 @@ const styles = StyleSheet.create({
     position: "absolute" as const,
     bottom: 50,
     left: -20,
-    backgroundColor: colors.light.primary,
+    backgroundColor: '#2B9F98', // Teal hint bubble
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
@@ -2884,6 +2961,18 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
+  menuCardPersonalized: {
+    backgroundColor: '#6A4C93', // Deep Purple for Personalized Session
+    borderColor: '#6A4C93',
+    shadowOpacity: 0.3,
+    elevation: 8,
+  },
+  menuCardConversation: {
+    backgroundColor: '#2B9F98', // Teal for Supportive Conversation
+    borderColor: '#2B9F98',
+    shadowOpacity: 0.3,
+    elevation: 8,
+  },
   menuCardHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -2894,23 +2983,23 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: `${colors.light.primary}15`,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)', // Lighter on vibrant cards
     alignItems: "center",
     justifyContent: "center",
   },
   menuIconContainerAlt: {
-    backgroundColor: `${colors.light.accent}15`,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)', // Lighter on vibrant cards
   },
   menuCardTitle: {
     flex: 1,
     fontSize: 20,
     fontWeight: "700" as const,
-    color: colors.light.text,
+    color: '#FFFFFF',
   },
   menuCardDescription: {
     fontSize: 15,
     lineHeight: 24,
-    color: colors.light.textSecondary,
+    color: '#FFFFFF',
     marginBottom: 16,
   },
   menuCardFeatures: {
@@ -2923,7 +3012,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 14,
-    color: colors.light.text,
+    color: '#FFFFFF',
     fontWeight: "600" as const,
   },
   menuDisclaimer: {
@@ -3008,21 +3097,43 @@ const styles = StyleSheet.create({
     color: colors.light.warning,
     fontWeight: "600" as const,
   },
-  shareButton: {
-    position: "absolute" as const,
-    right: 20,
-    bottom: 100,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.light.primary,
+  shareMenuOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "flex-end",
+  },
+  shareMenuContainer: {
+    backgroundColor: colors.light.cardBackgroundSecondary,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: isTablet ? 40 : 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  shareMenuItem: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    zIndex: 1000,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  shareMenuText: {
+    fontSize: 18,
+    color: colors.light.text,
+    fontWeight: "600" as const,
+  },
+  shareMenuDivider: {
+    height: 1,
+    backgroundColor: colors.light.border,
+    marginHorizontal: 20,
+  },
+  shareMenuCancel: {
+    fontSize: 18,
+    color: colors.light.textSecondary,
+    fontWeight: "600" as const,
   },
 });
