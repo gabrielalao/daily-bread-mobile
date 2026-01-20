@@ -2,7 +2,7 @@ import colors from "@/constants/colors";
 import { Tabs } from "expo-router";
 import { BookOpen, BookMarked, Brain, HandHeart, Book, Settings } from "lucide-react-native";
 import React, { useState, useCallback, useMemo } from "react";
-import { Platform, TouchableOpacity, View, Image, Dimensions, useWindowDimensions } from "react-native";
+import { Platform, TouchableOpacity, View, Image, Dimensions, useWindowDimensions, StatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useContent } from "@/contexts/ContentContext";
 import { t } from "@/utils/i18n";
@@ -15,19 +15,28 @@ export default function TabLayout() {
   const [showSettings, setShowSettings] = useState(false);
   const { width: screenWidth } = useWindowDimensions();
   
+  // Get status bar height for Android
+  const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0;
+  
   // Responsive sizing based on screen width
   const isSmallDevice = screenWidth < 375;
   const isMediumDevice = screenWidth >= 375 && screenWidth < 768;
   const isLargeDevice = screenWidth >= 768;
   
-  // Dynamic sizes
-  const logoSize = isSmallDevice ? 38 : isMediumDevice ? 44 : 48;
-  const logoRadius = isSmallDevice ? 9 : isMediumDevice ? 10 : 12;
-  const logoMargin = isSmallDevice ? 12 : 16;
-  const settingsSize = isSmallDevice ? 34 : 36;
-  const settingsMargin = isSmallDevice ? 12 : 16;
-  const settingsIconSize = isSmallDevice ? 18 : 20;
-  const headerFontSize = isSmallDevice ? 16 : isMediumDevice ? 18 : 20;
+  // Dynamic sizes - smaller for Android to fit better
+  const logoSize = Platform.OS === 'android' 
+    ? (isSmallDevice ? 36 : 40) 
+    : (isSmallDevice ? 38 : isMediumDevice ? 44 : 48);
+  const logoRadius = Platform.OS === 'android'
+    ? (isSmallDevice ? 8 : 9)
+    : (isSmallDevice ? 9 : isMediumDevice ? 10 : 12);
+  const logoMargin = Platform.OS === 'android' ? 8 : (isSmallDevice ? 12 : 16);
+  const settingsSize = Platform.OS === 'android' ? 32 : (isSmallDevice ? 34 : 36);
+  const settingsMargin = Platform.OS === 'android' ? 8 : (isSmallDevice ? 12 : 16);
+  const settingsIconSize = Platform.OS === 'android' ? 18 : (isSmallDevice ? 18 : 20);
+  const headerFontSize = Platform.OS === 'android'
+    ? (isSmallDevice ? 16 : 18)
+    : (isSmallDevice ? 16 : isMediumDevice ? 18 : 20);
   
   const handleOpenSettings = useCallback(() => {
     setShowSettings(true);
@@ -43,7 +52,7 @@ export default function TabLayout() {
       alignItems: 'center',
       justifyContent: 'center',
       marginLeft: logoMargin,
-      paddingVertical: 4,
+      height: Platform.OS === 'android' ? 56 : undefined,
     }}>
       <View style={{
         width: logoSize,
@@ -52,9 +61,9 @@ export default function TabLayout() {
         overflow: 'hidden',
         shadowColor: colors.light.primary,
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
+        shadowOpacity: Platform.OS === 'android' ? 0.15 : 0.1,
         shadowRadius: 4,
-        elevation: 3,
+        elevation: Platform.OS === 'android' ? 4 : 3,
       }}>
         <Image 
           source={require('@/assets/images/icon.png')}
@@ -74,7 +83,7 @@ export default function TabLayout() {
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: settingsMargin,
-      paddingVertical: 4,
+      height: Platform.OS === 'android' ? 56 : undefined,
     }}>
       <TouchableOpacity
         onPress={handleOpenSettings}
@@ -87,9 +96,9 @@ export default function TabLayout() {
           justifyContent: 'center',
           shadowColor: colors.light.primary,
           shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.08,
+          shadowOpacity: Platform.OS === 'android' ? 0.12 : 0.08,
           shadowRadius: 2,
-          elevation: 2,
+          elevation: Platform.OS === 'android' ? 3 : 2,
         }}
       >
         <Settings size={settingsIconSize} color={colors.light.primary} />
@@ -139,21 +148,26 @@ export default function TabLayout() {
           paddingLeft: 0,
           alignItems: 'center',
           justifyContent: 'center',
+          height: Platform.OS === 'android' ? 56 : undefined,
         },
         headerRightContainerStyle: {
           paddingRight: 0,
           alignItems: 'center',
           justifyContent: 'center',
+          height: Platform.OS === 'android' ? 56 : undefined,
         },
         headerTitleContainerStyle: {
           alignItems: 'center',
           justifyContent: 'center',
+          height: Platform.OS === 'android' ? 56 : undefined,
+          left: Platform.OS === 'android' ? 0 : undefined,
+          right: Platform.OS === 'android' ? 0 : undefined,
         },
         headerTitleStyle: {
           fontSize: headerFontSize,
           fontWeight: "700" as const,
           color: colors.light.text,
-          maxWidth: screenWidth - (logoSize + logoMargin * 2) - (settingsSize + settingsMargin * 2) - 40,
+          maxWidth: screenWidth - (logoSize + logoMargin * 2) - (settingsSize + settingsMargin * 2) - (Platform.OS === 'android' ? 20 : 40),
           textAlign: 'center',
         },
         headerTitleAlign: "center",
