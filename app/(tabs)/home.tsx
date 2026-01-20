@@ -2,15 +2,15 @@ import colors from "@/constants/colors";
 import { devotionals, getPersonalizedDevotional, type Devotional } from "@/constants/devotionals";
 import { useContent } from "@/contexts/ContentContext";
 import { usePersonalization } from "@/hooks/usePersonalization";
-import { useScreenshotShare } from "@/hooks/useScreenshotShare";
+import { useCardShare } from "@/hooks/useCardShare";
 import { getVersionById } from "@/constants/bible-versions";
 import { getAppLanguageById } from "@/constants/app-languages";
 import { t } from "@/utils/i18n";
 import { translateTextCached } from "@/utils/translate";
 import { LinearGradient } from "expo-linear-gradient";
-import { BookOpen, Calendar, Clock, Share2, X, Settings } from "lucide-react-native";
+import { BookOpen, Calendar, Clock, X, Upload } from "lucide-react-native";
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Animated, ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Dimensions, PanResponder, Modal } from "react-native";
+import { Animated, ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Dimensions, Modal } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar as RNCalendar } from 'react-native-calendars';
@@ -22,7 +22,12 @@ const isSmallScreen = screenWidth < 375;
 export default function HomeScreen() {
   const { contentHistory, userPreferences, markDevotionalViewed, isLoaded, setCurrentDayDevotional } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
-  const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
+  
+  // Card-level sharing hooks
+  const verseCard = useCardShare();
+  const reflectionCard = useCardShare();
+  const prayerCard = useCardShare();
+  
   const insets = useSafeAreaInsets();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -33,41 +38,27 @@ export default function HomeScreen() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewingPastContent, setViewingPastContent] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [activeCardType, setActiveCardType] = useState<'verse' | 'reflection' | 'prayer' | null>(null);
   const hasSetInitialDevotional = useRef(false);
   
-  // Draggable share button position
-  const pan = useRef(new Animated.ValueXY({ x: screenWidth - 60, y: 100 })).current;
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        pan.setOffset({
-          x: (pan.x as any)._value,
-          y: (pan.y as any)._value,
-        });
-        pan.setValue({ x: 0, y: 0 });
-      },
-      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
-        useNativeDriver: false,
-      }),
-      onPanResponderRelease: () => {
-        pan.flattenOffset();
-        
-        // Optional: Keep button within screen bounds
-        const maxX = screenWidth - 60;
-        const maxY = 800; // Adjust based on your needs
-        
-        Animated.spring(pan, {
-          toValue: {
-            x: Math.max(20, Math.min((pan.x as any)._value, maxX)),
-            y: Math.max(20, Math.min((pan.y as any)._value, maxY)),
-          },
-          useNativeDriver: false,
-        }).start();
-      },
-    })
-  ).current;
+  const handleCardPress = (cardType: 'verse' | 'reflection' | 'prayer') => {
+    setActiveCardType(cardType);
+    setShowShareMenu(true);
+  };
+
+  const handleShare = () => {
+    setShowShareMenu(false);
+    setTimeout(() => {
+      if (activeCardType === 'verse') {
+        verseCard.shareCard("Share today's verse from Christian Daily Bread");
+      } else if (activeCardType === 'reflection') {
+        reflectionCard.shareCard("Share today's reflection from Christian Daily Bread");
+      } else if (activeCardType === 'prayer') {
+        prayerCard.shareCard("Share today's prayer prompt from Christian Daily Bread");
+      }
+    }, 300);
+  };
   
   const devotional = useMemo<Devotional>(() => {
     // If viewing a specific past date, get devotional for that date
@@ -203,7 +194,7 @@ export default function HomeScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 32, 120) }]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
+        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
           <View style={styles.header}>
             <View style={styles.dateTimeRow}>
               <TouchableOpacity 
@@ -238,10 +229,16 @@ export default function HomeScreen() {
             <Text style={styles.subtitle}>{t(lang, "home.subtitle")}</Text>
           </View>
 
-          <View style={styles.card}>
+          <TouchableOpacity 
+            ref={verseCard.cardRef} 
+            collapsable={false} 
+            style={styles.card}
+            onPress={() => handleCardPress('verse')}
+            activeOpacity={0.9}
+          >
             <View style={styles.cardHeader}>
               <View style={styles.iconContainer}>
-                <BookOpen size={24} color={colors.light.primary} />
+                <BookOpen size={24} color="#FFFFFF" />
               </View>
               <View style={styles.cardTitleContainer}>
                 <Text style={styles.cardTitle}>{translatedTitle ?? devotional.title}</Text>
@@ -257,47 +254,34 @@ export default function HomeScreen() {
               </View>
               <Text style={styles.verse}>{translatedVerse ?? devotional.verse}</Text>
             </View>
+          </TouchableOpacity>
 
-            <View style={styles.divider} />
+          {/* Reflection Card - Separate with vibrant color */}
+          <TouchableOpacity 
+            ref={reflectionCard.cardRef} 
+            collapsable={false} 
+            style={styles.reflectionCard}
+            onPress={() => handleCardPress('reflection')}
+            activeOpacity={0.9}
+          >
+            <Text style={styles.reflectionTitle}>{t(lang, "home.reflectionTitle")}</Text>
+            <Text style={styles.reflection}>{translatedReflection ?? devotional.reflection}</Text>
+          </TouchableOpacity>
 
-            <View style={styles.reflectionContainer}>
-              <Text style={styles.reflectionTitle}>{t(lang, "home.reflectionTitle")}</Text>
-              <Text style={styles.reflection}>{translatedReflection ?? devotional.reflection}</Text>
-            </View>
-          </View>
-
-          <View style={styles.prayerPrompt}>
+          <TouchableOpacity 
+            ref={prayerCard.cardRef} 
+            collapsable={false} 
+            style={styles.prayerPrompt}
+            onPress={() => handleCardPress('prayer')}
+            activeOpacity={0.9}
+          >
             <Text style={styles.prayerPromptTitle}>{t(lang, "home.prayerTitle")}</Text>
             <Text style={styles.prayerPromptText}>
               {t(lang, "home.prayerText")}
             </Text>
-          </View>
+          </TouchableOpacity>
         </Animated.View>
       </ScrollView>
-
-      {/* Share Button - Draggable Floating Action Button */}
-      <Animated.View
-        style={[
-          styles.shareButton,
-          {
-            transform: [{ translateX: pan.x }, { translateY: pan.y }],
-          },
-        ]}
-        {...panResponder.panHandlers}
-      >
-        <TouchableOpacity
-          style={styles.shareButtonInner}
-          onPress={() => captureAndShare("Share today's devotional from Christian Daily Bread")}
-          disabled={isCapturing}
-          activeOpacity={0.8}
-        >
-          {isCapturing ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Share2 size={18} color="#FFFFFF" />
-          )}
-        </TouchableOpacity>
-      </Animated.View>
 
       {/* Calendar Modal */}
       <Modal
@@ -385,6 +369,41 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Share Menu Modal */}
+      <Modal
+        visible={showShareMenu}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowShareMenu(false)}
+      >
+        <TouchableOpacity 
+          style={styles.shareMenuOverlay}
+          activeOpacity={1}
+          onPress={() => setShowShareMenu(false)}
+        >
+          <View style={styles.shareMenuContainer}>
+            <TouchableOpacity
+              style={styles.shareMenuItem}
+              onPress={handleShare}
+              activeOpacity={0.7}
+            >
+              <Upload size={22} color={colors.light.text} />
+              <Text style={styles.shareMenuText}>Create Image</Text>
+            </TouchableOpacity>
+
+            <View style={styles.shareMenuDivider} />
+
+            <TouchableOpacity
+              style={styles.shareMenuItem}
+              onPress={() => setShowShareMenu(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.shareMenuCancel}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -456,7 +475,7 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   card: {
-    backgroundColor: colors.light.verseCard,
+    backgroundColor: '#2A9D8F', // Teal/Cyan (Primary brand color)
     borderRadius: isTablet ? 24 : 20,
     padding: isTablet ? 32 : (isSmallScreen ? 20 : 24),
     shadowColor: "#000",
@@ -486,7 +505,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 22,
     fontWeight: "700" as const,
-    color: colors.light.text,
+    color: '#FFFFFF',
     marginBottom: 6,
     lineHeight: 28,
     flexWrap: "wrap",
@@ -517,7 +536,7 @@ const styles = StyleSheet.create({
   verse: {
     fontSize: 17,
     lineHeight: 28,
-    color: colors.light.textSecondary,
+    color: '#FFFFFF',
     fontStyle: "italic" as const,
   },
   divider: {
@@ -526,38 +545,53 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     opacity: 0.2,
   },
+  reflectionCard: {
+    backgroundColor: '#A84664', // Pink/Magenta
+    borderRadius: isTablet ? 24 : 20,
+    padding: isTablet ? 32 : (isSmallScreen ? 20 : 24),
+    marginTop: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
   reflectionContainer: {
     gap: 12,
+    backgroundColor: colors.light.cardBackgroundSecondary,
+    padding: 20,
+    borderRadius: 16,
+    marginTop: 20,
   },
   reflectionTitle: {
     fontSize: 20,
     fontWeight: "700" as const,
-    color: colors.light.text,
+    color: '#FFFFFF',
     marginBottom: 8,
   },
   reflection: {
     fontSize: 16,
     lineHeight: 26,
-    color: colors.light.textSecondary,
+    color: '#FFFFFF',
   },
   prayerPrompt: {
     marginTop: 20,
-    backgroundColor: colors.light.cardBackgroundSecondary,
+    backgroundColor: '#5B7BB4', // Soft Blue
     borderRadius: 16,
     padding: 20,
     borderLeftWidth: 4,
-    borderLeftColor: colors.light.primary,
+    borderLeftColor: '#FFFFFF',
   },
   prayerPromptTitle: {
     fontSize: 16,
     fontWeight: "700" as const,
-    color: colors.light.text,
+    color: '#FFFFFF',
     marginBottom: 8,
   },
   prayerPromptText: {
     fontSize: 15,
     lineHeight: 24,
-    color: colors.light.textSecondary,
+    color: '#FFFFFF',
     fontStyle: "italic" as const,
   },
   loadingContainer: {
@@ -571,25 +605,6 @@ const styles = StyleSheet.create({
     color: colors.light.textTertiary,
     fontWeight: "600" as const,
     marginTop: 12,
-  },
-  shareButton: {
-    position: "absolute" as const,
-    width: 40,
-    height: 40,
-    zIndex: 1000,
-  },
-  shareButtonInner: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.light.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: colors.light.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    elevation: 10,
   },
   pastDateText: {
     color: colors.light.primary,
@@ -659,5 +674,44 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "700" as const,
+  },
+  shareMenuOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "flex-end",
+  },
+  shareMenuContainer: {
+    backgroundColor: colors.light.cardBackgroundSecondary,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: isTablet ? 40 : 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  shareMenuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  shareMenuText: {
+    fontSize: 18,
+    color: colors.light.text,
+    fontWeight: "600" as const,
+  },
+  shareMenuDivider: {
+    height: 1,
+    backgroundColor: colors.light.border,
+    marginHorizontal: 20,
+  },
+  shareMenuCancel: {
+    fontSize: 18,
+    color: colors.light.textSecondary,
+    fontWeight: "600" as const,
   },
 });

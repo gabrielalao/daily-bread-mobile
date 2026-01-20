@@ -13,6 +13,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react-native';
@@ -25,6 +26,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const { width: screenWidth } = Dimensions.get('window');
 const isTablet = screenWidth >= 768;
 const isSmallScreen = screenWidth < 375;
+const chapterGridItemWidth = (screenWidth - 100) / 5;
+const chapterSearchItemWidth = (screenWidth - 90) / 5;
 
 const BIBLE_READING_KEY = 'bible_reading_position';
 
@@ -41,6 +44,9 @@ export default function BibleScreen() {
   const [loading, setLoading] = useState(true);
   const [showBookPicker, setShowBookPicker] = useState(false);
   const [showChapterPicker, setShowChapterPicker] = useState(false);
+  
+  // Animation state
+  const [verseAnimations, setVerseAnimations] = useState<Animated.Value[]>([]);
   
   // Search state
   const [showSearch, setShowSearch] = useState(false);
@@ -89,6 +95,28 @@ export default function BibleScreen() {
     const translation = getBibleAPITranslation(userPreferences.bibleVersion);
     const data = await fetchBibleChapter(currentBook.id, currentChapter, translation);
     setChapterData(data);
+    
+    // Initialize animations for each verse
+    if (data) {
+      const animations = data.verses.map(() => new Animated.Value(0));
+      setVerseAnimations(animations);
+      
+      // Stagger the animations
+      setTimeout(() => {
+        Animated.stagger(
+          40, // 40ms delay between each verse
+          animations.map(anim => 
+            Animated.spring(anim, {
+              toValue: 1,
+              useNativeDriver: true,
+              tension: 50,
+              friction: 7,
+            })
+          )
+        ).start();
+      }, 100);
+    }
+    
     setLoading(false);
     saveReadingPosition(currentBook.id, currentChapter);
   };
@@ -242,12 +270,45 @@ export default function BibleScreen() {
         ) : chapterData ? (
           <View style={styles.chapterContainer}>
             <View style={styles.versesContainer}>
-              {chapterData.verses.map((verse) => (
-                <View key={verse.verse} style={styles.verseRow}>
-                  <Text style={styles.verseNumber}>{verse.verse}</Text>
-                  <Text style={styles.verseText}>{verse.text}</Text>
-                </View>
-              ))}
+              {chapterData.verses.map((verse, index) => {
+                const animation = verseAnimations[index] || new Animated.Value(1);
+                const isEvenVerse = verse.verse % 2 === 0;
+                
+                return (
+                  <Animated.View 
+                    key={verse.verse} 
+                    style={[
+                      styles.verseRow,
+                      isEvenVerse && styles.verseRowEven,
+                      {
+                        opacity: animation,
+                        transform: [
+                          {
+                            translateY: animation.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [20, 0],
+                            }),
+                          },
+                          {
+                            scale: animation.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.95, 1],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    <View style={[
+                      styles.verseNumberContainer,
+                      isEvenVerse && styles.verseNumberContainerAlt
+                    ]}>
+                      <Text style={styles.verseNumber}>{verse.verse}</Text>
+                    </View>
+                    <Text style={styles.verseText}>{verse.text}</Text>
+                  </Animated.View>
+                );
+              })}
             </View>
           </View>
         ) : (
@@ -527,32 +588,40 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   topPillButton: {
-    backgroundColor: colors.light.cardBackground,
+    backgroundColor: '#6A4C93', // Purple
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.light.border,
+    borderWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   topPillText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: colors.light.text,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   chapterPillButton: {
-    backgroundColor: colors.light.cardBackground,
+    backgroundColor: '#2A9D8F', // Teal
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.light.border,
-    minWidth: 50,
+    borderWidth: 0,
+    minWidth: 80,
     alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   chapterPillText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: colors.light.text,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   searchButton: {
     width: 44,
@@ -560,6 +629,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
+    borderRadius: 22,
+    backgroundColor: 'rgba(42, 157, 143, 0.15)', // Subtle teal background
   },
   bottomBar: {
     flexDirection: 'row',
@@ -603,9 +674,14 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: 'rgba(30, 30, 30, 0.90)',
+    backgroundColor: '#2A9D8F', // Vibrant teal
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   floatingNavLeft: {
     // Left button specific styles if needed
@@ -614,8 +690,9 @@ const styles = StyleSheet.create({
     // Right button specific styles if needed
   },
   floatingNavDisabled: {
-    backgroundColor: 'rgba(60, 60, 60, 0.4)',
+    backgroundColor: 'rgba(60, 60, 60, 0.6)',
     opacity: 0.5,
+    shadowOpacity: 0.1,
   },
   scrollView: {
     flex: 1,
@@ -645,15 +722,30 @@ const styles = StyleSheet.create({
   },
   verseRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
     alignItems: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  verseRowEven: {
+    backgroundColor: 'rgba(42, 157, 143, 0.05)', // Subtle teal tint for even verses
+  },
+  verseNumberContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#6A4C93', // Purple for odd verses
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verseNumberContainerAlt: {
+    backgroundColor: '#2A9D8F', // Teal for even verses
   },
   verseNumber: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.light.textSecondary,
-    minWidth: 28,
-    paddingTop: 2,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   verseText: {
     flex: 1,
@@ -661,6 +753,7 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     color: colors.light.text,
     fontWeight: '400',
+    paddingTop: 8,
   },
   errorContainer: {
     alignItems: 'center',
@@ -680,14 +773,19 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   retryButton: {
-    backgroundColor: colors.light.primary,
+    backgroundColor: '#2A9D8F', // Teal
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   retryButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#FFFFFF',
   },
   modalOverlay: {
@@ -773,7 +871,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   chapterGridItem: {
-    width: (screenWidth - 100) / 5,
+    width: chapterGridItemWidth,
     height: 56,
     borderRadius: 14,
     backgroundColor: colors.light.cardBackground,
@@ -897,7 +995,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   chapterSearchItem: {
-    width: (screenWidth - 90) / 5,
+    width: chapterSearchItemWidth,
     height: 56,
     borderRadius: 14,
     backgroundColor: colors.light.cardBackground,

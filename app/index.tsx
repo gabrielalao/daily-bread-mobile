@@ -74,25 +74,29 @@ export default function LandingPage() {
       icon: BookOpen,
       title: "Daily Devotionals",
       description: "Grow spiritually with personalized Scripture-based messages",
-      color: colors.light.primary,
+      color: "#2A9D8F", // Vibrant Teal
+      bgColor: "#2A9D8F",
     },
     {
       icon: Heart,
       title: "Biblical Therapy",
       description: "AI-powered healing rooted in God's Word and grace",
-      color: colors.light.success,
+      color: "#6A4C93", // Deep Purple
+      bgColor: "#6A4C93",
     },
     {
       icon: MessageCircle,
       title: "Prayer Guidance",
       description: "Find comfort and strength through guided prayers",
-      color: colors.light.accent,
+      color: "#D9896A", // Coral
+      bgColor: "#D9896A",
     },
     {
       icon: Sparkles,
       title: "Bible Study",
       description: "Deepen your faith with curated study materials",
-      color: colors.light.secondary,
+      color: "#5B7BB4", // Soft Blue
+      bgColor: "#5B7BB4",
     },
   ];
 
@@ -141,9 +145,9 @@ export default function LandingPage() {
               {features.map((feature, index) => {
                 const Icon = feature.icon;
                 return (
-                  <View key={index} style={styles.featureCard}>
-                    <View style={[styles.featureIconContainer, { backgroundColor: `${feature.color}15` }]}>
-                      <Icon size={28} color={feature.color} strokeWidth={2} />
+                  <View key={index} style={[styles.featureCard, { backgroundColor: feature.bgColor }]}>
+                    <View style={styles.featureIconContainer}>
+                      <Icon size={28} color="#FFFFFF" strokeWidth={2.5} />
                     </View>
                     <Text style={styles.featureTitle}>{feature.title}</Text>
                     <Text style={styles.featureDescription}>{feature.description}</Text>
@@ -294,7 +298,6 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   featureCard: {
-    backgroundColor: colors.light.cardBackground,
     borderRadius: 20,
     padding: 24,
     borderWidth: 0,
@@ -308,6 +311,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
@@ -315,13 +319,13 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: 20,
     fontWeight: "700" as const,
-    color: colors.light.text,
+    color: "#FFFFFF",
     marginBottom: 8,
   },
   featureDescription: {
     fontSize: 15,
     lineHeight: 22,
-    color: colors.light.textSecondary,
+    color: "rgba(255, 255, 255, 0.9)",
   },
   benefitsSection: {
     backgroundColor: colors.light.cardBackgroundSecondary,

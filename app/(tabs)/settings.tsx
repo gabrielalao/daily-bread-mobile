@@ -236,20 +236,20 @@ export default function SettingsScreen() {
             <Text style={styles.sectionTitle}>{t(tLang, "settings.biblePreferences")}</Text>
             
             <TouchableOpacity
-              style={styles.settingCard}
+              style={[styles.settingCard, styles.bibleCard]}
               onPress={() => setShowBibleVersionPicker(true)}
             >
               <View style={styles.settingRow}>
                 <View style={styles.iconContainer}>
-                  <BookOpen size={22} color={colors.light.primary} />
+                  <BookOpen size={22} color="#FFFFFF" />
                 </View>
                 <View style={styles.settingTextContainer}>
-                  <Text style={styles.settingLabel}>{t(tLang, "settings.bibleVersion")}</Text>
-                  <Text style={styles.settingValue}>
+                  <Text style={[styles.settingLabel, styles.lightText]}>{t(tLang, "settings.bibleVersion")}</Text>
+                  <Text style={[styles.settingValue, styles.lightText]}>
                     {currentVersion?.abbreviation} - {currentVersion?.name}
                   </Text>
                 </View>
-                <Text style={styles.changeButton}>{t(tLang, "common.change")}</Text>
+                <Text style={[styles.changeButton, styles.lightText]}>{t(tLang, "common.change")}</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -258,32 +258,32 @@ export default function SettingsScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t(tLang, "settings.appPreferences")}</Text>
             
-            <View style={styles.settingCard}>
+            <View style={[styles.settingCard, styles.appCard]}>
               <TouchableOpacity
                 style={styles.settingRow}
                 onPress={() => setShowLanguagePicker(true)}
               >
                 <View style={styles.iconContainer}>
-                  <FileText size={22} color={colors.light.primary} />
+                  <FileText size={22} color="#FFFFFF" />
                 </View>
                 <View style={styles.settingTextContainer}>
-                  <Text style={styles.settingLabel}>{t(tLang, "settings.appLanguage")}</Text>
-                  <Text style={styles.settingValue}>
+                  <Text style={[styles.settingLabel, styles.lightText]}>{t(tLang, "settings.appLanguage")}</Text>
+                  <Text style={[styles.settingValue, styles.lightText]}>
                     {currentLanguage?.nativeName}
                   </Text>
                 </View>
-                <Text style={styles.changeButton}>{t(tLang, "common.change")}</Text>
+                <Text style={[styles.changeButton, styles.lightText]}>{t(tLang, "common.change")}</Text>
               </TouchableOpacity>
 
               <View style={styles.divider} />
 
               <View style={styles.settingRow}>
                 <View style={styles.iconContainer}>
-                  <FileText size={22} color={colors.light.primary} />
+                  <FileText size={22} color="#FFFFFF" />
                 </View>
                 <View style={styles.settingTextContainer}>
-                  <Text style={styles.settingLabel}>{t(tLang, "settings.autoTranslate")}</Text>
-                  <Text style={styles.settingDescription}>
+                  <Text style={[styles.settingLabel, styles.lightText]}>{t(tLang, "settings.autoTranslate")}</Text>
+                  <Text style={[styles.settingDescription, styles.lightText]}>
                     {t(tLang, "settings.autoTranslateDescription")}
                   </Text>
                 </View>
@@ -815,6 +815,19 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
+  bibleCard: {
+    backgroundColor: '#5B7BB4', // Soft Blue for Bible preferences
+    shadowOpacity: 0.2,
+    elevation: 4,
+  },
+  appCard: {
+    backgroundColor: '#D97758', // Coral for App preferences
+    shadowOpacity: 0.2,
+    elevation: 4,
+  },
+  lightText: {
+    color: '#FFFFFF',
+  },
   settingRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -855,7 +868,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: colors.light.borderLight,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)', // Lighter divider for colored cards
     marginLeft: 72,
   },
   timeButton: {
@@ -874,21 +887,25 @@ const styles = StyleSheet.create({
   },
   infoBox: {
     marginTop: 16,
-    backgroundColor: colors.light.cardBackgroundSecondary,
-    borderRadius: 12,
-    padding: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.light.primary, // Dark theme primary (teal)
+    backgroundColor: '#2A9D8F', // Vibrant teal
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 0,
   },
   infoTitle: {
     fontSize: 16,
     fontWeight: "600" as const,
-    color: colors.light.text,
+    color: '#FFFFFF',
     marginBottom: 8,
   },
   infoText: {
     fontSize: 15,
-    color: colors.light.textSecondary,
+    color: '#FFFFFF',
     lineHeight: 22,
   },
   emptyStateCard: {

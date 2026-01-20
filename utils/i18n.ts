@@ -74,6 +74,8 @@ const en: Dict = {
   "prayers.todaysPrayer": "Today's Prayer",
   "prayers.dailyGuidance": "Your daily prayer guidance",
   "prayers.allPrayers": "All Prayer Guides",
+  "prayers.prayerPrompt": "Prayer Prompt",
+  "prayers.prayerPromptContent": "Take a moment to pray this prayer aloud or in your heart. Let these words guide you as you bring your needs before God.",
 
   "study.readingPlan": "Reading Plan",
   "study.studyTips": "Study Tips",
@@ -203,6 +205,8 @@ const fr: Dict = {
   "prayers.todaysPrayer": "Prière du Jour",
   "prayers.dailyGuidance": "Votre guidance quotidienne de prière",
   "prayers.allPrayers": "Tous les Guides de Prière",
+  "prayers.prayerPrompt": "Invitation à Prier",
+  "prayers.prayerPromptContent": "Prenez un moment pour prier cette prière à haute voix ou dans votre cœur. Laissez ces mots vous guider alors que vous apportez vos besoins devant Dieu.",
 
   "study.readingPlan": "Plan de lecture",
   "study.studyTips": "Conseils d'étude",
@@ -332,6 +336,8 @@ const da: Dict = {
   "prayers.todaysPrayer": "Dagens Bøn",
   "prayers.dailyGuidance": "Din daglige bønnevejledning",
   "prayers.allPrayers": "Alle Bønneguider",
+  "prayers.prayerPrompt": "Bønneinvitation",
+  "prayers.prayerPromptContent": "Tag et øjeblik til at bede denne bøn højt eller i dit hjerte. Lad disse ord guide dig, mens du bringer dine behov frem for Gud.",
 
   "study.readingPlan": "Læseplan",
   "study.studyTips": "Studietips",
@@ -461,6 +467,8 @@ const es: Dict = {
   "prayers.todaysPrayer": "Oración del Día",
   "prayers.dailyGuidance": "Tu guía diaria de oración",
   "prayers.allPrayers": "Todas las Guías de Oración",
+  "prayers.prayerPrompt": "Invitación a Orar",
+  "prayers.prayerPromptContent": "Toma un momento para orar esta oración en voz alta o en tu corazón. Deja que estas palabras te guíen mientras traes tus necesidades ante Dios.",
 
   "study.readingPlan": "Plan de lectura",
   "study.studyTips": "Consejos de estudio",
@@ -590,6 +598,8 @@ const de: Dict = {
   "prayers.todaysPrayer": "Heutiges Gebet",
   "prayers.dailyGuidance": "Deine tägliche Gebetsanleitung",
   "prayers.allPrayers": "Alle Gebetsanleitungen",
+  "prayers.prayerPrompt": "Gebetsaufforderung",
+  "prayers.prayerPromptContent": "Nimm dir einen Moment Zeit, um dieses Gebet laut oder in deinem Herzen zu beten. Lass diese Worte dich führen, während du deine Bedürfnisse vor Gott bringst.",
 
   "study.readingPlan": "Leseplan",
   "study.studyTips": "Studientipps",

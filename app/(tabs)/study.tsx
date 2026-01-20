@@ -6,12 +6,12 @@ import { translateTextCached } from "@/utils/translate";
 import { useContent } from "@/contexts/ContentContext";
 import { devotionals, getCorrelatedDevotionalTheme } from "@/constants/devotionals";
 import { usePersonalization } from "@/hooks/usePersonalization";
-import { useScreenshotShare } from "@/hooks/useScreenshotShare";
+import { useCardShare } from "@/hooks/useCardShare";
 import { getStudyInsight, mergeInsightOverrides } from "@/utils/studyInsights";
 import { t } from "@/utils/i18n";
 import { tParams } from "@/utils/i18n";
 import { LinearGradient } from "expo-linear-gradient";
-import { Book, Calendar, ChevronRight, X, Share2, ChevronDown, ChevronUp, Lightbulb, BookOpen, Heart, Clock } from "lucide-react-native";
+import { Book, Calendar, ChevronRight, X, Upload, ChevronDown, ChevronUp, Lightbulb, BookOpen, Heart, Clock, Share2 } from "lucide-react-native";
 import React, { useState, useRef } from "react";
 import { useFocusEffect } from "expo-router";
 import {
@@ -43,6 +43,47 @@ const { width: screenWidth } = Dimensions.get('window');
 const isTablet = screenWidth >= 768;
 const isSmallScreen = screenWidth < 375;
 
+// Vibrant color map for study plans - mixed up to avoid repetition
+const studyColorMap: Record<string, string> = {
+  "psalms-peace": "#D9896A", // Coral
+  "fruit-of-spirit": "#1A1A1A", // Black
+  "jesus-teachings": "#2A9D8F", // Teal
+  "faith-journey": "#5B7BB4", // Soft Blue
+  "biblical-finances": "#6A4C93", // Deep Purple
+  "stewardship-mastery": "#E85D4F", // Orange/Coral
+  "kingdom-business": "#2B9F98", // Teal Green
+  "marketplace-ministry": "#1A1A1A", // Black
+  "wisdom-for-leaders": "#A84664", // Pink/Magenta
+  "wealth-management-plan": "#D97758", // Coral/Orange
+  "health-wellness": "#6B5B95", // Purple
+  "parenting-wisdom": "#2A9D8F", // Teal
+  "investment-stewardship": "#5A9C92", // Teal/Green
+  "debt-freedom-path": "#1A1A1A", // Black
+  "career-excellence": "#4A5C8F", // Deep Blue
+  "budgeting-planning": "#D9896A", // Coral
+  "communication-wisdom": "#6A4C93", // Deep Purple
+  "income-increase": "#2B9F98", // Teal Green
+  "financial-freedom-journey": "#E85D4F", // Orange/Coral
+  "exercise-discipline": "#5B7BB4", // Soft Blue
+  "chronological-book-focused": "#A84664", // Pink/Magenta
+};
+
+// Array of colors to cycle through for individual day cards within detail pages
+const detailDayColors = [
+  "#2A9D8F", // Teal
+  "#1A1A1A", // Black
+  "#D9896A", // Coral
+  "#5B7BB4", // Soft Blue
+  "#6A4C93", // Deep Purple
+  "#E85D4F", // Orange/Coral
+  "#2B9F98", // Teal Green
+  "#A84664", // Pink/Magenta
+  "#D97758", // Coral/Orange
+  "#6B5B95", // Purple
+  "#4A5C8F", // Deep Blue
+  "#5A9C92", // Teal/Green
+];
+
 type FormattedVerse = {
   number: number;
   text: string;
@@ -51,8 +92,12 @@ type FormattedVerse = {
 export default function BibleStudyScreen() {
   const { contentHistory, userPreferences, markStudyViewed, addStudyCategory, isLoaded, getStudyPlanCycle, getStudyPlanCompletedDays, markStudyDayCompleted, advanceStudyPlanCycle, setCurrentDayStudy } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
-  const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
-  const modalViewRef = useRef<any>(null); // Separate ref for modal content
+  
+  // Card-level sharing hooks
+  const studyCard = useCardShare();
+  const reflectionCard = useCardShare();
+  
+  const modalViewRef = useRef<any>(null);
   const insets = useSafeAreaInsets();
   const [selectedPlan, setSelectedPlan] = useState<BibleStudyPlan | null>(null);
   const [fadeAnim] = useState(new Animated.Value(1));
@@ -60,8 +105,8 @@ export default function BibleStudyScreen() {
   const [selectedVerse, setSelectedVerse] = useState<BibleVerse | null>(null);
   const [verses, setVerses] = useState<FormattedVerse[]>([]);
   const [isCapturingModal, setIsCapturingModal] = useState(false);
-  const [expandedReadings, setExpandedReadings] = useState<Set<number>>(new Set()); // Track which readings are expanded
-  const [activeReadingDay, setActiveReadingDay] = useState<number | null>(null); // which day opened the verse modal
+  const [expandedReadings, setExpandedReadings] = useState<Set<number>>(new Set());
+  const [activeReadingDay, setActiveReadingDay] = useState<number | null>(null);
   const [isModalInsightExpanded, setIsModalInsightExpanded] = useState(true);
   const [didWarnTranslationFallback, setDidWarnTranslationFallback] = useState(false);
   const [translatedVerseRef, setTranslatedVerseRef] = useState<string | null>(null);
@@ -77,39 +122,24 @@ export default function BibleStudyScreen() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewingPastContent, setViewingPastContent] = useState(false);
-  
-  // Draggable share button position
-  const pan = useRef(new Animated.ValueXY({ x: screenWidth - 60, y: 100 })).current;
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        pan.setOffset({
-          x: (pan.x as any)._value,
-          y: (pan.y as any)._value,
-        });
-        pan.setValue({ x: 0, y: 0 });
-      },
-      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
-        useNativeDriver: false,
-      }),
-      onPanResponderRelease: () => {
-        pan.flattenOffset();
-        
-        const maxX = screenWidth - 60;
-        const maxY = 800;
-        
-        Animated.spring(pan, {
-          toValue: {
-            x: Math.max(20, Math.min((pan.x as any)._value, maxX)),
-            y: Math.max(20, Math.min((pan.y as any)._value, maxY)),
-          },
-          useNativeDriver: false,
-        }).start();
-      },
-    })
-  ).current;
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [activeCardType, setActiveCardType] = useState<'study' | 'reflection' | null>(null);
+
+  const handleCardPress = (cardType: 'study' | 'reflection') => {
+    setActiveCardType(cardType);
+    setShowShareMenu(true);
+  };
+
+  const handleShare = () => {
+    setShowShareMenu(false);
+    setTimeout(() => {
+      if (activeCardType === 'study') {
+        studyCard.shareCard("Share today's study from Christian Daily Bread");
+      } else if (activeCardType === 'reflection') {
+        reflectionCard.shareCard("Share today's reflection from Christian Daily Bread");
+      }
+    }, 300);
+  };
   
   // Use the correlated daily study or fallback
   const todayStudy = React.useMemo<DailyStudy>(() => {
@@ -715,7 +745,7 @@ export default function BibleStudyScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
+          <Animated.View collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
             <TouchableOpacity
               onPress={handleBack}
               style={styles.backButton}
@@ -765,11 +795,12 @@ export default function BibleStudyScreen() {
                 const insight = mergeInsightOverrides(reading, generated);
                 const hasInsights = Boolean(insight.spiritualInsight || (insight.keyThemes && insight.keyThemes.length > 0) || insight.practicalApplication);
                 const tr = translatedReadings[reading.day];
+                const dayColor = detailDayColors[(reading.day - 1) % detailDayColors.length];
                 
                 return (
                   <View key={reading.day} style={styles.readingCardContainer}>
                     <TouchableOpacity
-                      style={styles.readingCard}
+                      style={[styles.readingCard, { backgroundColor: dayColor }]}
                       onPress={() => handleReadVerse(reading)}
                       activeOpacity={0.7}
                     >
@@ -784,7 +815,7 @@ export default function BibleStudyScreen() {
                           <Text style={styles.readingFocus}>{tr?.focus ?? reading.focus}</Text>
                         </View>
                       </View>
-                      <ChevronRight size={20} color={colors.light.textLight} />
+                      <ChevronRight size={20} color="rgba(255, 255, 255, 0.7)" />
                     </TouchableOpacity>
 
                     {/* Insights Section */}
@@ -966,63 +997,26 @@ export default function BibleStudyScreen() {
             </View>
           </View>
         </Modal>
-
-        {/* Share Button - Floating Action Button */}
-        <TouchableOpacity
-          style={styles.shareButton}
-          onPress={() => captureAndShare(`Share this Bible study from Christian Daily Bread: ${selectedPlan.title}`)}
-          disabled={isCapturing}
-          activeOpacity={0.8}
-        >
-          {isCapturing ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Share2 size={18} color="#FFFFFF" />
-          )}
-        </TouchableOpacity>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Animated.View
-        style={[
-          styles.shareButton,
-          {
-            transform: [{ translateX: pan.x }, { translateY: pan.y }],
-          },
-        ]}
-        {...panResponder.panHandlers}
-      >
-        <TouchableOpacity
-          style={styles.shareButtonInner}
-          onPress={() => captureAndShare("Share this Bible study from Christian Daily Bread")}
-          disabled={isCapturing}
-          activeOpacity={0.8}
-        >
-          {isCapturing ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Share2 size={18} color="#FFFFFF" />
-          )}
-        </TouchableOpacity>
-      </Animated.View>
-
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 32, 120) }]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
+        <Animated.View collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
           <View style={styles.dateTimeContainer}>
             <TouchableOpacity
               style={styles.dateRow}
               onPress={() => setShowCalendar(true)}
               activeOpacity={0.7}
             >
-              <Calendar size={20} color={colors.light.primary} />
+              <Calendar size={18} color={colors.light.primary} />
               <Text style={[styles.dateText, viewingPastContent && styles.pastDateText]}>
                 {viewingPastContent && selectedDate
                   ? selectedDate.toLocaleDateString(locale, { weekday: "long", year: "numeric", month: "long", day: "numeric" })
@@ -1059,9 +1053,15 @@ export default function BibleStudyScreen() {
               <Text style={styles.todaySectionTitle}>📚 {t(userPreferences.appLanguage, "study.todaysStudy")}</Text>
               <Text style={styles.todaySectionSubtitle}>{t(userPreferences.appLanguage, "study.dailyGuidance")}</Text>
             </View>
-            <View style={styles.todayStudyCard}>
+            <TouchableOpacity 
+              ref={studyCard.cardRef} 
+              collapsable={false} 
+              style={styles.todayStudyCard}
+              onPress={() => handleCardPress('study')}
+              activeOpacity={0.9}
+            >
               <View style={styles.todayIconContainer}>
-                <BookOpen size={32} color={colors.light.primary} />
+                <BookOpen size={32} color="#FFFFFF" />
               </View>
               <View style={styles.todayTextContainer}>
                 <Text style={styles.todayStudyTitle}>{translatedDailyStudy?.title ?? todayStudy.title}</Text>
@@ -1081,17 +1081,25 @@ export default function BibleStudyScreen() {
                     {translatedDailyStudy?.insight ?? todayStudy.insight}
                   </Text>
                 </View>
-                <View style={styles.todayReflectionContainer}>
-                  <View style={styles.todayReflectionHeader}>
-                    <Heart size={14} color={colors.light.accent} />
-                    <Text style={styles.todayReflectionLabel}>{t(userPreferences.appLanguage, "study.reflection")}</Text>
-                  </View>
-                  <Text style={styles.todayReflectionText}>
-                    {translatedDailyStudy?.reflection ?? todayStudy.reflection}
-                  </Text>
-                </View>
               </View>
-            </View>
+            </TouchableOpacity>
+
+            {/* Reflection Card - Separate with vibrant color */}
+            <TouchableOpacity 
+              ref={reflectionCard.cardRef} 
+              collapsable={false} 
+              style={styles.studyReflectionCard}
+              onPress={() => handleCardPress('reflection')}
+              activeOpacity={0.9}
+            >
+              <View style={styles.todayReflectionHeader}>
+                <Heart size={14} color="#FFFFFF" />
+                <Text style={styles.todayReflectionLabel}>{t(userPreferences.appLanguage, "study.reflection")}</Text>
+              </View>
+              <Text style={styles.todayReflectionText}>
+                {translatedDailyStudy?.reflection ?? todayStudy.reflection}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* All Study Plans */}
@@ -1104,16 +1112,17 @@ export default function BibleStudyScreen() {
               const translated = translatedPlanCards[plan.id];
               const displayTitle = translated?.title ?? plan.title;
               const displayDesc = translated?.description ?? plan.description;
+              const cardColor = studyColorMap[plan.id] || colors.light.primary;
               return (
                 <TouchableOpacity
                   key={plan.id}
-                  style={styles.planCard}
+                  style={[styles.planCard, { backgroundColor: cardColor }]}
                   onPress={() => handleSelectPlan(plan)}
                   activeOpacity={0.8}
                 >
                   <View style={styles.planHeader}>
                     <View style={styles.planIconContainer}>
-                      <Book size={24} color={colors.light.primary} />
+                      <Book size={24} color="#FFFFFF" strokeWidth={2.5} />
                     </View>
                     <View style={styles.planBadge}>
                       <Text style={styles.planBadgeText}>{translateCategory(plan.category)}</Text>
@@ -1127,7 +1136,7 @@ export default function BibleStudyScreen() {
 
                   <View style={styles.planFooter}>
                     <View style={styles.planDuration}>
-                      <Calendar size={14} color={colors.light.textSecondary} />
+                      <Calendar size={14} color="rgba(255, 255, 255, 0.9)" />
                       <Text style={styles.planDurationText}>{formatDuration(plan.duration)}</Text>
                     </View>
                     <View style={styles.planReadings}>
@@ -1219,6 +1228,41 @@ export default function BibleStudyScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Share Menu Modal */}
+      <Modal
+        visible={showShareMenu}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowShareMenu(false)}
+      >
+        <TouchableOpacity 
+          style={styles.shareMenuOverlay}
+          activeOpacity={1}
+          onPress={() => setShowShareMenu(false)}
+        >
+          <View style={styles.shareMenuContainer}>
+            <TouchableOpacity
+              style={styles.shareMenuItem}
+              onPress={handleShare}
+              activeOpacity={0.7}
+            >
+              <Upload size={22} color={colors.light.text} />
+              <Text style={styles.shareMenuText}>Create Image</Text>
+            </TouchableOpacity>
+
+            <View style={styles.shareMenuDivider} />
+
+            <TouchableOpacity
+              style={styles.shareMenuItem}
+              onPress={() => setShowShareMenu(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.shareMenuCancel}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1248,20 +1292,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    backgroundColor: colors.light.cardBackground,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   dateText: {
-    fontSize: 14,
-    color: colors.light.textSecondary,
+    fontSize: 13,
+    color: colors.light.textTertiary,
     fontWeight: "500" as const,
   },
   timeRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    backgroundColor: colors.light.cardBackground,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   timeText: {
-    fontSize: 14,
-    color: colors.light.textSecondary,
+    fontSize: 13,
+    color: colors.light.textTertiary,
     fontWeight: "500" as const,
   },
   header: {
@@ -1295,7 +1347,7 @@ const styles = StyleSheet.create({
     color: colors.light.textSecondary,
   },
   todayStudyCard: {
-    backgroundColor: colors.light.cardBackground,
+    backgroundColor: '#6B5B95', // Purple
     borderRadius: isTablet ? 24 : 20,
     padding: isTablet ? 32 : (isSmallScreen ? 20 : 24),
     shadowColor: "#000",
@@ -1303,8 +1355,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 3,
-    borderWidth: 1,
-    borderColor: colors.light.border,
+    borderWidth: 0,
   },
   cardHeader: {
     flexDirection: "row",
@@ -1428,6 +1479,17 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
   },
+  studyReflectionCard: {
+    backgroundColor: '#D97758', // Coral/Orange
+    borderRadius: isTablet ? 24 : 20,
+    padding: isTablet ? 32 : (isSmallScreen ? 20 : 24),
+    marginTop: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
   todayReflectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -1437,14 +1499,14 @@ const styles = StyleSheet.create({
   todayReflectionLabel: {
     fontSize: 12,
     fontWeight: "700" as const,
-    color: colors.light.accent,
+    color: '#FFFFFF',
     textTransform: "uppercase" as const,
     letterSpacing: 0.5,
   },
   todayReflectionText: {
     fontSize: 14,
     lineHeight: 22,
-    color: colors.light.text,
+    color: '#FFFFFF',
     fontStyle: "italic" as const,
   },
   todayVerseCard: {
@@ -1471,7 +1533,7 @@ const styles = StyleSheet.create({
   todayVerseText: {
     fontSize: 15,
     lineHeight: 24,
-    color: colors.light.text,
+    color: '#FFFFFF',
     fontStyle: "italic" as const,
     marginBottom: 12,
   },
@@ -1510,7 +1572,7 @@ const styles = StyleSheet.create({
   todayTitle: {
     fontSize: isSmallScreen ? 18 : 20,
     fontWeight: "700" as const,
-    color: colors.light.text,
+    color: '#FFFFFF',
     flex: 1,
   },
   todayBadge: {
@@ -1553,16 +1615,14 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   planCard: {
-    backgroundColor: colors.light.cardBackground,
     borderRadius: isTablet ? 20 : 16,
     padding: isTablet ? 28 : (isSmallScreen ? 16 : 20),
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: colors.light.border,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 0,
   },
   planHeader: {
     flexDirection: "row",
@@ -1574,12 +1634,12 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: `${colors.light.primary}15`,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: "center",
     justifyContent: "center",
   },
   planBadge: {
-    backgroundColor: `${colors.light.accent}20`,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -1587,19 +1647,19 @@ const styles = StyleSheet.create({
   planBadgeText: {
     fontSize: 12,
     fontWeight: "600" as const,
-    color: colors.light.primary,
+    color: "#FFFFFF",
     textTransform: "uppercase" as const,
     letterSpacing: 0.5,
   },
   planTitle: {
     fontSize: 20,
     fontWeight: "700" as const,
-    color: colors.light.text,
+    color: "#FFFFFF",
     marginBottom: 6,
   },
   planDescription: {
     fontSize: 14,
-    color: colors.light.textSecondary,
+    color: "rgba(255, 255, 255, 0.9)",
     lineHeight: 20,
     marginBottom: 12,
   },
@@ -1609,7 +1669,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: colors.light.border,
+    borderTopColor: 'rgba(255, 255, 255, 0.2)',
   },
   planDuration: {
     flexDirection: "row",
@@ -1618,18 +1678,18 @@ const styles = StyleSheet.create({
   },
   planDurationText: {
     fontSize: 13,
-    color: colors.light.textSecondary,
+    color: "rgba(255, 255, 255, 0.9)",
     fontWeight: "500" as const,
   },
   planReadings: {
-    backgroundColor: `${colors.light.success}15`,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
   planReadingsText: {
     fontSize: 12,
-    color: colors.light.success,
+    color: "#FFFFFF",
     fontWeight: "600" as const,
   },
   backButton: {
@@ -1728,15 +1788,18 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   readingCard: {
-    backgroundColor: colors.light.cardBackground,
     borderRadius: 12,
     padding: 16,
     marginBottom: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: colors.light.border,
+    borderWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   readingLeft: {
     flex: 1,
@@ -1748,14 +1811,14 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.light.primary,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     alignItems: "center",
     justifyContent: "center",
   },
   dayBadgeText: {
     fontSize: 12,
     fontWeight: "700" as const,
-    color: colors.light.cardBackground,
+    color: "#FFFFFF",
   },
   readingContent: {
     flex: 1,
@@ -1763,12 +1826,12 @@ const styles = StyleSheet.create({
   readingReference: {
     fontSize: 16,
     fontWeight: "700" as const,
-    color: colors.light.text,
+    color: "#FFFFFF",
     marginBottom: 4,
   },
   readingFocus: {
     fontSize: 13,
-    color: colors.light.textSecondary,
+    color: "rgba(255, 255, 255, 0.9)",
     lineHeight: 18,
   },
   readingCardContainer: {
@@ -2036,25 +2099,6 @@ const styles = StyleSheet.create({
     fontWeight: "700" as const,
     color: colors.light.cardBackground,
   },
-  shareButton: {
-    position: "absolute" as const,
-    width: 40,
-    height: 40,
-    zIndex: 1000,
-  },
-  shareButtonInner: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.light.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
   modalShareButton: {
     position: "absolute" as const,
     bottom: 16,
@@ -2125,6 +2169,45 @@ const styles = StyleSheet.create({
   todayButtonInModalText: {
     color: "#FFFFFF",
     fontSize: 16,
+    fontWeight: "600" as const,
+  },
+  shareMenuOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "flex-end",
+  },
+  shareMenuContainer: {
+    backgroundColor: colors.light.cardBackgroundSecondary,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: isTablet ? 40 : 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  shareMenuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  shareMenuText: {
+    fontSize: 18,
+    color: colors.light.text,
+    fontWeight: "600" as const,
+  },
+  shareMenuDivider: {
+    height: 1,
+    backgroundColor: colors.light.border,
+    marginHorizontal: 20,
+  },
+  shareMenuCancel: {
+    fontSize: 18,
+    color: colors.light.textSecondary,
     fontWeight: "600" as const,
   },
 });

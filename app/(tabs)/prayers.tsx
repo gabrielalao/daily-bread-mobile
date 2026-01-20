@@ -4,7 +4,7 @@ import { getRecommendedPrayers, PrayerGuide } from "@/constants/prayers";
 import { useContent } from "@/contexts/ContentContext";
 import { usePersonalization } from "@/hooks/usePersonalization";
 import { devotionals, getCorrelatedDevotionalTheme } from "@/constants/devotionals";
-import { useScreenshotShare } from "@/hooks/useScreenshotShare";
+import { useCardShare } from "@/hooks/useCardShare";
 import { translateTextCached } from "@/utils/translate";
 import { t } from "@/utils/i18n";
 import { LinearGradient } from "expo-linear-gradient";
@@ -25,7 +25,7 @@ import {
   Calculator,
   MessageCircle,
   Activity,
-  Share2,
+  Upload,
   Calendar,
   Clock,
   BookOpen,
@@ -70,6 +70,47 @@ const iconMap: Record<string, React.ComponentType<{ size: number; color: string 
   activity: Activity,
 };
 
+// Vibrant color map for prayer guides - mixed up to avoid repetition
+const colorMap: Record<string, string> = {
+  anxiety: "#2A9D8F", // Teal
+  strength: "#1A1A1A", // Black
+  relationships: "#D9896A", // Coral
+  gratitude: "#5B7BB4", // Soft Blue
+  guidance: "#6A4C93", // Deep Purple
+  forgiveness: "#E85D4F", // Orange/Coral
+  "financial-wisdom": "#2B9F98", // Teal Green
+  "debt-freedom": "#1A1A1A", // Black
+  "business-wisdom": "#A84664", // Pink/Magenta
+  "marketplace-impact": "#D97758", // Coral/Orange
+  "work-life-harmony": "#6B5B95", // Purple
+  "wealth-building": "#2A9D8F", // Teal
+  "health-healing": "#5A9C92", // Teal/Green
+  "parenting-grace": "#1A1A1A", // Black
+  "investment-wisdom": "#D9896A", // Coral
+  "career-calling": "#4A5C8F", // Deep Blue
+  "budgeting-stewardship": "#6A4C93", // Deep Purple
+  "communication-relationships": "#2B9F98", // Teal Green
+  "income-growth": "#E85D4F", // Orange/Coral
+  "financial-freedom-journey": "#5B7BB4", // Soft Blue
+  "exercise-fitness": "#A84664", // Pink/Magenta
+};
+
+// Array of colors to cycle through for individual cards within detail pages
+const detailCardColors = [
+  "#2A9D8F", // Teal
+  "#1A1A1A", // Black
+  "#D9896A", // Coral
+  "#5B7BB4", // Soft Blue
+  "#6A4C93", // Deep Purple
+  "#E85D4F", // Orange/Coral
+  "#2B9F98", // Teal Green
+  "#A84664", // Pink/Magenta
+  "#D97758", // Coral/Orange
+  "#6B5B95", // Purple
+  "#4A5C8F", // Deep Blue
+  "#5A9C92", // Teal/Green
+];
+
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
 const isSmallScreen = width < 375;
@@ -77,7 +118,12 @@ const isSmallScreen = width < 375;
 export default function PrayerScreen() {
   const { contentHistory, userPreferences, markPrayerViewed, addPrayerCategory, isLoaded, setCurrentDayPrayer } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
-  const { viewRef, captureAndShare, isCapturing } = useScreenshotShare();
+  
+  // Card-level sharing hooks
+  const prayerCard = useCardShare();
+  const verseCard = useCardShare();
+  const applicationCard = useCardShare();
+  
   const [selectedGuide, setSelectedGuide] = useState<PrayerGuide | null>(null);
   const [fadeAnim] = useState(new Animated.Value(1));
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -93,41 +139,28 @@ export default function PrayerScreen() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewingPastContent, setViewingPastContent] = useState(false);
-  
-  // Draggable share button position
-  const pan = useRef(new Animated.ValueXY({ x: screenWidth - 60, y: 100 })).current;
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        pan.setOffset({
-          x: (pan.x as any)._value,
-          y: (pan.y as any)._value,
-        });
-        pan.setValue({ x: 0, y: 0 });
-      },
-      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
-        useNativeDriver: false,
-      }),
-      onPanResponderRelease: () => {
-        pan.flattenOffset();
-        
-        const maxX = screenWidth - 60;
-        const maxY = 800;
-        
-        Animated.spring(pan, {
-          toValue: {
-            x: Math.max(20, Math.min((pan.x as any)._value, maxX)),
-            y: Math.max(20, Math.min((pan.y as any)._value, maxY)),
-          },
-          useNativeDriver: false,
-        }).start();
-      },
-    })
-  ).current;
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [activeCardType, setActiveCardType] = useState<'prayer' | 'verse' | 'application' | null>(null);
   const scrollRef = React.useRef<ScrollView>(null);
   
+  const handleCardPress = (cardType: 'prayer' | 'verse' | 'application') => {
+    setActiveCardType(cardType);
+    setShowShareMenu(true);
+  };
+
+  const handleShare = () => {
+    setShowShareMenu(false);
+    setTimeout(() => {
+      if (activeCardType === 'prayer') {
+        prayerCard.shareCard("Share today's prayer from Christian Daily Bread");
+      } else if (activeCardType === 'verse') {
+        verseCard.shareCard("Share today's verse from Christian Daily Bread");
+      } else if (activeCardType === 'application') {
+        applicationCard.shareCard("Share today's prayer application from Christian Daily Bread");
+      }
+    }, 300);
+  };
+
   // Use the correlated daily prayer or fallback
   const todayPrayer = React.useMemo<DailyPrayer>(() => {
     // If viewing a specific past date, get prayer for that date
@@ -363,7 +396,7 @@ export default function PrayerScreen() {
           ]}
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
+          <Animated.View collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
             <TouchableOpacity
               onPress={handleBack}
               style={styles.backButton}
@@ -392,43 +425,35 @@ export default function PrayerScreen() {
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t(userPreferences.appLanguage, "prayers.sectionPrayers")}</Text>
-              {selectedGuide.prayers.map((prayer, index) => (
-                <View key={index} style={styles.prayerCard}>
-                  <View style={styles.prayerNumber}>
-                    <Text style={styles.prayerNumberText}>{index + 1}</Text>
+              {selectedGuide.prayers.map((prayer, index) => {
+                const cardColor = detailCardColors[index % detailCardColors.length];
+                return (
+                  <View key={index} style={[styles.prayerCard, { backgroundColor: cardColor }]}>
+                    <View style={styles.prayerNumber}>
+                      <Text style={styles.prayerNumberText}>{index + 1}</Text>
+                    </View>
+                    <Text style={styles.prayerText}>{translatedDetail?.prayers?.[index] ?? prayer}</Text>
                   </View>
-                  <Text style={styles.prayerText}>{translatedDetail?.prayers?.[index] ?? prayer}</Text>
-                </View>
-              ))}
+                );
+              })}
             </View>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t(userPreferences.appLanguage, "prayers.sectionScripture")}</Text>
-              {selectedGuide.scriptures.map((scripture, index) => (
-                <View key={index} style={styles.scriptureCard}>
-                  <Text style={styles.scriptureVerse}>&quot;{translatedDetail?.scriptureVerses?.[index] ?? scripture.verse}&quot;</Text>
-                  <Text style={styles.scriptureReference}>
-                    — {scripture.reference}
-                  </Text>
-                </View>
-              ))}
+              {selectedGuide.scriptures.map((scripture, index) => {
+                const cardColor = detailCardColors[(selectedGuide.prayers.length + index) % detailCardColors.length];
+                return (
+                  <View key={index} style={[styles.scriptureCard, { backgroundColor: cardColor }]}>
+                    <Text style={styles.scriptureVerse}>&quot;{translatedDetail?.scriptureVerses?.[index] ?? scripture.verse}&quot;</Text>
+                    <Text style={styles.scriptureReference}>
+                      — {scripture.reference}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
           </Animated.View>
         </ScrollView>
-
-        {/* Share Button - Floating Action Button */}
-        <TouchableOpacity
-          style={styles.shareButton}
-          onPress={() => captureAndShare(`Share this prayer guide from Christian Daily Bread: ${selectedGuide.title}`)}
-          disabled={isCapturing}
-          activeOpacity={0.8}
-        >
-          {isCapturing ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Share2 size={18} color="#FFFFFF" />
-          )}
-        </TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -444,14 +469,14 @@ export default function PrayerScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View ref={viewRef} collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
+        <Animated.View collapsable={false} style={[styles.content, { opacity: fadeAnim }]}>
           <View style={styles.dateTimeContainer}>
             <TouchableOpacity
               style={styles.dateRow}
               onPress={() => setShowCalendar(true)}
               activeOpacity={0.7}
             >
-              <Calendar size={20} color={colors.light.primary} />
+              <Calendar size={18} color={colors.light.primary} />
               <Text style={[styles.dateText, viewingPastContent && styles.pastDateText]}>
                 {viewingPastContent && selectedDate
                   ? selectedDate.toLocaleDateString(locale, { weekday: "long", year: "numeric", month: "long", day: "numeric" })
@@ -471,7 +496,7 @@ export default function PrayerScreen() {
               </TouchableOpacity>
             )}
             <View style={styles.timeRow}>
-              <Clock size={20} color={colors.light.textSecondary} />
+              <Clock size={18} color={colors.light.textSecondary} />
               <Text style={styles.timeText}>{time}</Text>
             </View>
           </View>
@@ -488,28 +513,57 @@ export default function PrayerScreen() {
               <Text style={styles.todaySectionTitle}>🙏 {t(userPreferences.appLanguage, "prayers.todaysPrayer")}</Text>
               <Text style={styles.todaySectionSubtitle}>{t(userPreferences.appLanguage, "prayers.dailyGuidance")}</Text>
             </View>
-            <View style={styles.todayPrayerCard}>
+            <TouchableOpacity 
+              ref={prayerCard.cardRef} 
+              collapsable={false} 
+              style={styles.todayPrayerCard}
+              onPress={() => handleCardPress('prayer')}
+              activeOpacity={0.9}
+            >
               <View style={styles.todayIconContainer}>
-                <Heart size={32} color={colors.light.primary} />
+                <Heart size={32} color="#FFFFFF" />
               </View>
               <View style={styles.todayTextContainer}>
                 <Text style={styles.todayTitle}>{translatedDailyPrayer?.title ?? todayPrayer.title}</Text>
                 <Text style={styles.todayPrayerText}>
                   {translatedDailyPrayer?.prayer ?? todayPrayer.prayer}
                 </Text>
-                
-                {/* Bible Verse */}
-                <View style={styles.todayVerseCard}>
-                  <Text style={styles.todayVerse}>
-                    &quot;{translatedDailyPrayer?.verse ?? todayPrayer.verse}&quot;
-                  </Text>
-                  <View style={styles.todayScriptureContainer}>
-                    <BookOpen size={14} color={colors.light.accent} />
-                    <Text style={styles.todayScripture}>{todayPrayer.scripture}</Text>
-                  </View>
-                </View>
               </View>
-            </View>
+            </TouchableOpacity>
+
+            {/* Bible Verse Card - Separate with vibrant color */}
+            <TouchableOpacity 
+              ref={verseCard.cardRef} 
+              collapsable={false} 
+              style={styles.prayerVerseCard}
+              onPress={() => handleCardPress('verse')}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.todayVerse}>
+                &quot;{translatedDailyPrayer?.verse ?? todayPrayer.verse}&quot;
+              </Text>
+              <View style={styles.todayScriptureContainer}>
+                <BookOpen size={14} color="#FFFFFF" />
+                <Text style={styles.todayScripture}>{todayPrayer.scripture}</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Prayer Prompt Card - Third card with vibrant color */}
+            <TouchableOpacity 
+              ref={applicationCard.cardRef} 
+              collapsable={false} 
+              style={styles.prayerPromptCard}
+              onPress={() => handleCardPress('application')}
+              activeOpacity={0.9}
+            >
+              <View style={styles.prayerPromptHeader}>
+                <Heart size={14} color="#FFFFFF" />
+                <Text style={styles.prayerPromptLabel}>{t(userPreferences.appLanguage, "prayers.prayerPrompt")}</Text>
+              </View>
+              <Text style={styles.prayerPromptText}>
+                {t(userPreferences.appLanguage, "prayers.prayerPromptContent")}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* All Prayer Guides */}
@@ -521,20 +575,16 @@ export default function PrayerScreen() {
             {recommendedPrayers.map((guide) => {
               const IconComponent = iconMap[guide.icon];
               const translated = translatedListItems[guide.id];
+              const cardColor = colorMap[guide.id] || colors.light.primary;
               return (
                 <TouchableOpacity
                   key={guide.id}
-                  style={styles.guideCard}
+                  style={[styles.guideCard, { backgroundColor: cardColor }]}
                   onPress={() => handleSelectGuide(guide)}
                   activeOpacity={0.8}
                 >
-                  <View
-                    style={[
-                      styles.guideIconContainer,
-                      { backgroundColor: `${colors.light.primary}15` },
-                    ]}
-                  >
-                    <IconComponent size={28} color={colors.light.primary} />
+                  <View style={styles.guideIconContainer}>
+                    <IconComponent size={28} color="#FFFFFF" strokeWidth={2.5} />
                   </View>
                   <Text style={styles.guideTitle}>{translated?.title ?? guide.title}</Text>
                   <Text style={styles.guideDescription} numberOfLines={2}>
@@ -624,29 +674,41 @@ export default function PrayerScreen() {
         </View>
       </Modal>
 
-      {/* Share Button - Draggable Floating Action Button */}
-      <Animated.View
-        style={[
-          styles.shareButton,
-          {
-            transform: [{ translateX: pan.x }, { translateY: pan.y }],
-          },
-        ]}
-        {...panResponder.panHandlers}
+      {/* Share Menu Modal */}
+      <Modal
+        visible={showShareMenu}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowShareMenu(false)}
       >
-        <TouchableOpacity
-          style={styles.shareButtonInner}
-          onPress={() => captureAndShare("Share prayer guides from Christian Daily Bread")}
-          disabled={isCapturing}
-          activeOpacity={0.8}
+        <TouchableOpacity 
+          style={styles.shareMenuOverlay}
+          activeOpacity={1}
+          onPress={() => setShowShareMenu(false)}
         >
-          {isCapturing ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Share2 size={18} color="#FFFFFF" />
-          )}
+          <View style={styles.shareMenuContainer}>
+            <TouchableOpacity
+              style={styles.shareMenuItem}
+              onPress={handleShare}
+              activeOpacity={0.7}
+            >
+              <Upload size={22} color={colors.light.text} />
+              <Text style={styles.shareMenuText}>Create Image</Text>
+            </TouchableOpacity>
+
+            <View style={styles.shareMenuDivider} />
+
+            <TouchableOpacity
+              style={styles.shareMenuItem}
+              onPress={() => setShowShareMenu(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.shareMenuCancel}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
         </TouchableOpacity>
-      </Animated.View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -731,7 +793,7 @@ const styles = StyleSheet.create({
     color: colors.light.textTertiary,
   },
   todayPrayerCard: {
-    backgroundColor: colors.light.cardBackground,
+    backgroundColor: '#E85D4F', // Orange/Coral
     borderRadius: isTablet ? 24 : 20,
     padding: isTablet ? 32 : (isSmallScreen ? 20 : 24),
     shadowColor: "#000",
@@ -764,7 +826,7 @@ const styles = StyleSheet.create({
   todayTitle: {
     fontSize: 22,
     fontWeight: "700" as const,
-    color: colors.light.text,
+    color: '#FFFFFF',
     marginBottom: 4,
     lineHeight: 28,
     flexWrap: "wrap",
@@ -826,7 +888,7 @@ const styles = StyleSheet.create({
   todayPrayerText: {
     fontSize: 15,
     lineHeight: 24,
-    color: colors.light.textSecondary,
+    color: '#FFFFFF',
     fontStyle: "italic" as const,
     marginBottom: 12,
   },
@@ -843,16 +905,57 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: colors.light.primary,
   },
+  prayerVerseCard: {
+    backgroundColor: '#5A9C92', // Teal/Green
+    borderRadius: isTablet ? 24 : 20,
+    padding: isTablet ? 32 : (isSmallScreen ? 20 : 24),
+    marginTop: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  prayerPromptCard: {
+    backgroundColor: '#6B5B95', // Purple
+    borderRadius: isTablet ? 24 : 20,
+    padding: isTablet ? 32 : (isSmallScreen ? 20 : 24),
+    marginTop: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  prayerPromptHeader: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    marginBottom: 8,
+  },
+  prayerPromptLabel: {
+    fontSize: 12,
+    fontWeight: "700" as const,
+    color: '#FFFFFF',
+    textTransform: "uppercase" as const,
+    letterSpacing: 1,
+    marginLeft: 6,
+  },
+  prayerPromptText: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: '#FFFFFF',
+    fontStyle: "italic" as const,
+  },
   todayVerse: {
     fontSize: isSmallScreen ? 14 : 15,
     lineHeight: isSmallScreen ? 22 : 24,
-    color: colors.light.textSecondary,
+    color: '#FFFFFF',
     marginBottom: 8,
     fontStyle: "italic" as const,
   },
   todayScripture: {
     fontSize: 13,
-    color: colors.light.primary,
+    color: '#FFFFFF',
     fontWeight: "600" as const,
   },
   allPrayersHeader: {
@@ -867,21 +970,20 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   guideCard: {
-    backgroundColor: colors.light.cardBackground,
     borderRadius: isTablet ? 20 : 16,
     padding: isTablet ? 28 : (isSmallScreen ? 16 : 20),
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: colors.light.border,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 0,
   },
   guideIconContainer: {
     width: 56,
     height: 56,
     borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
@@ -889,12 +991,12 @@ const styles = StyleSheet.create({
   guideTitle: {
     fontSize: isSmallScreen ? 18 : 20,
     fontWeight: "700" as const,
-    color: colors.light.text,
+    color: "#FFFFFF",
     marginBottom: 6,
   },
   guideDescription: {
     fontSize: 14,
-    color: colors.light.textSecondary,
+    color: "rgba(255, 255, 255, 0.9)",
     lineHeight: 20,
   },
   backButton: {
@@ -946,54 +1048,60 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   prayerCard: {
-    backgroundColor: colors.light.cardBackground,
     borderRadius: 12,
     padding: isSmallScreen ? 14 : 16,
     marginBottom: 12,
     flexDirection: "row",
     gap: isSmallScreen ? 10 : 12,
-    borderWidth: 1,
-    borderColor: colors.light.border,
+    borderWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   prayerNumber: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.light.primary,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     alignItems: "center",
     justifyContent: "center",
   },
   prayerNumberText: {
     fontSize: 14,
     fontWeight: "700" as const,
-    color: colors.light.cardBackground,
+    color: "#FFFFFF",
   },
   prayerText: {
     flex: 1,
     fontSize: isSmallScreen ? 14 : 15,
     lineHeight: isSmallScreen ? 22 : 24,
-    color: colors.light.text,
+    color: "rgba(255, 255, 255, 0.95)",
     fontStyle: "italic" as const,
   },
   scriptureCard: {
-    backgroundColor: `${colors.light.accent}10`,
     borderRadius: 12,
     padding: isSmallScreen ? 14 : 16,
     marginBottom: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.light.accent,
+    borderLeftWidth: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   scriptureVerse: {
     fontSize: isSmallScreen ? 14 : 15,
     lineHeight: isSmallScreen ? 22 : 24,
-    color: colors.light.text,
+    color: "rgba(255, 255, 255, 0.95)",
     marginBottom: 8,
     fontStyle: "italic" as const,
   },
   scriptureReference: {
     fontSize: 13,
     fontWeight: "600" as const,
-    color: colors.light.textSecondary,
+    color: "#FFFFFF",
   },
   loadingContainer: {
     flex: 1,
@@ -1004,25 +1112,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.light.textSecondary,
     fontWeight: "600" as const,
-  },
-  shareButton: {
-    position: "absolute" as const,
-    width: 40,
-    height: 40,
-    zIndex: 1000,
-  },
-  shareButtonInner: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.light.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   pastDateText: {
     color: colors.light.primary,
@@ -1084,6 +1173,45 @@ const styles = StyleSheet.create({
   todayButtonInModalText: {
     color: "#FFFFFF",
     fontSize: 16,
+    fontWeight: "600" as const,
+  },
+  shareMenuOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "flex-end",
+  },
+  shareMenuContainer: {
+    backgroundColor: colors.light.cardBackgroundSecondary,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: isTablet ? 40 : 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  shareMenuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  shareMenuText: {
+    fontSize: 18,
+    color: colors.light.text,
+    fontWeight: "600" as const,
+  },
+  shareMenuDivider: {
+    height: 1,
+    backgroundColor: colors.light.border,
+    marginHorizontal: 20,
+  },
+  shareMenuCancel: {
+    fontSize: 18,
+    color: colors.light.textSecondary,
     fontWeight: "600" as const,
   },
 });
