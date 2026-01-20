@@ -31,7 +31,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar as RNCalendar } from 'react-native-calendars';
 
 type BibleVerse = {
@@ -698,40 +698,17 @@ export default function BibleStudyScreen() {
 
   if (!isLoaded) {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={[colors.light.background, colors.light.cardBackground]}
-          style={StyleSheet.absoluteFillObject}
-        />
+    <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>{t(userPreferences.appLanguage, "common.loading")}</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (selectedPlan) {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={[colors.light.background, colors.light.cardBackground]}
-          style={StyleSheet.absoluteFillObject}
-        />
-        
-        {/* Share Button - Floating Action Button */}
-        <TouchableOpacity
-          style={styles.shareButton}
-          onPress={() => captureAndShare(`Share this Bible study from Christian Daily Bread: ${selectedPlan.title}`)}
-          disabled={isCapturing}
-          activeOpacity={0.8}
-        >
-          {isCapturing ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Share2 size={18} color="#FFFFFF" />
-          )}
-        </TouchableOpacity>
-        
+    <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView
           ref={scrollRef}
           style={styles.scrollView}
@@ -989,18 +966,26 @@ export default function BibleStudyScreen() {
             </View>
           </View>
         </Modal>
-      </View>
+
+        {/* Share Button - Floating Action Button */}
+        <TouchableOpacity
+          style={styles.shareButton}
+          onPress={() => captureAndShare(`Share this Bible study from Christian Daily Bread: ${selectedPlan.title}`)}
+          disabled={isCapturing}
+          activeOpacity={0.8}
+        >
+          {isCapturing ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Share2 size={18} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={[colors.light.background, colors.light.cardBackground]}
-        style={StyleSheet.absoluteFillObject}
-      />
-      
-      {/* Share Button - Draggable Floating Action Button */}
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Animated.View
         style={[
           styles.shareButton,
@@ -1234,13 +1219,14 @@ export default function BibleStudyScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.light.background,
   },
   scrollView: {
     flex: 1,
@@ -1250,6 +1236,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: isTablet ? 32 : (isSmallScreen ? 16 : 20),
+    paddingTop: 16, // Consistent top padding for all devices
   },
   dateTimeContainer: {
     flexDirection: "row",

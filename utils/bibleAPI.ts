@@ -17,9 +17,13 @@ export interface BibleChapter {
 const BIBLE_CACHE_PREFIX = 'bible_cache_';
 const BIBLE_API_URL = 'https://bible-api.com';
 
+// We'll use API + aggressive caching as a practical "offline-first" approach
+// True 100% offline would require bundling ~5MB of Bible JSON data
+// This approach: loads once with internet, then works 100% offline forever
+
 /**
- * Fetch a chapter from Bible API with offline caching
- * Supports multiple translations
+ * Fetch a chapter from Bible API with permanent offline caching
+ * After first fetch, works 100% offline
  */
 export async function fetchBibleChapter(
   bookId: string,
@@ -29,27 +33,28 @@ export async function fetchBibleChapter(
   const cacheKey = `${BIBLE_CACHE_PREFIX}${translation}_${bookId}_${chapter}`;
   
   try {
-    // Try to get from cache first
+    // Try cache first (works offline)
     const cached = await AsyncStorage.getItem(cacheKey);
     if (cached) {
-      console.log(`Bible: Loaded ${bookId} ${chapter} from cache`);
+      console.log(`Bible: Loaded ${bookId} ${chapter} from offline cache`);
       return JSON.parse(cached);
     }
 
-    // Fetch from API
-    console.log(`Bible: Fetching ${bookId} ${chapter} from API`);
+    // Only fetch if not in cache (requires internet once)
+    console.log(`Bible: Fetching ${bookId} ${chapter} from API (first time only)`);
     const response = await fetch(
-      `${BIBLE_API_URL}/${bookId}+${chapter}?translation=${translation}`
+      `${BIBLE_API_URL}/${bookId}+${chapter}?translation=${translation}`,
+      { timeout: 10000 } as any
     );
     
     if (!response.ok) {
-      console.error(`Bible API error: ${response.status}`);
+      console.warn(`Bible API error: ${response.status}`);
       return null;
     }
 
     const data = await response.json();
     
-    // Parse verses from the API response
+    // Parse verses
     const verses: BibleVerse[] = data.verses.map((v: any) => ({
       book: v.book_name,
       chapter: v.chapter,
@@ -64,19 +69,19 @@ export async function fetchBibleChapter(
       verses,
     };
 
-    // Cache for offline use
+    // Permanently cache for offline use
     await AsyncStorage.setItem(cacheKey, JSON.stringify(chapterData));
-    console.log(`Bible: Cached ${bookId} ${chapter}`);
+    console.log(`Bible: Permanently cached ${bookId} ${chapter} for offline use`);
 
     return chapterData;
   } catch (error) {
-    console.error('Bible API fetch error:', error);
+    console.error('Bible fetch error:', error);
     
-    // Try cache again in case of network error
+    // Always try cache on error (enables offline)
     try {
       const cached = await AsyncStorage.getItem(cacheKey);
       if (cached) {
-        console.log(`Bible: Using cached ${bookId} ${chapter} (offline)`);
+        console.log(`Bible: Using offline cache for ${bookId} ${chapter}`);
         return JSON.parse(cached);
       }
     } catch (cacheError) {
@@ -92,7 +97,7 @@ export async function fetchBibleChapter(
  */
 export function getBibleAPITranslation(bibleVersion: string): string {
   const translationMap: Record<string, string> = {
-    'niv': 'web', // Using World English Bible as NIV isn't available in free API
+    'niv': 'web', // Using World English Bible (public domain)
     'kjv': 'kjv',
     'esv': 'web',
     'nkjv': 'kjv',
@@ -104,23 +109,59 @@ export function getBibleAPITranslation(bibleVersion: string): string {
 }
 
 /**
- * Pre-cache a range of chapters for offline use
+ * Pre-cache commonly read chapters for immediate offline access
+ * Call this on app launch or settings screen
  */
-export async function preCacheBibleChapters(
-  bookId: string,
-  startChapter: number,
-  endChapter: number,
+export async function preCachePopularChapters(
   translation: string = 'kjv'
 ): Promise<void> {
-  const promises = [];
-  for (let chapter = startChapter; chapter <= endChapter; chapter++) {
-    promises.push(fetchBibleChapter(bookId, chapter, translation));
-    // Add a small delay to avoid overwhelming the API
-    if (chapter % 5 === 0) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+  const popularChapters = [
+    // Genesis
+    { book: 'gen', chapter: 1 },
+    // Psalms
+    { book: 'psalm', chapter: 23 },
+    { book: 'psalm', chapter: 91 },
+    // Proverbs
+    { book: 'proverbs', chapter: 3 },
+    // John
+    { book: 'john', chapter: 1 },
+    { book: 'john', chapter: 3 },
+    { book: 'john', chapter: 14 },
+    // Romans
+    { book: 'romans', chapter: 8 },
+    // Ephesians
+    { book: 'ephesians', chapter: 6 },
+    // Revelation
+    { book: 'revelation', chapter: 21 },
+  ];
+
+  console.log('Bible: Pre-caching popular chapters for offline use...');
+  
+  for (const { book, chapter } of popularChapters) {
+    try {
+      await fetchBibleChapter(book, chapter, translation);
+      // Small delay to avoid overwhelming the API
+      await new Promise(resolve => setTimeout(resolve, 300));
+    } catch (error) {
+      console.warn(`Failed to pre-cache ${book} ${chapter}:`, error);
     }
   }
-  await Promise.all(promises);
+  
+  console.log('Bible: Pre-caching complete!');
+}
+
+/**
+ * Check how many chapters are cached offline
+ */
+export async function getCachedChapterCount(): Promise<number> {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const bibleKeys = keys.filter(key => key.startsWith(BIBLE_CACHE_PREFIX));
+    return bibleKeys.length;
+  } catch (error) {
+    console.error('Error counting cached chapters:', error);
+    return 0;
+  }
 }
 
 /**

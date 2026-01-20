@@ -12,6 +12,7 @@ import React, { useEffect, Component, ReactNode } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { View, Text, StyleSheet, Platform } from "react-native";
 import { t } from "@/utils/i18n";
+import { preCachePopularChapters } from "@/utils/bibleAPI";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -74,7 +75,7 @@ function RootLayoutNav() {
   const lang = userPreferences.appLanguage;
   return (
     <>
-      <StatusBar style="auto" translucent={true} />
+      <StatusBar style="light" translucent={true} />
       <OfflineIndicator />
       <Stack
         screenOptions={{
@@ -103,6 +104,12 @@ export default function RootLayout() {
   useEffect(() => {
     console.log('RootLayout mounted');
     SplashScreen.hideAsync();
+    
+    // Pre-cache popular Bible chapters for offline use
+    // This runs in the background without blocking the app
+    preCachePopularChapters('kjv').catch(err => 
+      console.warn('Bible pre-caching failed (will work once user has internet):', err)
+    );
   }, []);
 
   return (
@@ -128,23 +135,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: colors.light.background,
   },
   errorTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
-    color: '#e74c3c',
+    color: colors.light.error,
   },
   errorMessage: {
     fontSize: 14,
-    color: '#333',
+    color: colors.light.text,
     marginBottom: 10,
     textAlign: 'center',
   },
   errorStack: {
     fontSize: 10,
-    color: '#666',
+    color: colors.light.textTertiary,
     textAlign: 'left',
   },
 });

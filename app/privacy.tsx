@@ -1,184 +1,220 @@
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Linking } from "react-native";
+import { router } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ChevronLeft } from "lucide-react-native";
 import colors from "@/constants/colors";
-import { useContent } from "@/contexts/ContentContext";
-import { translateTextCached } from "@/utils/translate";
-import { LinearGradient } from "expo-linear-gradient";
-import { Shield } from "lucide-react-native";
-import React from "react";
-import { useFocusEffect } from "expo-router";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
 
-export default function PrivacyScreen() {
-  const scrollRef = React.useRef<ScrollView>(null);
-  const { userPreferences } = useContent();
-  const lang = userPreferences.appLanguage;
-  const [tr, setTr] = React.useState<Record<string, string>>({});
-
-  useFocusEffect(
-    React.useCallback(() => {
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
-    }, [])
-  );
-
-  React.useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      setTr({});
-      if (!userPreferences.autoTranslateContent || !lang || lang === "en") return;
-
-      const base = {
-        title: "Privacy Policy",
-        subtitle: "Protecting Your Data",
-        intro: "At Christian Daily Bread, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data.",
-        s1t: "Data Collection",
-        s1b: "We collect minimal data to improve our services. No personal data is required to use Christian Daily Bread.",
-        s2t: "Data Use",
-        s2b: "We use data to improve our services and personalize your experience.",
-        s3t: "Data Protection",
-        s3b: "We implement reasonable security measures to protect your data.",
-      };
-
-      const entries = await Promise.all(
-        Object.entries(base).map(async ([k, v]) => {
-          const res = await translateTextCached({ text: v, targetLang: lang });
-          return [k, res.text] as const;
-        })
-      );
-      if (cancelled) return;
-      setTr(Object.fromEntries(entries));
-    };
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [lang, userPreferences.autoTranslateContent]);
-
+export default function PrivacyPolicyScreen() {
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={[colors.light.background, colors.light.cardBackground]}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <ScrollView
-        ref={scrollRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <View style={styles.iconContainer}>
-              <Shield size={32} color={colors.light.primary} />
-            </View>
-            <Text style={styles.title}>{tr.title ?? "Privacy Policy"}</Text>
-            <Text style={styles.subtitle}>{tr.subtitle ?? "Protecting Your Data"}</Text>
-          </View>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <ChevronLeft size={24} color={colors.light.primary} />
+          <Text style={styles.backText}>Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Privacy Policy</Text>
+      </View>
 
-          <View style={styles.card}>
-            <Text style={styles.intro}>
-              {tr.intro ?? "At Christian Daily Bread, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data."}
-            </Text>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Daily Bread Privacy Policy</Text>
+        <Text style={styles.subtitle}>Protecting Your Data</Text>
+        <Text style={styles.lastModified}>Last modified on December 14, 2025</Text>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{tr.s1t ?? "Data Collection"}</Text>
-              <Text style={styles.sectionText}>
-                {tr.s1b ?? "We collect minimal data to improve our services. No personal data is required to use Christian Daily Bread."}
-              </Text>
-            </View>
+        <Text style={styles.paragraph}>
+          At Daily Bread, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data.
+        </Text>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{tr.s2t ?? "Data Use"}</Text>
-              <Text style={styles.sectionText}>
-                {tr.s2b ?? "We use data to improve our services and personalize your experience."}
-              </Text>
-            </View>
+        <Text style={styles.sectionTitle}>Data Collection</Text>
+        <Text style={styles.paragraph}>
+          We collect minimal data to improve our services. No personal data is required to use Daily Bread.
+        </Text>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{tr.s3t ?? "Data Protection"}</Text>
-              <Text style={styles.sectionText}>
-                {tr.s3b ?? "We implement reasonable security measures to protect your data."}
-              </Text>
-            </View>
-          </View>
+        <Text style={styles.sectionTitle}>Data Use</Text>
+        <Text style={styles.paragraph}>
+          We use data to improve our services and personalize your experience.
+        </Text>
+
+        <Text style={styles.sectionTitle}>Data Protection</Text>
+        <Text style={styles.paragraph}>
+          We implement reasonable security measures to protect your data.
+        </Text>
+
+        <View style={styles.infoBox}>
+          <Text style={styles.infoTitle}>Important Information</Text>
+          <Text style={styles.infoText}>
+            Daily Bread's AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
+          </Text>
+          <Text style={styles.infoText}>
+            If you are experiencing a mental health crisis, thoughts of self-harm, or severe distress, please contact a licensed mental health professional, your healthcare provider, or a crisis hotline immediately.
+          </Text>
         </View>
+
+        <Text style={styles.sectionTitle}>FAQ</Text>
+
+        <View style={styles.faqItem}>
+          <Text style={styles.faqQuestion}>Q: Is Daily Bread free to download and use?</Text>
+          <Text style={styles.faqAnswer}>A: Yes, Daily Bread is completely free to download and use, with no hidden fees or subscriptions.</Text>
+        </View>
+
+        <View style={styles.faqItem}>
+          <Text style={styles.faqQuestion}>Q: Do I need to create an account to use Daily Bread?</Text>
+          <Text style={styles.faqAnswer}>A: No, you don't need to sign up or log in to use Daily Bread. Just download and start exploring!</Text>
+        </View>
+
+        <View style={styles.faqItem}>
+          <Text style={styles.faqQuestion}>Q: How often is new content added?</Text>
+          <Text style={styles.faqAnswer}>A: We refresh our therapy resources and devotions daily to support your ongoing journey.</Text>
+        </View>
+
+        <View style={styles.faqItem}>
+          <Text style={styles.faqQuestion}>Q: What kind of therapy resources are available?</Text>
+          <Text style={styles.faqAnswer}>A: Daily Bread offers Christ-centered therapy resources, including devotions, scriptural reflections, and spiritual guidance for mental and emotional well-being.</Text>
+        </View>
+
+        <View style={styles.faqItem}>
+          <Text style={styles.faqQuestion}>Q: Is Daily Bread available on multiple devices?</Text>
+          <Text style={styles.faqAnswer}>A: Yes, Daily Bread is available on iOS and Android devices.</Text>
+        </View>
+
+        <Text style={styles.sectionTitle}>Get in Touch</Text>
+        <Text style={styles.paragraph}>We're here to help you the best way we can.</Text>
+
+        <TouchableOpacity 
+          style={styles.contactButton}
+          onPress={() => Linking.openURL('mailto:support@dailybread.app')}
+        >
+          <Text style={styles.contactLabel}>✉️ Email</Text>
+          <Text style={styles.contactValue}>support@dailybread.app</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.footer}>© {new Date().getFullYear()} Christian Daily Bread. All rights reserved.</Text>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.light.background,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.light.borderLight,
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  backText: {
+    fontSize: 16,
+    color: colors.light.primary,
+    fontWeight: "600" as const,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: colors.light.text,
+    marginLeft: 16,
   },
   scrollView: {
     flex: 1,
   },
-  scrollContent: {
-    paddingBottom: 32,
-  },
   content: {
     padding: 20,
-  },
-  header: {
-    marginBottom: 24,
-    alignItems: "center",
-  },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: `${colors.light.primary}15`,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
+    paddingBottom: 40,
   },
   title: {
     fontSize: 28,
     fontWeight: "700" as const,
     color: colors.light.text,
     marginBottom: 8,
-    textAlign: "center",
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: "600" as const,
     color: colors.light.textSecondary,
-    lineHeight: 22,
-    textAlign: "center",
+    marginBottom: 8,
   },
-  card: {
-    backgroundColor: colors.light.cardBackground,
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: colors.light.border,
-  },
-  intro: {
-    fontSize: 15,
-    lineHeight: 24,
-    color: colors.light.text,
-    marginBottom: 24,
-  },
-  section: {
+  lastModified: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700" as const,
     color: colors.light.text,
+    marginTop: 24,
     marginBottom: 12,
   },
-  sectionText: {
-    fontSize: 15,
+  paragraph: {
+    fontSize: 16,
     lineHeight: 24,
     color: colors.light.textSecondary,
+    marginBottom: 16,
+  },
+  infoBox: {
+    backgroundColor: colors.light.cardBackgroundSecondary,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.light.warning,
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 16,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: "700" as const,
+    color: colors.light.text,
+    marginBottom: 8,
+  },
+  infoText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.light.textSecondary,
+    marginBottom: 8,
+  },
+  faqItem: {
+    marginBottom: 16,
+  },
+  faqQuestion: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: colors.light.text,
+    marginBottom: 6,
+  },
+  faqAnswer: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.light.textSecondary,
+  },
+  contactButton: {
+    backgroundColor: colors.light.cardBackground,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  contactLabel: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: colors.light.textSecondary,
+    marginBottom: 4,
+  },
+  contactValue: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: colors.light.primary,
+  },
+  footer: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    textAlign: "center",
+    marginTop: 32,
   },
 });

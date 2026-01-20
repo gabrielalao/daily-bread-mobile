@@ -18,7 +18,7 @@ import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, Activit
 import { Audio } from "expo-av";
 import * as Speech from "expo-speech";
 import { z } from "zod";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 const therapySchema = z.object({
   title: z.string(),
@@ -1098,25 +1098,17 @@ You'll receive a notification to remind you.`,
 
   if (!isLoaded || !therapy) {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={[colors.light.background, colors.light.cardBackground]}
-          style={StyleSheet.absoluteFillObject}
-        />
+    <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>{tr("Loading...")}</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (showMainMenu) {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={[colors.light.background, colors.light.cardBackground]}
-          style={StyleSheet.absoluteFillObject}
-        />
+    <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -1243,13 +1235,13 @@ You'll receive a notification to remind you.`,
             </View>
           </View>
         </ScrollView>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (showChatOnboarding) {
     return (
-      <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
         <LinearGradient
           colors={[colors.light.background, colors.light.cardBackground]}
           style={StyleSheet.absoluteFillObject}
@@ -1522,13 +1514,13 @@ You'll receive a notification to remind you.`,
             </View>
           </View>
         </Modal>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (showFocusSelection) {
     return (
-      <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
         <LinearGradient
           colors={[colors.light.background, colors.light.cardBackground]}
           style={StyleSheet.absoluteFillObject}
@@ -1633,13 +1625,13 @@ You'll receive a notification to remind you.`,
 
           </View>
         </ScrollView>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (showChatInterface) {
     return (
-      <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
         <LinearGradient
           colors={[colors.light.background, colors.light.cardBackground]}
           style={StyleSheet.absoluteFillObject}
@@ -1941,7 +1933,7 @@ You'll receive a notification to remind you.`,
             onSchedule={handleScheduleSession}
           />
         </KeyboardAvoidingView>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -1950,7 +1942,7 @@ You'll receive a notification to remind you.`,
     : therapy;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <LinearGradient
         colors={[colors.light.background, colors.light.cardBackground]}
         style={StyleSheet.absoluteFillObject}
@@ -2054,13 +2046,14 @@ You'll receive a notification to remind you.`,
           </View>
         </Animated.View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.light.background,
   },
   scrollView: {
     flex: 1,
@@ -2070,6 +2063,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: isTablet ? 32 : (isSmallScreen ? 16 : 20),
+    paddingTop: 16, // Consistent top padding for all devices
   },
   header: {
     marginBottom: 24,
