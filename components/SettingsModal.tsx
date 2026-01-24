@@ -3,7 +3,7 @@ import { useNotifications } from "@/contexts/NotificationContext";
 import { useContent } from "@/contexts/ContentContext";
 import { useScheduledSessions } from "@/contexts/ScheduledSessionsContext";
 import type { ScheduledSession } from "@/contexts/ScheduledSessionsContext";
-import { bibleVersions, getPopularVersions, getVersionById } from "@/constants/bible-versions";
+import { bibleVersions, getVersionById } from "@/constants/bible-versions";
 import { appLanguages, getAppLanguageById } from "@/constants/app-languages";
 import { t, tParams } from "@/utils/i18n";
 import { LinearGradient } from "expo-linear-gradient";
@@ -256,7 +256,6 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
   }
 
   const currentVersion = getVersionById(userPreferences.bibleVersion);
-  const popularVersions = getPopularVersions();
   const allVersions = bibleVersions;
   const originalLanguageVersions = allVersions.filter(v => v.language === 'Hebrew' || v.language === 'Greek');
 

@@ -12,6 +12,7 @@ import { TypingIndicator } from "@/components/TypingIndicator";
 import { ScheduleNextSessionModal } from "@/components/ScheduleNextSessionModal";
 import { useRorkAgent, generateObject } from "@rork-ai/toolkit-sdk";
 import { LinearGradient } from "expo-linear-gradient";
+import Constants from "expo-constants";
 import { Brain, Check, Heart, Sparkles, MessageCircle, AlertTriangle, X, Send, ArrowLeft, Mic, MicOff, Volume2, VolumeX, Settings, Plus, Minus, Calendar, Upload } from "lucide-react-native";
 import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, Platform, FlatList, Alert, Dimensions } from "react-native";
@@ -32,7 +33,7 @@ const therapySchema = z.object({
   prayerPrompt: z.string(),
 });
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
 const isTablet = screenWidth >= 768;
 const isSmallScreen = screenWidth < 375;
 
@@ -60,13 +61,11 @@ const MOODS = [
   { id: "grateful", label: "Grateful", emoji: "🙏" },
 ];
 
-import Constants from "expo-constants";
-
 export default function TherapyScreen() {
   const { contentHistory, userPreferences, markTherapyViewed, isLoaded, setCurrentDayTherapy } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
-  const { isOffline, isOnline } = useNetworkStatus();
-  const { scheduleSession, getNextSession } = useScheduledSessions();
+  const { isOffline } = useNetworkStatus();
+  const { scheduleSession } = useScheduledSessions();
   const insets = useSafeAreaInsets();
   
   // Card-level sharing hooks
@@ -112,7 +111,6 @@ export default function TherapyScreen() {
     platform?: string;
   } | null>(null);
   const [isTyping, setIsTyping] = useState(false);
-  const [thinkingDelay, setThinkingDelay] = useState(0);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [chatMessageCount, setChatMessageCount] = useState(0);
 
@@ -331,7 +329,7 @@ export default function TherapyScreen() {
     return () => {
       cancelled = true;
     };
-  }, [therapy?.id, lang, userPreferences.autoTranslateContent]);
+  }, [therapy, lang, userPreferences.autoTranslateContent]);
 
   useEffect(() => {
     console.log("Rork extra config:", Constants.expoConfig?.extra);
@@ -568,7 +566,7 @@ Make it personal, compassionate, and practical. Focus on hope, healing, and God'
           try {
             const serialized = JSON.stringify(error, Object.getOwnPropertyNames(error), 2);
             console.error('Serialized error:', serialized);
-          } catch (e) {
+          } catch {
             console.error('Could not serialize error');
           }
         }

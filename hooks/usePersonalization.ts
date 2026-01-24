@@ -15,6 +15,8 @@ export function usePersonalization() {
 
   const generatePersonalizedTopicsMutation = useMutation({
     mutationFn: async (userInput: string) => {
+      // In Offline mode we never call network for personalization.
+      if (userPreferences.offlineModeEnabled) return [];
       const prompt = `Based on this user's spiritual interest: "${userInput}", suggest 3-5 relevant Christian topics or themes they might be interested in. Topics should be specific spiritual concepts like "peace", "anxiety", "strength", "relationships", "guidance", "faith", "forgiveness", "gratitude", etc. Return only the topics as a comma-separated list, nothing else.`;
       
       const response = await generateText({ messages: [{ role: 'user', content: prompt }] });
@@ -29,6 +31,8 @@ export function usePersonalization() {
 
   const analyzeContentInteractionMutation = useMutation({
     mutationFn: async (params: { type: 'devotional' | 'prayer' | 'study' | 'therapy'; content: string }) => {
+      // In Offline mode we never call network for personalization.
+      if (userPreferences.offlineModeEnabled) return [];
       const { type, content } = params;
       const prompt = `Analyze this Christian ${type} content and extract 1-2 key spiritual themes or topics (like "peace", "strength", "faith", etc.): "${content}". Return only the topics as a comma-separated list, nothing else.`;
       
@@ -45,6 +49,6 @@ export function usePersonalization() {
     personalizedTopics,
     generatePersonalizedTopics: generatePersonalizedTopicsMutation.mutate,
     analyzeContentInteraction: analyzeContentInteractionMutation.mutate,
-    isGenerating: generatePersonalizedTopicsMutation.isPending || analyzeContentInteractionMutation.isPending,
+    isGenerating: userPreferences.offlineModeEnabled ? false : (generatePersonalizedTopicsMutation.isPending || analyzeContentInteractionMutation.isPending),
   };
 }

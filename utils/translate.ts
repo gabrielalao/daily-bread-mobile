@@ -86,6 +86,7 @@ export async function translateTextCached(opts: {
   text: string;
   targetLang: string;
   sourceLang?: string;
+  offlineModeEnabled?: boolean;
 }): Promise<TranslateResult> {
   const sourceLang = opts.sourceLang ?? "en";
   const targetLang = opts.targetLang;
@@ -97,6 +98,11 @@ export async function translateTextCached(opts: {
   const key = cacheKey(targetLang, text);
   const cached = await AsyncStorage.getItem(key);
   if (cached) return { text: cached, wasCached: true, didTranslate: true };
+
+  // Strict offline mode: allow cache hits only, never call translation providers.
+  if (opts.offlineModeEnabled) {
+    return { text: opts.text, wasCached: false, didTranslate: false };
+  }
 
   const existing = inFlight.get(key);
   if (existing) return existing;

@@ -1,24 +1,26 @@
 import colors from "@/constants/colors";
 import { dailyStudies, DailyStudy, getCorrelatedDailyStudy, getTodayDailyStudy } from "@/constants/daily-studies";
-import { getRecommendedStudies, getTodayStudy, BibleStudyPlan } from "@/constants/bible-studies";
+import { getRecommendedStudies, BibleStudyPlan } from "@/constants/bible-studies";
+import { BIBLE_BOOKS } from "@/constants/bibleBooks";
 import { getPassageProviderCode, getVersionById } from "@/constants/bible-versions";
 import { translateTextCached } from "@/utils/translate";
+import { fetchBibleChapter, getBibleAPITranslation } from "@/utils/bibleAPI";
 import { useContent } from "@/contexts/ContentContext";
 import { devotionals, getCorrelatedDevotionalTheme } from "@/constants/devotionals";
 import { usePersonalization } from "@/hooks/usePersonalization";
 import { useCardShare } from "@/hooks/useCardShare";
 import { getStudyInsight, mergeInsightOverrides } from "@/utils/studyInsights";
-import { t } from "@/utils/i18n";
-import { tParams } from "@/utils/i18n";
-import { LinearGradient } from "expo-linear-gradient";
+import { t, tParams } from "@/utils/i18n";
+import { NetworkStatusDot } from "@/components/NetworkStatusDot";
+import { A11yText as Text } from "@/components/A11yText";
 import { Book, Calendar, ChevronRight, X, Upload, ChevronDown, ChevronUp, Lightbulb, BookOpen, Heart, Clock, Share2 } from "lucide-react-native";
 import React, { useState, useRef } from "react";
 import { useFocusEffect } from "expo-router";
 import {
   Animated,
   ScrollView,
+  FlatList,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
   ActivityIndicator,
@@ -26,7 +28,6 @@ import {
   Platform,
   Alert,
   Dimensions,
-  PanResponder,
 } from "react-native";
 import { useMutation } from "@tanstack/react-query";
 import * as Sharing from 'expo-sharing';
@@ -85,7 +86,7 @@ const detailDayColors = [
 ];
 
 type FormattedVerse = {
-  number: number;
+  number: number | string;
   text: string;
 };
 
@@ -172,18 +173,23 @@ export default function BibleStudyScreen() {
     return getTodayDailyStudy(contentHistory.studies);
   }, [contentHistory.currentDayStudy, contentHistory.studies, contentHistory.currentDayDevotional, selectedDate, viewingPastContent]);
   
-  const todayStudyPlan = getTodayStudy(contentHistory.studies);
-  const recommendedStudies = getRecommendedStudies(
-    contentHistory.studies,
-    userPreferences.studyCategories
+  const recommendedStudies = React.useMemo(
+    () => getRecommendedStudies(contentHistory.studies, userPreferences.studyCategories),
+    [contentHistory.studies, userPreferences.studyCategories]
   );
+
+  const todayStudyId = todayStudy?.id;
+  const todayStudyTitle = todayStudy?.title;
+  const todayStudyVerse = todayStudy?.verse;
+  const todayStudyInsight = todayStudy?.insight;
+  const todayStudyReflection = todayStudy?.reflection;
   
   // Save the correlated study to context
   React.useEffect(() => {
     if (isLoaded && todayStudy && contentHistory.currentDayStudy !== todayStudy.id) {
       setCurrentDayStudy(todayStudy.id);
     }
-  }, [todayStudy, isLoaded, contentHistory.currentDayStudy]);
+  }, [todayStudy, isLoaded, contentHistory.currentDayStudy, setCurrentDayStudy]);
 
   // Translate today's daily study when enabled
   React.useEffect(() => {
@@ -192,13 +198,13 @@ export default function BibleStudyScreen() {
       setTranslatedDailyStudy(null);
       const lang = userPreferences.appLanguage;
       if (!userPreferences.autoTranslateContent || !lang || lang === "en") return;
-      if (!todayStudy) return;
+      if (!todayStudyId || !todayStudyTitle || !todayStudyVerse || !todayStudyInsight || !todayStudyReflection) return;
 
       const [titleRes, verseRes, insightRes, reflectionRes] = await Promise.all([
-        translateTextCached({ text: todayStudy.title, targetLang: lang }),
-        translateTextCached({ text: todayStudy.verse, targetLang: lang }),
-        translateTextCached({ text: todayStudy.insight, targetLang: lang }),
-        translateTextCached({ text: todayStudy.reflection, targetLang: lang }),
+        translateTextCached({ text: todayStudyTitle, targetLang: lang }),
+        translateTextCached({ text: todayStudyVerse, targetLang: lang }),
+        translateTextCached({ text: todayStudyInsight, targetLang: lang }),
+        translateTextCached({ text: todayStudyReflection, targetLang: lang }),
       ]);
 
       if (cancelled) return;
@@ -213,7 +219,15 @@ export default function BibleStudyScreen() {
     return () => {
       cancelled = true;
     };
-  }, [todayStudy?.id, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
+  }, [
+    todayStudyId,
+    todayStudyTitle,
+    todayStudyVerse,
+    todayStudyInsight,
+    todayStudyReflection,
+    userPreferences.appLanguage,
+    userPreferences.autoTranslateContent,
+  ]);
 
   const translateCategory = (category: string) => {
     const key = `cat.${category.toLowerCase().replace(/[^a-z]+/g, "")}`;
@@ -288,7 +302,7 @@ export default function BibleStudyScreen() {
     return () => {
       cancelled = true;
     };
-  }, [recommendedStudies.map(p => p.id).join("|"), userPreferences.appLanguage, userPreferences.autoTranslateContent]);
+  }, [recommendedStudies, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
 
   // Translate selected plan reading list content progressively (focus + insights) when enabled.
   React.useEffect(() => {
@@ -338,26 +352,214 @@ export default function BibleStudyScreen() {
     return () => {
       cancelled = true;
     };
-  }, [selectedPlan?.id, userPreferences.appLanguage, userPreferences.autoTranslateContent, getStudyPlanCycle]);
+  }, [selectedPlan, userPreferences.appLanguage, userPreferences.autoTranslateContent, getStudyPlanCycle]);
 
   const fetchVerseMutation = useMutation({
-    mutationFn: async (reference: string): Promise<{ reference: string; verses: { number: number; text: string }[] }> => {
+    mutationFn: async (reference: string): Promise<{ reference: string; verses: FormattedVerse[] }> => {
       try {
+        // Study plan references are mostly chapter/verse ranges.
+        // We prefer fetching chapters via our offline-first cache (AsyncStorage) so it becomes instant after first load
+        // and continues to work offline. We only fall back to bible-api.com "reference" queries if parsing fails.
+        const normalizeDashes = (s: string) => s.replace(/[–—]/g, '-');
+        const normalizeBookName = (bookNameRaw: string) => {
+          const low = bookNameRaw.trim().toLowerCase();
+          if (low === 'psalm') return 'psalms';
+          if (low === 'song of songs') return 'song of solomon';
+          return bookNameRaw.trim();
+        };
+
+        const findBook = (bookNameRaw: string) => {
+          const normalized = normalizeBookName(bookNameRaw);
+          return (BIBLE_BOOKS as { id: string; name: string }[]).find(
+            (b) => b.name.toLowerCase() === normalized.toLowerCase()
+          );
+        };
+
+        type ParsedRef =
+          | { kind: 'chapter'; cleaned: string; bookId: string; bookName: string; chapter: number }
+          | { kind: 'chapterRange'; cleaned: string; bookId: string; bookName: string; startChapter: number; endChapter: number }
+          | { kind: 'verse'; cleaned: string; bookId: string; bookName: string; chapter: number; verse: number }
+          | { kind: 'verseRange'; cleaned: string; bookId: string; bookName: string; chapter: number; startVerse: number; endVerse: number };
+
+        const parseReference = (ref: string): ParsedRef | null => {
+          const cleaned = normalizeDashes(ref).trim().replace(/\s+/g, ' ');
+
+          // Verse range within a single chapter: "Matthew 5:1-12"
+          {
+            const m = cleaned.match(/^(.+?)\s+(\d+):(\d+)\s*-\s*(\d+)$/);
+            if (m) {
+              const book = findBook(m[1]);
+              const chapter = Number(m[2]);
+              const startVerse = Number(m[3]);
+              const endVerse = Number(m[4]);
+              if (!book || !Number.isFinite(chapter) || !Number.isFinite(startVerse) || !Number.isFinite(endVerse)) return null;
+              if (chapter < 1 || startVerse < 1 || endVerse < 1) return null;
+              return {
+                kind: 'verseRange',
+                cleaned,
+                bookId: book.id,
+                bookName: book.name,
+                chapter,
+                startVerse,
+                endVerse,
+              };
+            }
+          }
+
+          // Single verse: "John 3:16"
+          {
+            const m = cleaned.match(/^(.+?)\s+(\d+):(\d+)$/);
+            if (m) {
+              const book = findBook(m[1]);
+              const chapter = Number(m[2]);
+              const verse = Number(m[3]);
+              if (!book || !Number.isFinite(chapter) || !Number.isFinite(verse)) return null;
+              if (chapter < 1 || verse < 1) return null;
+              return { kind: 'verse', cleaned, bookId: book.id, bookName: book.name, chapter, verse };
+            }
+          }
+
+          // Multi-chapter range: "Genesis 1-3"
+          {
+            const m = cleaned.match(/^(.+?)\s+(\d+)\s*-\s*(\d+)$/);
+            if (m) {
+              const book = findBook(m[1]);
+              const startChapter = Number(m[2]);
+              const endChapter = Number(m[3]);
+              if (!book || !Number.isFinite(startChapter) || !Number.isFinite(endChapter)) return null;
+              if (startChapter < 1 || endChapter < 1) return null;
+              return { kind: 'chapterRange', cleaned, bookId: book.id, bookName: book.name, startChapter, endChapter };
+            }
+          }
+
+          // Single chapter: "Psalm 23", "1 Corinthians 13"
+          {
+            const m = cleaned.match(/^(.+?)\s+(\d+)$/);
+            if (m) {
+              const book = findBook(m[1]);
+              const chapter = Number(m[2]);
+              if (!book || !Number.isFinite(chapter) || chapter < 1) return null;
+              return { kind: 'chapter', cleaned, bookId: book.id, bookName: book.name, chapter };
+            }
+          }
+
+          return null;
+        };
+
+        const parsed = parseReference(reference);
+        if (parsed) {
+          const translation = userPreferences.offlineModeEnabled ? "kjv" : getBibleAPITranslation(userPreferences.bibleVersion);
+          const fetchOpts = { allowNetwork: !userPreferences.offlineModeEnabled };
+
+          const formatChapter = (chapterNum: number, useChapterPrefix: boolean) => (v: any): FormattedVerse => ({
+            number: useChapterPrefix ? `${chapterNum}:${v.verse}` : v.verse,
+            text: (v.text ?? '').trim(),
+          });
+
+          if (parsed.kind === 'chapter') {
+            const chapterData = await fetchBibleChapter(parsed.bookId, parsed.chapter, translation, fetchOpts);
+            if (!chapterData) throw new Error(`Unable to load ${parsed.bookName} ${parsed.chapter} (offline cache miss / API error)`);
+            const out = (chapterData.verses ?? []).map(formatChapter(parsed.chapter, false));
+            return { reference: parsed.cleaned, verses: out.length > 0 ? out : [{ number: 1, text: 'Verse not available' }] };
+          }
+
+          if (parsed.kind === 'verseRange') {
+            const chapterData = await fetchBibleChapter(parsed.bookId, parsed.chapter, translation, fetchOpts);
+            if (!chapterData) throw new Error(`Unable to load ${parsed.bookName} ${parsed.chapter} (offline cache miss / API error)`);
+            const low = Math.min(parsed.startVerse, parsed.endVerse);
+            const high = Math.max(parsed.startVerse, parsed.endVerse);
+            const selected = (chapterData.verses ?? []).filter((v: any) => v.verse >= low && v.verse <= high);
+            const out = selected.map(formatChapter(parsed.chapter, false));
+            return { reference: parsed.cleaned, verses: out.length > 0 ? out : [{ number: low, text: 'Verse not available' }] };
+          }
+
+          if (parsed.kind === 'verse') {
+            const chapterData = await fetchBibleChapter(parsed.bookId, parsed.chapter, translation, fetchOpts);
+            if (!chapterData) throw new Error(`Unable to load ${parsed.bookName} ${parsed.chapter} (offline cache miss / API error)`);
+            const v = (chapterData.verses ?? []).find((vv: any) => vv.verse === parsed.verse);
+            return {
+              reference: parsed.cleaned,
+              verses: v ? [formatChapter(parsed.chapter, false)(v)] : [{ number: parsed.verse, text: 'Verse not available' }],
+            };
+          }
+
+          if (parsed.kind === 'chapterRange') {
+            const step = parsed.startChapter <= parsed.endChapter ? 1 : -1;
+            const chapters: number[] = [];
+            for (let c = parsed.startChapter; step > 0 ? c <= parsed.endChapter : c >= parsed.endChapter; c += step) {
+              chapters.push(c);
+            }
+
+            // Concurrency-limited fetch prevents big ranges from spawning too many parallel reads/fetches.
+            const mapWithConcurrency = async <T, R>(
+              items: T[],
+              limit: number,
+              fn: (item: T, idx: number) => Promise<R>
+            ): Promise<R[]> => {
+              const out = new Array(items.length) as R[];
+              let nextIdx = 0;
+              const workerCount = Math.min(limit, items.length);
+              await Promise.all(
+                Array.from({ length: workerCount }, async () => {
+                  while (true) {
+                    const idx = nextIdx++;
+                    if (idx >= items.length) break;
+                    out[idx] = await fn(items[idx], idx);
+                  }
+                })
+              );
+              return out;
+            };
+
+            const chapterDatas = await mapWithConcurrency(
+              chapters,
+              3,
+              async (chapterNum) => {
+                const chapterData = await fetchBibleChapter(parsed.bookId, chapterNum, translation, fetchOpts);
+                if (!chapterData) throw new Error(`Unable to load ${parsed.bookName} ${chapterNum} (offline cache miss / API error)`);
+                return { chapterNum, chapterData };
+              }
+            );
+
+            const combined: FormattedVerse[] = [];
+            for (const { chapterNum, chapterData } of chapterDatas) {
+              for (const v of chapterData.verses ?? []) {
+                combined.push(formatChapter(chapterNum, true)(v));
+              }
+            }
+
+            return {
+              reference: parsed.cleaned,
+              verses: combined.length > 0 ? combined : [{ number: 1, text: 'Verse not available' }],
+            };
+          }
+        }
+
+        // If we couldn't parse the reference into chapter/verse ranges, we fall back to bible-api.com queries.
+        // In Offline mode, do not attempt this network call.
+        if (userPreferences.offlineModeEnabled) {
+          throw new Error("Offline mode is on. Enable Online Mode to load this passage.");
+        }
+
         const preferred = getVersionById(userPreferences.bibleVersion);
         const { code, didFallback } = getPassageProviderCode(userPreferences.bibleVersion);
-        const urlFor = (t: string) => `https://bible-api.com/${encodeURIComponent(reference)}?translation=${encodeURIComponent(t)}`;
+        const urlFor = (ref: string, t: string) => `https://bible-api.com/${encodeURIComponent(ref)}?translation=${encodeURIComponent(t)}`;
 
         let usedCode = code;
-        let response = await fetch(urlFor(usedCode));
+        let response = await fetch(urlFor(reference, usedCode));
 
         // If provider doesn't support the requested translation, auto-fallback to KJV so UX never breaks.
         if (!response.ok && usedCode !== 'kjv') {
           usedCode = 'kjv';
-          response = await fetch(urlFor(usedCode));
+          response = await fetch(urlFor(reference, usedCode));
         }
 
         if (!response.ok) {
-          throw new Error('Failed to fetch verse');
+          const body = await response.text().catch(() => '');
+          throw new Error(
+            `Failed to fetch verse (HTTP ${response.status}${usedCode ? `, translation=${usedCode}` : ''})` +
+              (body ? `: ${body.slice(0, 180)}` : '')
+          );
         }
 
         const data = await response.json();
@@ -493,7 +695,14 @@ export default function BibleStudyScreen() {
     return () => {
       cancelled = true;
     };
-  }, [selectedPlan?.id, activeReadingDay, selectedVerse?.reference, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
+  }, [
+    selectedPlan,
+    activeReadingDay,
+    selectedVerse,
+    userPreferences.appLanguage,
+    userPreferences.autoTranslateContent,
+    getStudyPlanCycle,
+  ]);
 
   const captureModalContent = async () => {
     if (!modalViewRef.current) {
@@ -689,7 +898,7 @@ export default function BibleStudyScreen() {
     return () => {
       cancelled = true;
     };
-  }, [selectedPlan?.id, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
+  }, [selectedPlan, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
 
   const handleBack = () => {
     Animated.timing(fadeAnim, {
@@ -956,20 +1165,26 @@ export default function BibleStudyScreen() {
                     })()
                   )}
 
-                  <ScrollView 
+                  <FlatList
+                    data={verses}
+                    keyExtractor={(_, index) => String(index)}
                     style={[styles.verseScrollView, { minHeight: isTablet ? 400 : 300 }]}
                     contentContainerStyle={[styles.verseScrollContent, { paddingBottom: 80 }]}
                     showsVerticalScrollIndicator={false}
-                  >
-                    {verses.map((verse, index) => (
-                      <View key={index} style={styles.verseContainer}>
+                    initialNumToRender={24}
+                    windowSize={8}
+                    maxToRenderPerBatch={24}
+                    updateCellsBatchingPeriod={50}
+                    removeClippedSubviews={Platform.OS !== 'ios'}
+                    renderItem={({ item: verse }) => (
+                      <View style={styles.verseRow}>
                         <View style={styles.verseNumberContainer}>
                           <Text style={styles.verseNumber}>{verse.number}</Text>
                         </View>
                         <Text style={styles.verseText}>{verse.text}</Text>
                       </View>
-                    ))}
-                  </ScrollView>
+                    )}
+                  />
                   
                   {/* Share Button - Inside modal, at bottom-right */}
                   <TouchableOpacity
@@ -1039,6 +1254,9 @@ export default function BibleStudyScreen() {
               <Clock size={20} color={colors.light.textSecondary} />
               <Text style={styles.timeText}>{time}</Text>
             </View>
+            <View style={styles.statusDotContainer}>
+              <NetworkStatusDot />
+            </View>
           </View>
 
           <View style={styles.header}>
@@ -1055,7 +1273,6 @@ export default function BibleStudyScreen() {
             </View>
             <TouchableOpacity 
               ref={studyCard.cardRef} 
-              collapsable={false} 
               style={styles.todayStudyCard}
               onPress={() => handleCardPress('study')}
               activeOpacity={0.9}
@@ -1087,7 +1304,6 @@ export default function BibleStudyScreen() {
             {/* Reflection Card - Separate with vibrant color */}
             <TouchableOpacity 
               ref={reflectionCard.cardRef} 
-              collapsable={false} 
               style={styles.studyReflectionCard}
               onPress={() => handleCardPress('reflection')}
               activeOpacity={0.9}
@@ -1165,7 +1381,7 @@ export default function BibleStudyScreen() {
               <Text style={styles.calendarTitle}>Select a Date</Text>
               <TouchableOpacity
                 onPress={() => setShowCalendar(false)}
-                style={styles.closeButton}
+                style={styles.calendarCloseButton}
               >
                 <X size={24} color={colors.light.text} />
               </TouchableOpacity>
@@ -1310,6 +1526,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
+  },
+  statusDotContainer: {
+    marginLeft: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
   timeText: {
     fontSize: 13,
@@ -2038,7 +2259,7 @@ const styles = StyleSheet.create({
   verseScrollContent: {
     paddingBottom: 8,
   },
-  verseContainer: {
+  verseRow: {
     flexDirection: "row",
     marginBottom: 16,
     alignItems: "flex-start",
@@ -2155,7 +2376,7 @@ const styles = StyleSheet.create({
     fontWeight: "700" as const,
     color: colors.light.text,
   },
-  closeButton: {
+  calendarCloseButton: {
     padding: 4,
   },
   todayButtonInModal: {

@@ -24,6 +24,14 @@ export type UserPreferences = {
   bibleVersion: string;
   appLanguage: string;
   autoTranslateContent: boolean;
+  /**
+   * When enabled, the app should avoid network calls for all features
+   * except Therapy (which explicitly requires internet). English-only.
+   */
+  offlineModeEnabled: boolean;
+  accessibilityLargeTextEnabled: boolean;
+  accessibilityDyslexiaFontEnabled: boolean;
+  accessibilityBoldTextEnabled: boolean;
 };
 
 const CONTENT_HISTORY_KEY = '@content_history';
@@ -63,6 +71,10 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     bibleVersion: DEFAULT_BIBLE_VERSION,
     appLanguage: DEFAULT_APP_LANGUAGE,
     autoTranslateContent: false,
+    offlineModeEnabled: false, // OFF by default; user can enable in Settings
+    accessibilityLargeTextEnabled: false,
+    accessibilityDyslexiaFontEnabled: false,
+    accessibilityBoldTextEnabled: false,
   });
 
   const [userId, setUserId] = useState<string>('');
@@ -163,6 +175,10 @@ export const [ContentProvider, useContent] = createContextHook(() => {
           bibleVersion: parsed.bibleVersion || DEFAULT_BIBLE_VERSION,
           appLanguage: parsed.appLanguage || DEFAULT_APP_LANGUAGE,
           autoTranslateContent: Boolean(parsed.autoTranslateContent),
+          offlineModeEnabled: Boolean(parsed.offlineModeEnabled),
+          accessibilityLargeTextEnabled: Boolean(parsed.accessibilityLargeTextEnabled),
+          accessibilityDyslexiaFontEnabled: Boolean(parsed.accessibilityDyslexiaFontEnabled),
+          accessibilityBoldTextEnabled: Boolean(parsed.accessibilityBoldTextEnabled),
         });
       }
 
@@ -329,9 +345,36 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     await updatePreferences({ bibleVersion: version });
   };
 
+  const setOfflineModeEnabled = async (enabled: boolean) => {
+    // Offline mode implies English-only + no new translation requests.
+    // (We still keep the user's chosen language stored if they later re-enable online mode via Settings.)
+    if (enabled) {
+      await updatePreferences({ offlineModeEnabled: true, appLanguage: 'en', autoTranslateContent: false });
+      return;
+    }
+    await updatePreferences({ offlineModeEnabled: false });
+  };
+
+  const setAccessibilityLargeTextEnabled = async (enabled: boolean) => {
+    await updatePreferences({ accessibilityLargeTextEnabled: enabled });
+  };
+
+  const setAccessibilityDyslexiaFontEnabled = async (enabled: boolean) => {
+    await updatePreferences({ accessibilityDyslexiaFontEnabled: enabled });
+  };
+
+  const setAccessibilityBoldTextEnabled = async (enabled: boolean) => {
+    await updatePreferences({ accessibilityBoldTextEnabled: enabled });
+  };
+
   const setAppLanguage = async (languageId: string) => {
     // If the user selects a non-English UI language, auto-enable content translation so
     // the app reads fully in that language (they can still turn it off manually).
+    // If Offline mode is enabled, force English only.
+    if (userPreferences.offlineModeEnabled && languageId !== 'en') {
+      await updatePreferences({ appLanguage: 'en', autoTranslateContent: false });
+      return;
+    }
     if (languageId && languageId !== 'en' && !userPreferences.autoTranslateContent) {
       await updatePreferences({ appLanguage: languageId, autoTranslateContent: true });
       return;
@@ -340,6 +383,11 @@ export const [ContentProvider, useContent] = createContextHook(() => {
   };
 
   const setAutoTranslateContent = async (enabled: boolean) => {
+    if (userPreferences.offlineModeEnabled && enabled) {
+      // Offline mode cannot fetch new translations.
+      await updatePreferences({ autoTranslateContent: false });
+      return;
+    }
     await updatePreferences({ autoTranslateContent: enabled });
   };
 
@@ -363,6 +411,10 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     setCurrentDayStudy,
     setCurrentDayTherapy,
     setBibleVersion,
+    setOfflineModeEnabled,
+    setAccessibilityLargeTextEnabled,
+    setAccessibilityDyslexiaFontEnabled,
+    setAccessibilityBoldTextEnabled,
     setAppLanguage,
     setAutoTranslateContent,
     getStudyPlanCycle,

@@ -1,10 +1,10 @@
 import colors from "@/constants/colors";
 import { router } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { BookOpen, Heart, MessageCircle, Sparkles, ArrowRight } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, View, ActivityIndicator } from "react-native";
+import { Animated, Pressable, StyleSheet, View, ActivityIndicator, TouchableOpacity } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { A11yText as Text } from "@/components/A11yText";
 
 const HAS_SEEN_LANDING_KEY = '@daily_bread_has_seen_landing';
 
@@ -155,6 +155,29 @@ export default function LandingPage() {
                 );
               })}
             </View>
+          </View>
+
+          <View style={styles.offlineOnlineSection}>
+            <Text style={styles.offlineOnlineTitle}>Offline &amp; Online</Text>
+            <View style={styles.offlineOnlineBullet}>
+              <View style={[styles.bulletDot, { backgroundColor: "#E74C3C" }]} />
+              <Text style={styles.offlineOnlineText}>
+                Offline mode disables Translation, Personalization, and extra Bible versions. (Therapy still needs internet.)
+              </Text>
+            </View>
+            <View style={styles.offlineOnlineBullet}>
+              <View style={[styles.bulletDot, { backgroundColor: "#2ECC71" }]} />
+              <Text style={styles.offlineOnlineText}>
+                Online mode enables Translation, Personalization, and extra Bible versions.
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.offlineOnlineButton}
+              onPress={() => router.push("/(tabs)/settings")}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.offlineOnlineButtonText}>Manage Offline &amp; Data</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.benefitsSection}>
@@ -334,6 +357,52 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     borderWidth: 1,
     borderColor: colors.light.borderLight,
+  },
+  offlineOnlineSection: {
+    backgroundColor: colors.light.cardBackgroundSecondary,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: colors.light.borderLight,
+  },
+  offlineOnlineTitle: {
+    fontSize: 18,
+    fontWeight: "800" as const,
+    color: colors.light.text,
+    marginBottom: 12,
+  },
+  offlineOnlineBullet: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 10,
+  },
+  bulletDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginTop: 5,
+  },
+  offlineOnlineText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.light.textSecondary,
+    fontWeight: "500" as const,
+  },
+  offlineOnlineButton: {
+    marginTop: 8,
+    alignSelf: "flex-start",
+    backgroundColor: colors.light.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  offlineOnlineButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "700" as const,
+    fontSize: 14,
   },
   benefitItem: {
     flexDirection: "row",
