@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
-import { Alert, Platform } from 'react-native';
-import * as Sharing from 'expo-sharing';
+import { Alert, Platform, Share } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
+
+const APP_DOWNLOAD_URL = 'https://daily-bread.app/';
 
 const addWatermark = async (canvas: HTMLCanvasElement): Promise<HTMLCanvasElement> => {
   const ctx = canvas.getContext('2d');
@@ -124,6 +125,8 @@ export const useScreenshotShare = () => {
 
     try {
       let uri: string;
+      const baseMessage = (customMessage ?? 'Shared from Christian Daily Bread').trim();
+      const message = `${baseMessage}\n\nDownload the app: ${APP_DOWNLOAD_URL}`;
 
       if (Platform.OS === 'web') {
         // Web-specific screenshot capture using html2canvas
@@ -159,24 +162,11 @@ export const useScreenshotShare = () => {
         
         Alert.alert(
           'Screenshot Saved! 📸',
-          'Your screenshot has been saved with dailybread.app branding.',
+          `Your screenshot has been saved with dailybread.app branding.\n\nShare the app: ${APP_DOWNLOAD_URL}`,
           [{ text: 'Great!' }]
         );
       } else {
-        // Mobile: Use react-native-view-shot
-        const isAvailable = await Sharing.isAvailableAsync();
-        
-        if (!isAvailable) {
-          Alert.alert(
-            'Sharing Unavailable',
-            'Sharing is not available on this device.',
-            [{ text: 'OK' }]
-          );
-          setIsCapturing(false);
-          return;
-        }
-
-        // Capture the screenshot
+        // Mobile: Capture screenshot then share with text
         uri = await captureRef(viewRef, {
           format: 'png',
           quality: 1,
@@ -185,11 +175,10 @@ export const useScreenshotShare = () => {
 
         console.log('Screenshot captured:', uri);
 
-        // Share via native share sheet
-        await Sharing.shareAsync(uri, {
-          mimeType: 'image/png',
-          dialogTitle: customMessage || 'Share from Christian Daily Bread',
-          UTI: 'public.png',
+        await Share.share({
+          title: 'Christian Daily Bread',
+          message,
+          url: uri,
         });
       }
     } catch (error) {

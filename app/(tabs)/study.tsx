@@ -27,10 +27,10 @@ import {
   Modal,
   Platform,
   Alert,
+  Share,
   Dimensions,
 } from "react-native";
 import { useMutation } from "@tanstack/react-query";
-import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar as RNCalendar } from 'react-native-calendars';
@@ -833,10 +833,10 @@ export default function BibleStudyScreen() {
           result: 'tmpfile',
         });
 
-        await Sharing.shareAsync(uri, {
-          mimeType: 'image/png',
-          dialogTitle: 'Share from dailybread.app',
-          UTI: 'public.png',
+        await Share.share({
+          title: 'Christian Daily Bread',
+          message: 'Download the app: https://daily-bread.app/',
+          url: uri,
         });
       }
     } catch (error) {

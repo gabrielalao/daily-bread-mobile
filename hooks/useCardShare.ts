@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
-import { Alert, Platform } from 'react-native';
-import * as Sharing from 'expo-sharing';
+import { Alert, Platform, Share } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
+
+const APP_DOWNLOAD_URL = 'https://daily-bread.app/';
 
 /**
  * Adds watermark to web canvas
@@ -64,6 +65,8 @@ export const useCardShare = () => {
 
     try {
       let uri: string;
+      const baseMessage = (customMessage ?? 'Shared from Christian Daily Bread').trim();
+      const message = `${baseMessage}\n\nDownload the app: ${APP_DOWNLOAD_URL}`;
 
       if (Platform.OS === 'web') {
         // Web-specific capture using html2canvas
@@ -98,7 +101,7 @@ export const useCardShare = () => {
         
         Alert.alert(
           'Card Saved! 📸',
-          'Your card has been saved with © Christian Daily Bread branding.',
+          `Your card has been saved with © Christian Daily Bread branding.\n\nShare the app: ${APP_DOWNLOAD_URL}`,
           [{ text: 'Great!' }]
         );
       } else {
@@ -116,10 +119,11 @@ export const useCardShare = () => {
         console.log('Platform:', Platform.OS);
         console.log('Attempting to share...');
 
-        // Use expo-sharing for both iOS and Android (designed for file sharing)
-        await Sharing.shareAsync(uri, {
-          mimeType: 'image/png',
-          UTI: 'public.png',
+        // Share image + text (download link) together
+        await Share.share({
+          title: 'Christian Daily Bread',
+          message,
+          url: uri,
         });
         
         console.log('Share completed successfully!');
