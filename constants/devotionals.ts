@@ -78,7 +78,7 @@ export function getCorrelatedDevotionalTheme(devotional: Devotional): string[] {
   };
   
   // Check finances first as it's very specific
-  for (const [theme, searchTerms] of Object entries(themeMap)) {
+  for (const [theme, searchTerms] of Object.entries(themeMap)) {
     if (searchTerms.some(term => text.includes(term))) {
       keywords.push(theme);
     }
