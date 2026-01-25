@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
 import { Audio } from 'expo-av';
 import { Play, Pause, SkipBack, SkipForward } from 'lucide-react-native';
 import colors from '@/constants/colors';
@@ -20,6 +20,7 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId }: Devoti
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [albumArt, setAlbumArt] = useState<string | null>(null);
 
   // All hooks must be called before any early returns
   useEffect(() => {
@@ -29,6 +30,16 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId }: Devoti
         }
       : undefined;
   }, [sound]);
+
+  // Try to get album art from the audio file
+  useEffect(() => {
+    if (audioSource && sound) {
+      // Expo AV doesn't easily expose metadata, so we'll use the default album art
+      // In a production app, you'd want to use expo-media-library or a custom solution
+      // For now, we'll use a placeholder that matches the devotion
+      setAlbumArt(require('@/assets/audio/finding-peace-in-the-storm.mp3'));
+    }
+  }, [audioSource, sound]);
 
   // Early returns must come AFTER all hooks
   if (!audioSource || hasError) {
@@ -114,62 +125,71 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId }: Devoti
 
   return (
     <View style={styles.container}>
-      {/* Album Art / Thumbnail */}
-      <View style={styles.albumArtContainer}>
-        <View style={styles.albumArt}>
-          <Text style={styles.albumArtIcon}>🕊️</Text>
+      {/* Horizontal Layout like Spotify */}
+      <View style={styles.playerContent}>
+        {/* Album Art */}
+        <Image
+          source={audioSource}
+          style={styles.albumArt}
+          resizeMode="cover"
+        />
+
+        {/* Song Info & Controls Combined */}
+        <View style={styles.infoAndControls}>
+          {/* Song Title and Artist */}
+          <View style={styles.songInfo}>
+            <Text style={styles.songTitle} numberOfLines={1}>
+              {title}
+            </Text>
+            <Text style={styles.artistName} numberOfLines={1}>
+              Christian Daily Bread
+            </Text>
+          </View>
+
+          {/* Play/Pause Button */}
+          <TouchableOpacity
+            style={styles.playButton}
+            onPress={togglePlayPause}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Text style={styles.loadingDot}>...</Text>
+            ) : isPlaying ? (
+              <Pause size={24} color='#1F1F1F' fill='#1F1F1F' />
+            ) : (
+              <Play size={24} color='#1F1F1F' fill='#1F1F1F' />
+            )}
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Song Info */}
-      <View style={styles.songInfo}>
-        <Text style={styles.songTitle} numberOfLines={2}>
-          {title}
-        </Text>
-        <Text style={styles.artistName}>Christian Daily Bread</Text>
-      </View>
-
-      {/* Progress Bar */}
+      {/* Progress Bar - Full Width Below */}
       <View style={styles.progressContainer}>
+        <Text style={styles.timeText}>{formatTime(position)}</Text>
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
         </View>
-        <View style={styles.timeContainer}>
-          <Text style={styles.timeText}>{formatTime(position)}</Text>
-          <Text style={styles.timeText}>{formatTime(duration)}</Text>
-        </View>
+        <Text style={styles.timeText}>{formatTime(duration)}</Text>
       </View>
 
-      {/* Controls */}
-      <View style={styles.controls}>
+      {/* Skip Controls */}
+      <View style={styles.skipControls}>
         <TouchableOpacity
-          style={styles.controlButton}
+          style={styles.skipButton}
           onPress={skipBackward}
           disabled={!sound || isLoading}
         >
-          <SkipBack size={24} color={!sound || isLoading ? colors.light.textLight : '#FFFFFF'} />
+          <SkipBack size={20} color={!sound || isLoading ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.7)'} />
+          <Text style={styles.skipText}>15s</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.playButton}
-          onPress={togglePlayPause}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <Text style={styles.loadingDot}>...</Text>
-          ) : isPlaying ? (
-            <Pause size={32} color='#FFFFFF' fill='#FFFFFF' />
-          ) : (
-            <Play size={32} color='#FFFFFF' fill='#FFFFFF' />
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.controlButton}
+          style={styles.skipButton}
           onPress={skipForward}
           disabled={!sound || isLoading}
         >
-          <SkipForward size={24} color={!sound || isLoading ? colors.light.textLight : '#FFFFFF'} />
+          <SkipForward size={20} color={!sound || isLoading ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.7)'} />
+          <Text style={styles.skipText}>15s</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -178,9 +198,9 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId }: Devoti
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#1F1F1F', // Dark background like Spotify
+    backgroundColor: '#1F1F1F',
     borderRadius: 16,
-    padding: isTablet ? 24 : 20,
+    padding: 16,
     marginTop: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -188,91 +208,95 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
-  albumArtContainer: {
+  playerContent: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   albumArt: {
     width: 64,
     height: 64,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    marginRight: 12,
   },
-  albumArtIcon: {
-    fontSize: 32,
+  infoAndControls: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   songInfo: {
-    alignItems: 'center',
-    marginBottom: 20,
+    flex: 1,
+    marginRight: 12,
   },
   songTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700' as const,
     color: '#FFFFFF',
     marginBottom: 4,
-    textAlign: 'center',
   },
   artistName: {
-    fontSize: 13,
+    fontSize: 12,
     color: 'rgba(255, 255, 255, 0.6)',
     fontWeight: '500' as const,
   },
+  playButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  loadingDot: {
+    color: '#1F1F1F',
+    fontSize: 16,
+    fontWeight: '700' as const,
+  },
   progressContainer: {
-    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   progressBar: {
+    flex: 1,
     height: 4,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 2,
     overflow: 'hidden',
-    marginBottom: 8,
+    marginHorizontal: 8,
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#FFFFFF',
     borderRadius: 2,
   },
-  timeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
   timeText: {
     fontSize: 11,
     color: 'rgba(255, 255, 255, 0.6)',
     fontWeight: '500' as const,
+    width: 35,
+    textAlign: 'center',
   },
-  controls: {
+  skipControls: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 32,
+  },
+  skipButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 24,
+    gap: 4,
   },
-  controlButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#FFFFFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  loadingDot: {
-    color: '#1F1F1F',
-    fontSize: 20,
-    fontWeight: '700' as const,
+  skipText: {
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontWeight: '600' as const,
   },
 });
