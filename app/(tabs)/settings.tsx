@@ -45,6 +45,7 @@ export default function SettingsScreen() {
     setAccessibilityLargeTextEnabled,
     setAccessibilityDyslexiaFontEnabled,
     setAccessibilityBoldTextEnabled,
+    setAutoPlayDailyAudio,
   } = useContent();
   const { scheduleSession, cancelSession, updateSession, getUpcomingSessions } = useScheduledSessions();
   const { isOnline } = useNetworkStatus();
@@ -493,6 +494,24 @@ export default function SettingsScreen() {
                 <Switch
                   value={userPreferences.accessibilityBoldTextEnabled}
                   onValueChange={setAccessibilityBoldTextEnabled}
+                  trackColor={{ false: colors.light.borderLight, true: colors.light.primary }}
+                  thumbColor={Platform.OS === 'android' ? colors.light.text : undefined}
+                />
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.settingRow}>
+                <View style={styles.iconContainer}>
+                  <Play size={20} color={colors.light.primary} />
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingLabel}>Auto-Play Daily Audio</Text>
+                  <Text style={styles.settingDescription}>Automatically play music at 5 AM when content changes</Text>
+                </View>
+                <Switch
+                  value={userPreferences.autoPlayDailyAudio}
+                  onValueChange={setAutoPlayDailyAudio}
                   trackColor={{ false: colors.light.borderLight, true: colors.light.primary }}
                   thumbColor={Platform.OS === 'android' ? colors.light.text : undefined}
                 />

@@ -417,6 +417,7 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     setAccessibilityLargeTextEnabled,
     setAccessibilityDyslexiaFontEnabled,
     setAccessibilityBoldTextEnabled,
+    setAutoPlayDailyAudio,
     setAppLanguage,
     setAutoTranslateContent,
     getStudyPlanCycle,
