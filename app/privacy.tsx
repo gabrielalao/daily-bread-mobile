@@ -43,7 +43,7 @@ export default function PrivacyPolicyScreen() {
         <View style={styles.infoBox}>
           <Text style={styles.infoTitle}>Important Information</Text>
           <Text style={styles.infoText}>
-            Daily Bread's AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
+            Daily Bread&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
           </Text>
           <Text style={styles.infoText}>
             If you are experiencing a mental health crisis, thoughts of self-harm, or severe distress, please contact a licensed mental health professional, your healthcare provider, or a crisis hotline immediately.
@@ -59,7 +59,7 @@ export default function PrivacyPolicyScreen() {
 
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>Q: Do I need to create an account to use Daily Bread?</Text>
-          <Text style={styles.faqAnswer}>A: No, you don't need to sign up or log in to use Daily Bread. Just download and start exploring!</Text>
+          <Text style={styles.faqAnswer}>A: No, you don&apos;t need to sign up or log in to use Daily Bread. Just download and start exploring!</Text>
         </View>
 
         <View style={styles.faqItem}>
@@ -78,7 +78,7 @@ export default function PrivacyPolicyScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>Get in Touch</Text>
-        <Text style={styles.paragraph}>We're here to help you the best way we can.</Text>
+        <Text style={styles.paragraph}>We&apos;re here to help you the best way we can.</Text>
 
         <TouchableOpacity 
           style={styles.contactButton}

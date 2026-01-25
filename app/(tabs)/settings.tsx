@@ -1,14 +1,20 @@
 import colors from "@/constants/colors";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useContent } from "@/contexts/ContentContext";
-import { useScheduledSessions } from "@/contexts/ScheduledSessionsContext";
-import type { ScheduledSession } from "@/contexts/ScheduledSessionsContext";
-import { bibleVersions, getPopularVersions, getVersionById } from "@/constants/bible-versions";
+import { useScheduledSessions, type ScheduledSession } from "@/contexts/ScheduledSessionsContext";
+import { ScheduleNextSessionModal } from "@/components/ScheduleNextSessionModal";
+import { getVersionById } from "@/constants/bible-versions";
 import { appLanguages, getAppLanguageById } from "@/constants/app-languages";
 import { t, tParams } from "@/utils/i18n";
-import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Trash2, Edit, Repeat, Share2 } from "lucide-react-native";
+import { NetworkStatusDot } from "@/components/NetworkStatusDot";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { requireOnlineOrPrompt } from "@/utils/networkPolicy";
+import { BibleVersionPickerModal } from "@/components/BibleVersionPickerModal";
+import { getEffectiveBibleVersionId } from "@/utils/bibleVersionPolicy";
+import { A11yText as Text } from "@/components/A11yText";
+import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Share2, Edit3, Trash2, Plus } from "lucide-react-native";
 import React, { useState } from "react";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import {
   Alert,
   Platform,
@@ -16,7 +22,6 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -25,31 +30,41 @@ import {
   Linking,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { ScheduleNextSessionModal } from "@/components/ScheduleNextSessionModal";
 
 const { width: screenWidth } = Dimensions.get('window');
 const isTablet = screenWidth >= 768;
 
 export default function SettingsScreen() {
-  const { settings, isLoaded, enableNotifications, disableNotifications, updateNotificationTime } = useNotifications();
-  const { userPreferences, setBibleVersion, setAppLanguage, setAutoTranslateContent, isLoaded: contentLoaded } = useContent();
+  const { settings, enableNotifications, disableNotifications, updateNotificationTime } = useNotifications();
+  const {
+    userPreferences,
+    setBibleVersion,
+    setAppLanguage,
+    setAutoTranslateContent,
+    setOfflineModeEnabled,
+    setAccessibilityLargeTextEnabled,
+    setAccessibilityDyslexiaFontEnabled,
+    setAccessibilityBoldTextEnabled,
+  } = useContent();
+  const { scheduleSession, cancelSession, updateSession, getUpcomingSessions } = useScheduledSessions();
+  const { isOnline } = useNetworkStatus();
   const tLang = userPreferences.appLanguage;
-  const { sessions, isLoaded: sessionsLoaded, cancelSession, updateSession, getNextOccurrence } = useScheduledSessions();
   const [selectedHour, setSelectedHour] = useState(parseInt(settings.time.split(':')[0]));
   const [selectedMinute, setSelectedMinute] = useState(parseInt(settings.time.split(':')[1]));
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showBibleVersionPicker, setShowBibleVersionPicker] = useState(false);
-  const [bibleVersionQuery, setBibleVersionQuery] = useState("");
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [languageQuery, setLanguageQuery] = useState("");
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [editingSession, setEditingSession] = useState<ScheduledSession | null>(null);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
+  const [showOfflineOnlineFaqModal, setShowOfflineOnlineFaqModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [editingSession, setEditingSession] = useState<ScheduledSession | null>(null);
   const scrollRef = React.useRef<ScrollView>(null);
-  const router = useRouter();
   const insets = useSafeAreaInsets();
+  
+  const upcomingSessions = getUpcomingSessions();
 
   const handleToggleNotifications = async (value: boolean) => {
     if (Platform.OS === 'web') {
@@ -93,17 +108,44 @@ export default function SettingsScreen() {
   };
 
   const handleBibleVersionChange = async (versionId: string) => {
-    await setBibleVersion(versionId);
-    const version = getVersionById(versionId);
-    setShowBibleVersionPicker(false);
-    Alert.alert(
-      t(tLang, "settings.bibleVersionUpdatedTitle"),
-      tParams(tLang, "settings.bibleVersionUpdatedBody", { name: version?.name ?? versionId, abbr: version?.abbreviation ?? "" }),
-      [{ text: t(tLang, "common.ok") }]
-    );
+    const doChange = async () => {
+      await setBibleVersion(versionId);
+      const version = getVersionById(versionId);
+      Alert.alert(
+        t(tLang, "settings.bibleVersionUpdatedTitle"),
+        tParams(tLang, "settings.bibleVersionUpdatedBody", { name: version?.name ?? versionId, abbr: version?.abbreviation ?? "" }),
+        [{ text: t(tLang, "common.ok") }]
+      );
+    };
+
+    // If offline mode is enabled and they pick non-KJV, allow saving the preference but explain that KJV will be shown until Online mode.
+    if (userPreferences.offlineModeEnabled && versionId !== "kjv") {
+      await requireOnlineOrPrompt({
+        feature: "bibleVersions",
+        offlineModeEnabled: userPreferences.offlineModeEnabled,
+        isOnline,
+        setOfflineModeEnabled,
+        onContinue: doChange,
+      });
+      return;
+    }
+
+    await doChange();
   };
 
   const handleLanguageChange = async (langId: string) => {
+    if (userPreferences.offlineModeEnabled && langId !== "en") {
+      await requireOnlineOrPrompt({
+        feature: "translation",
+        offlineModeEnabled: userPreferences.offlineModeEnabled,
+        isOnline,
+        setOfflineModeEnabled,
+        onContinue: async () => {
+          await setAppLanguage(langId);
+        },
+      });
+      return;
+    }
     await setAppLanguage(langId);
     const language = getAppLanguageById(langId);
     setShowLanguagePicker(false);
@@ -131,6 +173,75 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleScheduleSession = async (
+    dateTime: Date,
+    recurrence: any,
+    recurrenceEndDate?: Date
+  ) => {
+    try {
+      await scheduleSession(
+        dateTime,
+        'Therapy Session Reminder',
+        "It's time for your scheduled therapy session. Take a moment for yourself.",
+        recurrence,
+        recurrenceEndDate
+      );
+      setShowScheduleModal(false);
+      Alert.alert(
+        'Session Scheduled',
+        `Your therapy session has been scheduled for ${dateTime.toLocaleDateString('en-US', {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+        })} at ${dateTime.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+        })}`,
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error scheduling session:', error);
+      Alert.alert('Error', 'Failed to schedule session. Please try again.');
+    }
+  };
+
+  const handleUpdateSession = async (
+    sessionId: string,
+    dateTime: Date,
+    recurrence: any,
+    recurrenceEndDate?: Date
+  ) => {
+    try {
+      const success = await updateSession(sessionId, {
+        dateTime,
+        recurrence,
+        recurrenceEndDate,
+      });
+      
+      if (success) {
+        setShowScheduleModal(false);
+        setEditingSession(null);
+        Alert.alert(
+          'Session Updated',
+          `Your therapy session has been updated to ${dateTime.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+          })} at ${dateTime.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+          })}`,
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Error', 'Failed to update session. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error updating session:', error);
+      Alert.alert('Error', 'Failed to update session. Please try again.');
+    }
+  };
+
   const openTermsOfService = () => {
     setShowTermsModal(true);
   };
@@ -143,6 +254,10 @@ export default function SettingsScreen() {
     setShowSupportModal(true);
   };
 
+  const openOfflineOnlineFaq = () => {
+    setShowOfflineOnlineFaqModal(true);
+  };
+
   const currentVersion = getVersionById(userPreferences.bibleVersion);
   const currentLanguage = getAppLanguageById(userPreferences.appLanguage);
 
@@ -152,12 +267,11 @@ export default function SettingsScreen() {
     }, [])
   );
 
-  const filteredVersions = bibleVersionQuery
-    ? bibleVersions.filter(v =>
-        v.name.toLowerCase().includes(bibleVersionQuery.toLowerCase()) ||
-        v.abbreviation.toLowerCase().includes(bibleVersionQuery.toLowerCase())
-      )
-    : getPopularVersions();
+  const effectiveVersionId = getEffectiveBibleVersionId({
+    preferredVersionId: userPreferences.bibleVersion,
+    offlineModeEnabled: userPreferences.offlineModeEnabled,
+  });
+  const effectiveVersion = getVersionById(effectiveVersionId);
 
   const filteredLanguages = languageQuery
     ? appLanguages.filter(l =>
@@ -180,7 +294,10 @@ export default function SettingsScreen() {
         <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>{t(tLang, "settings.title")}</Text>
+            <View style={styles.headerTitleRow}>
+              <Text style={styles.title}>{t(tLang, "settings.title")}</Text>
+              <NetworkStatusDot />
+            </View>
             <Text style={styles.subtitle}>{t(tLang, "settings.subtitle")}</Text>
           </View>
 
@@ -246,7 +363,10 @@ export default function SettingsScreen() {
                 <View style={styles.settingTextContainer}>
                   <Text style={[styles.settingLabel, styles.lightText]}>{t(tLang, "settings.bibleVersion")}</Text>
                   <Text style={[styles.settingValue, styles.lightText]}>
-                    {currentVersion?.abbreviation} - {currentVersion?.name}
+                    Preferred: {currentVersion?.abbreviation} - {currentVersion?.name}
+                    {effectiveVersionId !== userPreferences.bibleVersion && effectiveVersion
+                      ? ` • Showing: ${effectiveVersion.abbreviation} (${userPreferences.offlineModeEnabled ? "Offline mode" : "Effective"})`
+                      : ""}
                   </Text>
                 </View>
                 <Text style={[styles.changeButton, styles.lightText]}>{t(tLang, "common.change")}</Text>
@@ -257,11 +377,33 @@ export default function SettingsScreen() {
           {/* App Preferences Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t(tLang, "settings.appPreferences")}</Text>
+
+            {/* Offline & Data */}
+            <View style={styles.settingCard}>
+              <View style={styles.settingRow}>
+                <View style={styles.iconContainer}>
+                  <Text style={styles.offlineDotLabel}>●</Text>
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingLabel}>Offline mode</Text>
+                  <Text style={styles.settingDescription}>
+                    When enabled: disables Translation + Personalization + extra Bible versions. Therapy already needs internet.
+                  </Text>
+                </View>
+                <Switch
+                  value={userPreferences.offlineModeEnabled}
+                  onValueChange={(v) => setOfflineModeEnabled(v)}
+                  trackColor={{ false: colors.light.borderLight, true: colors.light.primary }}
+                  thumbColor={Platform.OS === 'android' ? colors.light.text : undefined}
+                />
+              </View>
+            </View>
             
             <View style={[styles.settingCard, styles.appCard]}>
               <TouchableOpacity
                 style={styles.settingRow}
                 onPress={() => setShowLanguagePicker(true)}
+                disabled={userPreferences.offlineModeEnabled}
               >
                 <View style={styles.iconContainer}>
                   <FileText size={22} color="#FFFFFF" />
@@ -289,7 +431,68 @@ export default function SettingsScreen() {
                 </View>
                 <Switch
                   value={userPreferences.autoTranslateContent}
-                  onValueChange={setAutoTranslateContent}
+                  onValueChange={(v) => setAutoTranslateContent(v)}
+                  disabled={userPreferences.offlineModeEnabled}
+                  trackColor={{ false: colors.light.borderLight, true: colors.light.primary }}
+                  thumbColor={Platform.OS === 'android' ? colors.light.text : undefined}
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Accessibility Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Accessibility</Text>
+            <Text style={styles.sectionSubtitle}>Adjust reading and display options</Text>
+
+            <View style={styles.settingCard}>
+              <View style={styles.settingRow}>
+                <View style={styles.iconContainer}>
+                  <Text style={styles.offlineDotLabel}>A11y</Text>
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingLabel}>Larger text</Text>
+                  <Text style={styles.settingDescription}>Increase readable text size across the app</Text>
+                </View>
+                <Switch
+                  value={userPreferences.accessibilityLargeTextEnabled}
+                  onValueChange={setAccessibilityLargeTextEnabled}
+                  trackColor={{ false: colors.light.borderLight, true: colors.light.primary }}
+                  thumbColor={Platform.OS === 'android' ? colors.light.text : undefined}
+                />
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.settingRow}>
+                <View style={styles.iconContainer}>
+                  <Text style={styles.offlineDotLabel}>Font</Text>
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingLabel}>Dyslexia-friendly font</Text>
+                  <Text style={styles.settingDescription}>Use Atkinson Hyperlegible for improved readability</Text>
+                </View>
+                <Switch
+                  value={userPreferences.accessibilityDyslexiaFontEnabled}
+                  onValueChange={setAccessibilityDyslexiaFontEnabled}
+                  trackColor={{ false: colors.light.borderLight, true: colors.light.primary }}
+                  thumbColor={Platform.OS === 'android' ? colors.light.text : undefined}
+                />
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.settingRow}>
+                <View style={styles.iconContainer}>
+                  <Text style={styles.offlineDotLabel}>Bold</Text>
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingLabel}>Bold text</Text>
+                  <Text style={styles.settingDescription}>Increase text weight for better contrast</Text>
+                </View>
+                <Switch
+                  value={userPreferences.accessibilityBoldTextEnabled}
+                  onValueChange={setAccessibilityBoldTextEnabled}
                   trackColor={{ false: colors.light.borderLight, true: colors.light.primary }}
                   thumbColor={Platform.OS === 'android' ? colors.light.text : undefined}
                 />
@@ -299,15 +502,92 @@ export default function SettingsScreen() {
 
           {/* Scheduled Sessions Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t(tLang, "settings.scheduledSessions")}</Text>
-            
-            <View style={styles.emptyStateCard}>
-              <CalendarIcon size={48} color={colors.light.textSecondary} />
-              <Text style={styles.emptyStateTitle}>{t(tLang, "settings.noScheduledSessions")}</Text>
-              <Text style={styles.emptyStateText}>
-                {t(tLang, "settings.scheduleSessionDescription")}
-              </Text>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>{t(tLang, "settings.scheduledSessions")}</Text>
+              <TouchableOpacity 
+                style={styles.addButton}
+                onPress={() => {
+                  setEditingSession(null);
+                  setShowScheduleModal(true);
+                }}
+              >
+                <Plus size={20} color="#FFFFFF" />
+                <Text style={styles.addButtonText}>Schedule</Text>
+              </TouchableOpacity>
             </View>
+            
+            {upcomingSessions.length === 0 ? (
+              <View style={styles.emptyStateCard}>
+                <CalendarIcon size={48} color={colors.light.textSecondary} />
+                <Text style={styles.emptyStateTitle}>{t(tLang, "settings.noScheduledSessions")}</Text>
+                <Text style={styles.emptyStateText}>
+                  {t(tLang, "settings.scheduleSessionDescription")}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.sessionsListCard}>
+                {upcomingSessions.map((session, index) => (
+                  <View key={session.id}>
+                    {index > 0 && <View style={styles.divider} />}
+                    <View style={styles.sessionRow}>
+                      <View style={styles.sessionInfo}>
+                        <View style={styles.sessionIconContainer}>
+                          <CalendarIcon size={20} color={colors.light.primary} />
+                        </View>
+                        <View style={styles.sessionDetails}>
+                          <Text style={styles.sessionTitle}>{session.title}</Text>
+                          <Text style={styles.sessionDateTime}>
+                            {new Date(session.dateTime).toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                            })} at {new Date(session.dateTime).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </Text>
+                          {session.recurrence !== 'none' && (
+                            <Text style={styles.sessionRecurrence}>
+                              Repeats {session.recurrence}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                      <View style={styles.sessionActions}>
+                        <TouchableOpacity
+                          style={styles.sessionActionButton}
+                          onPress={() => {
+                            setEditingSession(session);
+                            setShowScheduleModal(true);
+                          }}
+                        >
+                          <Edit3 size={18} color={colors.light.primary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.sessionActionButton}
+                          onPress={() => {
+                            Alert.alert(
+                              'Cancel Session',
+                              'Are you sure you want to cancel this scheduled session?',
+                              [
+                                { text: 'No', style: 'cancel' },
+                                { 
+                                  text: 'Yes, Cancel', 
+                                  style: 'destructive',
+                                  onPress: () => cancelSession(session.id)
+                                },
+                              ]
+                            );
+                          }}
+                        >
+                          <Trash2 size={18} color={colors.light.error} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
 
           {/* Legal & Support Section */}
@@ -340,6 +620,16 @@ export default function SettingsScreen() {
                   <HelpCircle size={22} color={colors.light.primary} />
                 </View>
                 <Text style={styles.settingLabel}>{t(tLang, "settings.support")}</Text>
+                <ChevronRight size={20} color={colors.light.textSecondary} />
+              </TouchableOpacity>
+
+              <View style={styles.divider} />
+
+              <TouchableOpacity style={styles.settingRow} onPress={openOfflineOnlineFaq}>
+                <View style={styles.iconContainer}>
+                  <FileText size={22} color={colors.light.primary} />
+                </View>
+                <Text style={styles.settingLabel}>Offline &amp; Online FAQ</Text>
                 <ChevronRight size={20} color={colors.light.textSecondary} />
               </TouchableOpacity>
             </View>
@@ -433,50 +723,18 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* Bible Version Picker Modal */}
-      <Modal
+      <BibleVersionPickerModal
         visible={showBibleVersionPicker}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowBibleVersionPicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.pickerModal}>
-            <View style={styles.pickerHeader}>
-              <Text style={styles.pickerTitle}>{t(tLang, "settings.selectBibleVersion")}</Text>
-              <TouchableOpacity onPress={() => setShowBibleVersionPicker(false)}>
-                <Text style={styles.pickerClose}>{t(tLang, "common.close")}</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TextInput
-              style={styles.searchInput}
-              placeholder={t(tLang, "settings.searchVersions")}
-              placeholderTextColor={colors.light.textSecondary}
-              value={bibleVersionQuery}
-              onChangeText={setBibleVersionQuery}
-            />
-
-            <ScrollView style={styles.pickerScroll}>
-              {filteredVersions.map((version) => (
-                <TouchableOpacity
-                  key={version.id}
-                  style={styles.pickerItem}
-                  onPress={() => handleBibleVersionChange(version.id)}
-                >
-                  <View style={styles.pickerItemContent}>
-                    <Text style={styles.pickerItemTitle}>{version.name}</Text>
-                    <Text style={styles.pickerItemSubtitle}>{version.abbreviation}</Text>
-                  </View>
-                  {userPreferences.bibleVersion === version.id && (
-                    <Check size={20} color={colors.light.primary} />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setShowBibleVersionPicker(false)}
+        preferredVersionId={userPreferences.bibleVersion}
+        offlineModeEnabled={userPreferences.offlineModeEnabled}
+        isOnline={isOnline}
+        setOfflineModeEnabled={setOfflineModeEnabled}
+        setPreferredVersionId={async (id) => {
+          await handleBibleVersionChange(id);
+          setShowBibleVersionPicker(false);
+        }}
+      />
 
       {/* Language Picker Modal */}
       <Modal
@@ -550,7 +808,7 @@ export default function SettingsScreen() {
               <Text style={styles.legalDate}>Last modified on December 14, 2025</Text>
 
               <Text style={styles.legalParagraph}>
-                Welcome to Daily Bread! These Terms of Service ("Terms") govern your use of our mobile application, website, and services. By using Daily Bread, you agree to be bound by these Terms. Please read them carefully.
+                Welcome to Daily Bread! These Terms of Service (&quot;Terms&quot;) govern your use of our mobile application, website, and services. By using Daily Bread, you agree to be bound by these Terms. Please read them carefully.
               </Text>
 
               <Text style={styles.legalSectionTitle}>Use of Service</Text>
@@ -565,13 +823,13 @@ export default function SettingsScreen() {
 
               <Text style={styles.legalSectionTitle}>Disclaimer of Warranties</Text>
               <Text style={styles.legalParagraph}>
-                Daily Bread is provided on an "AS IS" and "AS AVAILABLE" basis. We disclaim all warranties, express or implied.
+                Daily Bread is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis. We disclaim all warranties, express or implied.
               </Text>
 
               <View style={styles.legalInfoBox}>
                 <Text style={styles.legalInfoTitle}>Important Information</Text>
                 <Text style={styles.legalInfoText}>
-                  Daily Bread's AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
+                  Daily Bread&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
                 </Text>
                 <Text style={styles.legalInfoText}>
                   If you are experiencing a mental health crisis, thoughts of self-harm, or severe distress, please contact a licensed mental health professional, your healthcare provider, or a crisis hotline immediately.
@@ -584,7 +842,7 @@ export default function SettingsScreen() {
               <Text style={styles.legalAnswer}>A: Yes, Daily Bread is completely free to download and use, with no hidden fees or subscriptions.</Text>
 
               <Text style={styles.legalQuestion}>Q: Do I need to create an account to use Daily Bread?</Text>
-              <Text style={styles.legalAnswer}>A: No, you don't need to sign up or log in to use Daily Bread. Just download and start exploring!</Text>
+              <Text style={styles.legalAnswer}>A: No, you don&apos;t need to sign up or log in to use Daily Bread. Just download and start exploring!</Text>
 
               <Text style={styles.legalQuestion}>Q: How often is new content added?</Text>
               <Text style={styles.legalAnswer}>A: We refresh our therapy resources and devotions daily to support your ongoing journey.</Text>
@@ -649,7 +907,7 @@ export default function SettingsScreen() {
               <View style={styles.legalInfoBox}>
                 <Text style={styles.legalInfoTitle}>Important Information</Text>
                 <Text style={styles.legalInfoText}>
-                  Daily Bread's AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
+                  Daily Bread&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
                 </Text>
                 <Text style={styles.legalInfoText}>
                   If you are experiencing a mental health crisis, thoughts of self-harm, or severe distress, please contact a licensed mental health professional, your healthcare provider, or a crisis hotline immediately.
@@ -662,7 +920,7 @@ export default function SettingsScreen() {
               <Text style={styles.legalAnswer}>A: Yes, Daily Bread is completely free to download and use, with no hidden fees or subscriptions.</Text>
 
               <Text style={styles.legalQuestion}>Q: Do I need to create an account to use Daily Bread?</Text>
-              <Text style={styles.legalAnswer}>A: No, you don't need to sign up or log in to use Daily Bread. Just download and start exploring!</Text>
+              <Text style={styles.legalAnswer}>A: No, you don&apos;t need to sign up or log in to use Daily Bread. Just download and start exploring!</Text>
 
               <Text style={styles.legalQuestion}>Q: How often is new content added?</Text>
               <Text style={styles.legalAnswer}>A: We refresh our therapy resources and devotions daily to support your ongoing journey.</Text>
@@ -704,7 +962,7 @@ export default function SettingsScreen() {
             >
               <Text style={styles.legalSubtitle}>Get in Touch</Text>
               <Text style={styles.legalParagraph}>
-                We're here to help you the best way we can.
+                We&apos;re here to help you the best way we can.
               </Text>
 
               {/* Contact Options */}
@@ -730,13 +988,13 @@ export default function SettingsScreen() {
               <View style={styles.legalInfoBox}>
                 <Text style={styles.legalInfoTitle}>Free Christian Therapy Services</Text>
                 <Text style={styles.legalInfoText}>
-                  Daily Bread is committed to providing free therapy services to those who cannot afford it. If you need support, please contact us. We'll do our best to connect you with a licensed therapist.
+                  Daily Bread is committed to providing free therapy services to those who cannot afford it. If you need support, please contact us. We&apos;ll do our best to connect you with a licensed therapist.
                 </Text>
               </View>
 
               <Text style={styles.legalSectionTitle}>Partner with Us</Text>
               <Text style={styles.legalParagraph}>
-                Are you a licensed therapist passionate about providing faith-based services? We're looking for therapists to partner with us and provide Christian therapy services on our app.
+                Are you a licensed therapist passionate about providing faith-based services? We&apos;re looking for therapists to partner with us and provide Christian therapy services on our app.
               </Text>
               <View style={styles.supportRequirementsList}>
                 <Text style={styles.supportRequirement}>• Must be a licensed therapist (LCSW, LPC, LMFT, etc.)</Text>
@@ -759,6 +1017,76 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Offline & Online FAQ Modal */}
+      <Modal
+        visible={showOfflineOnlineFaqModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowOfflineOnlineFaqModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.legalModal}>
+            <View style={styles.pickerHeader}>
+              <Text style={styles.pickerTitle}>Offline &amp; Online FAQ</Text>
+              <TouchableOpacity onPress={() => setShowOfflineOnlineFaqModal(false)}>
+                <Text style={styles.pickerClose}>{t(tLang, "common.close")}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              style={styles.legalScroll}
+              contentContainerStyle={styles.legalContent}
+              showsVerticalScrollIndicator={true}
+              bounces={true}
+              nestedScrollEnabled={true}
+            >
+              <Text style={styles.legalSubtitle}>Quick clarity on what needs internet</Text>
+
+              <View style={styles.legalInfoBox}>
+                <Text style={styles.legalInfoTitle}>Offline mode</Text>
+                <Text style={styles.legalInfoText}>
+                  Offline mode is designed for maximum privacy and reliability. When enabled, the app avoids network calls (except Therapy).
+                </Text>
+                <Text style={styles.legalInfoText}>
+                  Offline mode disables: Translation, Personalization, and extra Bible versions. Therapy already needs internet.
+                </Text>
+              </View>
+
+              <Text style={styles.legalSectionTitle}>What works offline</Text>
+              <Text style={styles.legalParagraph}>
+                • Home (daily devotionals, reflection, prayer prompt){'\n'}
+                • Prayers (daily prayer + guides){'\n'}
+                • Study (plans + insights) and reading passages in KJV{'\n'}
+                • Bible reading in KJV (fully offline){'\n'}
+                • Settings + local notifications + sharing
+              </Text>
+
+              <Text style={styles.legalSectionTitle}>What works online</Text>
+              <Text style={styles.legalParagraph}>
+                • Therapy AI chat, personalized sessions, voice transcription{'\n'}
+                • Translation (when not already cached){'\n'}
+                • Personalization (topic extraction/suggestions){'\n'}
+                • Extra Bible versions (WEB/ASV/DARBY/YLT/WBT/BBE, etc.) can be loaded while online and cached for later
+              </Text>
+
+              <Text style={styles.legalFooter}>You can toggle Offline mode anytime in Settings.</Text>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Schedule Session Modal */}
+      <ScheduleNextSessionModal
+        visible={showScheduleModal}
+        onClose={() => {
+          setShowScheduleModal(false);
+          setEditingSession(null);
+        }}
+        onSchedule={handleScheduleSession}
+        editingSession={editingSession}
+        onUpdate={handleUpdateSession}
+      />
     </SafeAreaView>
   );
 }
@@ -781,6 +1109,12 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 24,
     marginTop: 8,
+  },
+  headerTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
   },
   title: {
     fontSize: 34,
@@ -842,6 +1176,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+  },
+  offlineDotLabel: {
+    fontSize: 18,
+    fontWeight: "800" as const,
+    color: colors.light.primary,
   },
   settingTextContainer: {
     flex: 1,
@@ -931,6 +1270,90 @@ const styles = StyleSheet.create({
     color: colors.light.textSecondary,
     textAlign: "center",
     lineHeight: 21,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.light.primary,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    gap: 6,
+  },
+  addButtonText: {
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+  },
+  sessionsListCard: {
+    backgroundColor: colors.light.cardBackground,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: colors.light.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  sessionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    minHeight: 80,
+  },
+  sessionInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  sessionIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: `${colors.light.primary}15`,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sessionDetails: {
+    flex: 1,
+    gap: 4,
+  },
+  sessionTitle: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: colors.light.text,
+  },
+  sessionDateTime: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: colors.light.textSecondary,
+  },
+  sessionRecurrence: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: colors.light.primary,
+  },
+  sessionActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  sessionActionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.light.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.light.border,
   },
   shareCard: {
     backgroundColor: colors.light.cardBackground,

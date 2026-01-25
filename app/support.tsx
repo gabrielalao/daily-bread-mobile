@@ -29,7 +29,7 @@ export default function SupportScreen() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         <Text style={styles.title}>Get in Touch</Text>
-        <Text style={styles.subtitle}>We're here to help you the best way we can.</Text>
+        <Text style={styles.subtitle}>We&apos;re here to help you the best way we can.</Text>
 
         {/* Contact Options */}
         <TouchableOpacity style={styles.contactCard} onPress={handleEmail}>
@@ -46,7 +46,7 @@ export default function SupportScreen() {
         <View style={styles.infoBox}>
           <Text style={styles.infoTitle}>Free Christian Therapy Services</Text>
           <Text style={styles.infoText}>
-            Daily Bread is committed to providing free therapy services to those who cannot afford it. If you need support, please contact us. We'll do our best to connect you with a licensed therapist.
+            Daily Bread is committed to providing free therapy services to those who cannot afford it. If you need support, please contact us. We&apos;ll do our best to connect you with a licensed therapist.
           </Text>
         </View>
 
@@ -54,7 +54,7 @@ export default function SupportScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Partner with Us</Text>
           <Text style={styles.paragraph}>
-            Are you a licensed therapist passionate about providing faith-based services? We're looking for therapists to partner with us and provide Christian therapy services on our app.
+            Are you a licensed therapist passionate about providing faith-based services? We&apos;re looking for therapists to partner with us and provide Christian therapy services on our app.
           </Text>
           <View style={styles.requirementsList}>
             <Text style={styles.requirement}>• Must be a licensed therapist (LCSW, LPC, LMFT, etc.)</Text>

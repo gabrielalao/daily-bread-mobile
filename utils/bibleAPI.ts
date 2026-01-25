@@ -1,4 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getVersionById } from '@/constants/bible-versions';
+import { getBundledKjvChapter } from '@/utils/offlineBibleKJV';
 
 export interface BibleVerse {
   book: string;
@@ -28,9 +30,17 @@ const BIBLE_API_URL = 'https://bible-api.com';
 export async function fetchBibleChapter(
   bookId: string,
   chapter: number,
-  translation: string = 'kjv'
+  translation: string = 'kjv',
+  opts?: { allowNetwork?: boolean }
 ): Promise<BibleChapter | null> {
+  // Prefer bundled KJV when requested (true offline).
+  if (translation === 'kjv') {
+    const bundled = getBundledKjvChapter(bookId, chapter);
+    if (bundled) return bundled;
+  }
+
   const cacheKey = `${BIBLE_CACHE_PREFIX}${translation}_${bookId}_${chapter}`;
+  const allowNetwork = opts?.allowNetwork !== false;
   
   try {
     // Try cache first (works offline)
@@ -38,6 +48,12 @@ export async function fetchBibleChapter(
     if (cached) {
       console.log(`Bible: Loaded ${bookId} ${chapter} from offline cache`);
       return JSON.parse(cached);
+    }
+
+    // In strict offline mode, do not attempt any network fetches.
+    if (!allowNetwork) {
+      console.log(`Bible: Offline mode - cache miss for ${bookId} ${chapter} (${translation})`);
+      return null;
     }
 
     // Only fetch if not in cache (requires internet once)
@@ -96,16 +112,24 @@ export async function fetchBibleChapter(
  * Map Bible version preference to API translation code
  */
 export function getBibleAPITranslation(bibleVersion: string): string {
-  const translationMap: Record<string, string> = {
-    'niv': 'web', // Using World English Bible (public domain)
-    'kjv': 'kjv',
-    'esv': 'web',
-    'nkjv': 'kjv',
-    'nasb': 'web',
-    'nlt': 'web',
+  const id = (bibleVersion ?? '').toLowerCase();
+
+  // If the selected version is supported by the passage provider, use its apiCode directly.
+  const v = getVersionById(id);
+  if (v?.apiCode) return v.apiCode;
+
+  // Otherwise, fall back to a public-domain equivalent so "online mode" still works.
+  // (These popular/copyrighted translations are not provided by bible-api.com.)
+  const fallbackMap: Record<string, string> = {
+    niv: 'web',
+    esv: 'web',
+    nlt: 'web',
+    nasb: 'web',
+    msg: 'web',
+    nkjv: 'kjv',
   };
-  
-  return translationMap[bibleVersion.toLowerCase()] || 'kjv';
+
+  return fallbackMap[id] || 'kjv';
 }
 
 /**

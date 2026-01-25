@@ -7,7 +7,8 @@ import { devotionals, getCorrelatedDevotionalTheme } from "@/constants/devotiona
 import { useCardShare } from "@/hooks/useCardShare";
 import { translateTextCached } from "@/utils/translate";
 import { t } from "@/utils/i18n";
-import { LinearGradient } from "expo-linear-gradient";
+import { NetworkStatusDot } from "@/components/NetworkStatusDot";
+import { A11yText as Text } from "@/components/A11yText";
 import {
   Heart,
   Shield,
@@ -31,25 +32,19 @@ import {
   BookOpen,
   X,
 } from "lucide-react-native";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useFocusEffect } from "expo-router";
 import {
   Animated,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
   Dimensions,
-  ActivityIndicator,
-  Alert,
-  PanResponder,
   Modal,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar as RNCalendar } from 'react-native-calendars';
-
-const screenWidth = Dimensions.get('window').width;
 
 const iconMap: Record<string, React.ComponentType<{ size: number; color: string }>> = {
   heart: Heart,
@@ -192,17 +187,26 @@ export default function PrayerScreen() {
     return getTodayDailyPrayer(contentHistory.prayers);
   }, [contentHistory.currentDayPrayer, contentHistory.prayers, contentHistory.currentDayDevotional, selectedDate, viewingPastContent]);
   
-  const recommendedPrayers = getRecommendedPrayers(
-    contentHistory.prayers,
-    userPreferences.prayerCategories
+  const recommendedPrayers = React.useMemo(
+    () =>
+      getRecommendedPrayers(
+        contentHistory.prayers,
+        userPreferences.prayerCategories
+      ),
+    [contentHistory.prayers, userPreferences.prayerCategories]
   );
+
+  const todayPrayerId = todayPrayer?.id;
+  const todayPrayerTitle = todayPrayer?.title;
+  const todayPrayerPrayer = todayPrayer?.prayer;
+  const todayPrayerVerse = todayPrayer?.verse;
   
   // Save the correlated prayer to context
   React.useEffect(() => {
     if (isLoaded && todayPrayer && contentHistory.currentDayPrayer !== todayPrayer.id) {
       setCurrentDayPrayer(todayPrayer.id);
     }
-  }, [todayPrayer, isLoaded, contentHistory.currentDayPrayer]);
+  }, [todayPrayer, isLoaded, contentHistory.currentDayPrayer, setCurrentDayPrayer]);
 
   // Translate today's daily prayer when enabled
   React.useEffect(() => {
@@ -211,12 +215,12 @@ export default function PrayerScreen() {
       setTranslatedDailyPrayer(null);
       const lang = userPreferences.appLanguage;
       if (!userPreferences.autoTranslateContent || !lang || lang === "en") return;
-      if (!todayPrayer) return;
+      if (!todayPrayerId || !todayPrayerTitle || !todayPrayerPrayer || !todayPrayerVerse) return;
 
       const [titleRes, prayerRes, verseRes] = await Promise.all([
-        translateTextCached({ text: todayPrayer.title, targetLang: lang }),
-        translateTextCached({ text: todayPrayer.prayer, targetLang: lang }),
-        translateTextCached({ text: todayPrayer.verse, targetLang: lang }),
+        translateTextCached({ text: todayPrayerTitle, targetLang: lang }),
+        translateTextCached({ text: todayPrayerPrayer, targetLang: lang }),
+        translateTextCached({ text: todayPrayerVerse, targetLang: lang }),
       ]);
 
       if (cancelled) return;
@@ -226,7 +230,7 @@ export default function PrayerScreen() {
     return () => {
       cancelled = true;
     };
-  }, [todayPrayer?.id, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
+  }, [todayPrayerId, todayPrayerTitle, todayPrayerPrayer, todayPrayerVerse, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
 
   // Update time display (only when minute changes to reduce re-renders)
   useEffect(() => {
@@ -289,7 +293,7 @@ export default function PrayerScreen() {
     return () => {
       cancelled = true;
     };
-  }, [recommendedPrayers.map(p => p.id).join("|"), userPreferences.appLanguage, userPreferences.autoTranslateContent]);
+  }, [recommendedPrayers, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
 
   // Translate selected prayer detail (full) when enabled.
   React.useEffect(() => {
@@ -325,7 +329,7 @@ export default function PrayerScreen() {
     return () => {
       cancelled = true;
     };
-  }, [selectedGuide?.id, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
+  }, [selectedGuide, userPreferences.appLanguage, userPreferences.autoTranslateContent]);
 
   const handleSelectGuide = (guide: PrayerGuide) => {
     Animated.timing(fadeAnim, {
@@ -498,6 +502,9 @@ export default function PrayerScreen() {
             <View style={styles.timeRow}>
               <Clock size={18} color={colors.light.textSecondary} />
               <Text style={styles.timeText}>{time}</Text>
+            </View>
+            <View style={styles.statusDotContainer}>
+              <NetworkStatusDot />
             </View>
           </View>
 
@@ -756,6 +763,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
+  },
+  statusDotContainer: {
+    marginLeft: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
   timeText: {
     fontSize: 13,
