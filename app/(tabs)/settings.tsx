@@ -1,12 +1,27 @@
 import colors from "@/constants/colors";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useContent } from "@/contexts/ContentContext";
+<<<<<<< Updated upstream
 import { useScheduledSessions } from "@/contexts/ScheduledSessionsContext";
 import type { ScheduledSession } from "@/contexts/ScheduledSessionsContext";
 import { bibleVersions, getPopularVersions, getVersionById } from "@/constants/bible-versions";
 import { appLanguages, getAppLanguageById } from "@/constants/app-languages";
 import { t, tParams } from "@/utils/i18n";
 import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Trash2, Edit, Repeat, Share2 } from "lucide-react-native";
+=======
+import { useScheduledSessions, type ScheduledSession } from "@/contexts/ScheduledSessionsContext";
+import { ScheduleNextSessionModal } from "@/components/ScheduleNextSessionModal";
+import { getVersionById } from "@/constants/bible-versions";
+import { appLanguages, getAppLanguageById } from "@/constants/app-languages";
+import { t, tParams } from "@/utils/i18n";
+import { NetworkStatusDot } from "@/components/NetworkStatusDot";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { requireOnlineOrPrompt } from "@/utils/networkPolicy";
+import { BibleVersionPickerModal } from "@/components/BibleVersionPickerModal";
+import { getEffectiveBibleVersionId } from "@/utils/bibleVersionPolicy";
+import { A11yText as Text } from "@/components/A11yText";
+import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Share2, Edit3, Trash2, Plus } from "lucide-react-native";
+>>>>>>> Stashed changes
 import React, { useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
@@ -31,8 +46,24 @@ const { width: screenWidth } = Dimensions.get('window');
 const isTablet = screenWidth >= 768;
 
 export default function SettingsScreen() {
+<<<<<<< Updated upstream
   const { settings, isLoaded, enableNotifications, disableNotifications, updateNotificationTime } = useNotifications();
   const { userPreferences, setBibleVersion, setAppLanguage, setAutoTranslateContent, isLoaded: contentLoaded } = useContent();
+=======
+  const { settings, enableNotifications, disableNotifications, updateNotificationTime } = useNotifications();
+  const {
+    userPreferences,
+    setBibleVersion,
+    setAppLanguage,
+    setAutoTranslateContent,
+    setOfflineModeEnabled,
+    setAccessibilityLargeTextEnabled,
+    setAccessibilityDyslexiaFontEnabled,
+    setAccessibilityBoldTextEnabled,
+  } = useContent();
+  const { scheduleSession, cancelSession, updateSession, getUpcomingSessions } = useScheduledSessions();
+  const { isOnline } = useNetworkStatus();
+>>>>>>> Stashed changes
   const tLang = userPreferences.appLanguage;
   const { sessions, isLoaded: sessionsLoaded, cancelSession, updateSession, getNextOccurrence } = useScheduledSessions();
   const [selectedHour, setSelectedHour] = useState(parseInt(settings.time.split(':')[0]));
@@ -47,9 +78,17 @@ export default function SettingsScreen() {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
+<<<<<<< Updated upstream
+=======
+  const [showOfflineOnlineFaqModal, setShowOfflineOnlineFaqModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [editingSession, setEditingSession] = useState<ScheduledSession | null>(null);
+>>>>>>> Stashed changes
   const scrollRef = React.useRef<ScrollView>(null);
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  
+  const upcomingSessions = getUpcomingSessions();
 
   const handleToggleNotifications = async (value: boolean) => {
     if (Platform.OS === 'web') {
@@ -128,6 +167,75 @@ export default function SettingsScreen() {
       });
     } catch (error) {
       console.error('Error sharing app:', error);
+    }
+  };
+
+  const handleScheduleSession = async (
+    dateTime: Date,
+    recurrence: any,
+    recurrenceEndDate?: Date
+  ) => {
+    try {
+      await scheduleSession(
+        dateTime,
+        'Therapy Session Reminder',
+        "It's time for your scheduled therapy session. Take a moment for yourself.",
+        recurrence,
+        recurrenceEndDate
+      );
+      setShowScheduleModal(false);
+      Alert.alert(
+        'Session Scheduled',
+        `Your therapy session has been scheduled for ${dateTime.toLocaleDateString('en-US', {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+        })} at ${dateTime.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+        })}`,
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error scheduling session:', error);
+      Alert.alert('Error', 'Failed to schedule session. Please try again.');
+    }
+  };
+
+  const handleUpdateSession = async (
+    sessionId: string,
+    dateTime: Date,
+    recurrence: any,
+    recurrenceEndDate?: Date
+  ) => {
+    try {
+      const success = await updateSession(sessionId, {
+        dateTime,
+        recurrence,
+        recurrenceEndDate,
+      });
+      
+      if (success) {
+        setShowScheduleModal(false);
+        setEditingSession(null);
+        Alert.alert(
+          'Session Updated',
+          `Your therapy session has been updated to ${dateTime.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+          })} at ${dateTime.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+          })}`,
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Error', 'Failed to update session. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error updating session:', error);
+      Alert.alert('Error', 'Failed to update session. Please try again.');
     }
   };
 
@@ -299,15 +407,92 @@ export default function SettingsScreen() {
 
           {/* Scheduled Sessions Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t(tLang, "settings.scheduledSessions")}</Text>
-            
-            <View style={styles.emptyStateCard}>
-              <CalendarIcon size={48} color={colors.light.textSecondary} />
-              <Text style={styles.emptyStateTitle}>{t(tLang, "settings.noScheduledSessions")}</Text>
-              <Text style={styles.emptyStateText}>
-                {t(tLang, "settings.scheduleSessionDescription")}
-              </Text>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>{t(tLang, "settings.scheduledSessions")}</Text>
+              <TouchableOpacity 
+                style={styles.addButton}
+                onPress={() => {
+                  setEditingSession(null);
+                  setShowScheduleModal(true);
+                }}
+              >
+                <Plus size={20} color="#FFFFFF" />
+                <Text style={styles.addButtonText}>Schedule</Text>
+              </TouchableOpacity>
             </View>
+            
+            {upcomingSessions.length === 0 ? (
+              <View style={styles.emptyStateCard}>
+                <CalendarIcon size={48} color={colors.light.textSecondary} />
+                <Text style={styles.emptyStateTitle}>{t(tLang, "settings.noScheduledSessions")}</Text>
+                <Text style={styles.emptyStateText}>
+                  {t(tLang, "settings.scheduleSessionDescription")}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.sessionsListCard}>
+                {upcomingSessions.map((session, index) => (
+                  <View key={session.id}>
+                    {index > 0 && <View style={styles.divider} />}
+                    <View style={styles.sessionRow}>
+                      <View style={styles.sessionInfo}>
+                        <View style={styles.sessionIconContainer}>
+                          <CalendarIcon size={20} color={colors.light.primary} />
+                        </View>
+                        <View style={styles.sessionDetails}>
+                          <Text style={styles.sessionTitle}>{session.title}</Text>
+                          <Text style={styles.sessionDateTime}>
+                            {new Date(session.dateTime).toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                            })} at {new Date(session.dateTime).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </Text>
+                          {session.recurrence !== 'none' && (
+                            <Text style={styles.sessionRecurrence}>
+                              Repeats {session.recurrence}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                      <View style={styles.sessionActions}>
+                        <TouchableOpacity
+                          style={styles.sessionActionButton}
+                          onPress={() => {
+                            setEditingSession(session);
+                            setShowScheduleModal(true);
+                          }}
+                        >
+                          <Edit3 size={18} color={colors.light.primary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.sessionActionButton}
+                          onPress={() => {
+                            Alert.alert(
+                              'Cancel Session',
+                              'Are you sure you want to cancel this scheduled session?',
+                              [
+                                { text: 'No', style: 'cancel' },
+                                { 
+                                  text: 'Yes, Cancel', 
+                                  style: 'destructive',
+                                  onPress: () => cancelSession(session.id)
+                                },
+                              ]
+                            );
+                          }}
+                        >
+                          <Trash2 size={18} color={colors.light.error} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
 
           {/* Legal & Support Section */}
@@ -759,6 +944,79 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Modal>
+<<<<<<< Updated upstream
+=======
+
+      {/* Offline & Online FAQ Modal */}
+      <Modal
+        visible={showOfflineOnlineFaqModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowOfflineOnlineFaqModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.legalModal}>
+            <View style={styles.pickerHeader}>
+              <Text style={styles.pickerTitle}>Offline &amp; Online FAQ</Text>
+              <TouchableOpacity onPress={() => setShowOfflineOnlineFaqModal(false)}>
+                <Text style={styles.pickerClose}>{t(tLang, "common.close")}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              style={styles.legalScroll}
+              contentContainerStyle={styles.legalContent}
+              showsVerticalScrollIndicator={true}
+              bounces={true}
+              nestedScrollEnabled={true}
+            >
+              <Text style={styles.legalSubtitle}>Quick clarity on what needs internet</Text>
+
+              <View style={styles.legalInfoBox}>
+                <Text style={styles.legalInfoTitle}>Offline mode</Text>
+                <Text style={styles.legalInfoText}>
+                  Offline mode is designed for maximum privacy and reliability. When enabled, the app avoids network calls (except Therapy).
+                </Text>
+                <Text style={styles.legalInfoText}>
+                  Offline mode disables: Translation, Personalization, and extra Bible versions. Therapy already needs internet.
+                </Text>
+              </View>
+
+              <Text style={styles.legalSectionTitle}>What works offline</Text>
+              <Text style={styles.legalParagraph}>
+                • Home (daily devotionals, reflection, prayer prompt){'\n'}
+                • Prayers (daily prayer + guides){'\n'}
+                • Study (plans + insights) and reading passages in KJV{'\n'}
+                • Bible reading in KJV (fully offline){'\n'}
+                • Settings + local notifications + sharing
+              </Text>
+
+              <Text style={styles.legalSectionTitle}>What works online</Text>
+              <Text style={styles.legalParagraph}>
+                • Therapy AI chat, personalized sessions, voice transcription{'\n'}
+                • Translation (when not already cached){'\n'}
+                • Personalization (topic extraction/suggestions){'\n'}
+                • Extra Bible versions (WEB/ASV/DARBY/YLT/WBT/BBE, etc.) can be loaded while online and cached for later
+              </Text>
+
+              <Text style={styles.legalFooter}>You can toggle Offline mode anytime in Settings.</Text>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Schedule Session Modal */}
+      <ScheduleNextSessionModal
+        visible={showScheduleModal}
+        onClose={() => {
+          setShowScheduleModal(false);
+          setEditingSession(null);
+        }}
+        onSchedule={handleScheduleSession}
+        editingSession={editingSession}
+        onUpdate={handleUpdateSession}
+      />
+>>>>>>> Stashed changes
     </SafeAreaView>
   );
 }
@@ -931,6 +1189,90 @@ const styles = StyleSheet.create({
     color: colors.light.textSecondary,
     textAlign: "center",
     lineHeight: 21,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.light.primary,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    gap: 6,
+  },
+  addButtonText: {
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+  },
+  sessionsListCard: {
+    backgroundColor: colors.light.cardBackground,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: colors.light.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  sessionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    minHeight: 80,
+  },
+  sessionInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  sessionIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: `${colors.light.primary}15`,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sessionDetails: {
+    flex: 1,
+    gap: 4,
+  },
+  sessionTitle: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: colors.light.text,
+  },
+  sessionDateTime: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: colors.light.textSecondary,
+  },
+  sessionRecurrence: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: colors.light.primary,
+  },
+  sessionActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  sessionActionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.light.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.light.border,
   },
   shareCard: {
     backgroundColor: colors.light.cardBackground,
