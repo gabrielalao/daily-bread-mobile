@@ -369,6 +369,10 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     await updatePreferences({ accessibilityBoldTextEnabled: enabled });
   };
 
+  const setAutoPlayDailyAudio = async (enabled: boolean) => {
+    await updatePreferences({ autoPlayDailyAudio: enabled });
+  };
+
   const setAppLanguage = async (languageId: string) => {
     // If the user selects a non-English UI language, auto-enable content translation so
     // the app reads fully in that language (they can still turn it off manually).
