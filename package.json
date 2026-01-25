@@ -7,7 +7,8 @@
     "start-web": "bunx rork start -p r4qzda6e2bkihxcrpye8g --web --tunnel",
     "start-web-dev": "DEBUG=expo* bunx rork start -p r4qzda6e2bkihxcrpye8g --web --tunnel",
     "lint": "expo lint",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "extract-album-art": "bash scripts/extract-album-art.sh"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
