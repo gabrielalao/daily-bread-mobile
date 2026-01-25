@@ -17,6 +17,9 @@ export function getAlbumArtForDevotion(devotionTitle: string): any | null {
       case 'finding-peace-in-the-storm':
         return require('@/assets/audio/finding-peace-in-the-storm.jpg');
       
+      case 'strength-for-today':
+        return require('@/assets/audio/strength-for-today.jpg');
+      
       // Add more album art mappings here as needed
       // For now, other devotions will use a default placeholder
       
