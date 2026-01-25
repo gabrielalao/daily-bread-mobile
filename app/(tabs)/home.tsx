@@ -314,7 +314,9 @@ export default function HomeScreen() {
 
             <RNCalendar
               onDayPress={(day) => {
-                const selected = new Date(day.dateString);
+                // Parse date string correctly in local timezone
+                const [year, month, dayNum] = day.dateString.split('-').map(Number);
+                const selected = new Date(year, month - 1, dayNum, 12, 0, 0); // Set to noon to avoid timezone issues
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 
@@ -323,6 +325,7 @@ export default function HomeScreen() {
                   setSelectedDate(selected);
                   setViewingPastContent(selected.toDateString() !== today.toDateString());
                   setShowCalendar(false);
+                  console.log(`Selected date: ${selected.toDateString()}, Day of year: ${getDayOfYear(selected)}`);
                 }
               }}
               maxDate={new Date().toISOString().split('T')[0]}
