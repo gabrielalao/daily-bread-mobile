@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { Audio } from 'expo-av';
-import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat } from 'lucide-react-native';
+import { Play, Pause, SkipBack, SkipForward } from 'lucide-react-native';
 import colors from '@/constants/colors';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -9,7 +9,7 @@ const isTablet = screenWidth >= 768;
 
 interface DevotionalMusicPlayerProps {
   title: string;
-  audioSource: any; // require() result for the audio file
+  audioSource: any; // require() result for the audio file, or null if not available
   devotionId: string;
 }
 
@@ -19,6 +19,12 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId }: Devoti
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  // Don't render if no audio source
+  if (!audioSource) {
+    return null;
+  }
 
   useEffect(() => {
     return sound
@@ -31,6 +37,7 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId }: Devoti
   const loadSound = async () => {
     try {
       setIsLoading(true);
+      setHasError(false);
       const { sound: newSound } = await Audio.Sound.createAsync(
         audioSource,
         { shouldPlay: false },
@@ -43,6 +50,7 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId }: Devoti
       }
     } catch (error) {
       console.error('Error loading sound:', error);
+      setHasError(true);
     } finally {
       setIsLoading(false);
     }
@@ -97,6 +105,10 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId }: Devoti
 
   const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
 
+  if (hasError) {
+    return null; // Hide player if there's an error
+  }
+
   return (
     <View style={styles.container}>
       {/* Album Art / Thumbnail */}
@@ -108,7 +120,7 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId }: Devoti
 
       {/* Song Info */}
       <View style={styles.songInfo}>
-        <Text style={styles.songTitle} numberOfLines={1}>
+        <Text style={styles.songTitle} numberOfLines={2}>
           {title}
         </Text>
         <Text style={styles.artistName}>Christian Daily Bread</Text>
