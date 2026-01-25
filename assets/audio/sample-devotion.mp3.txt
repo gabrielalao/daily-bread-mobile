@@ -1,0 +1,7 @@
+# PLACEHOLDER AUDIO FILE
+
+This is a placeholder file. Replace it with your actual devotional music.
+
+The actual MP3 file should be added by the user.
+
+For now, this serves as a reference point in the codebase.

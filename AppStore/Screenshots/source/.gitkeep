@@ -1,0 +1,25 @@
+# Place Your Original Screenshots Here
+
+## Instructions
+
+1. Take screenshots from iPhone simulator or device
+2. Drop all screenshot files here
+3. Run the resize command to generate App Store-ready images
+
+## Supported Formats
+
+- PNG (recommended)
+- JPG/JPEG
+
+## Example Files
+
+```
+home-screen.png
+prayers-screen.png
+study-screen.png
+therapy-screen.png
+bible-reader.png
+settings-screen.png
+```
+
+These will be resized to **1242 × 2688px** and saved in the `resized/` folder.

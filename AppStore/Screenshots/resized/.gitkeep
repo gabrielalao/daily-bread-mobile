@@ -1,0 +1,22 @@
+# App Store Ready Screenshots
+
+All screenshots in this folder are **1242 × 2688px** - ready for App Store Connect upload.
+
+## Files
+
+Screenshots will appear here after running the resize command from the parent directory.
+
+## Upload to App Store
+
+1. Select all PNG files from this folder
+2. Go to App Store Connect
+3. Navigate to: App Store → iOS Screenshots → 6.7" Display
+4. Drag and drop files or click to upload
+5. Arrange in desired order
+6. Save changes
+
+These screenshots are optimized for:
+- iPhone 14 Pro Max
+- iPhone 15 Pro Max
+- iPhone 15 Plus
+- iPhone 14 Plus

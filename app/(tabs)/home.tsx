@@ -9,6 +9,7 @@ import { t } from "@/utils/i18n";
 import { translateTextCached } from "@/utils/translate";
 import { NetworkStatusDot } from "@/components/NetworkStatusDot";
 import { A11yText as Text } from "@/components/A11yText";
+import { DevotionalMusicPlayer } from "@/components/DevotionalMusicPlayer";
 import { BookOpen, Calendar, Clock, X, Upload } from "lucide-react-native";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Animated, ScrollView, StyleSheet, View, TouchableOpacity, Dimensions, Modal } from "react-native";
@@ -298,6 +299,13 @@ export default function HomeScreen() {
               {t(lang, "home.prayerText")}
             </Text>
           </TouchableOpacity>
+
+          {/* Music Player */}
+          <DevotionalMusicPlayer
+            title={devotional.title}
+            audioSource={require('@/assets/audio/sample-devotion.mp3')}
+            devotionId={devotional.id}
+          />
         </Animated.View>
       </ScrollView>
 
