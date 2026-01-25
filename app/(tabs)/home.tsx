@@ -7,10 +7,11 @@ import { getVersionById } from "@/constants/bible-versions";
 import { getAppLanguageById } from "@/constants/app-languages";
 import { t } from "@/utils/i18n";
 import { translateTextCached } from "@/utils/translate";
-import { LinearGradient } from "expo-linear-gradient";
+import { NetworkStatusDot } from "@/components/NetworkStatusDot";
+import { A11yText as Text } from "@/components/A11yText";
 import { BookOpen, Calendar, Clock, X, Upload } from "lucide-react-native";
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Animated, ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Dimensions, Modal } from "react-native";
+import { Animated, ScrollView, StyleSheet, View, TouchableOpacity, Dimensions, Modal } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar as RNCalendar } from 'react-native-calendars';
@@ -86,7 +87,13 @@ export default function HomeScreen() {
     );
     console.log('Selected new devotional for today:', selected.title);
     return selected;
-  }, [contentHistory.currentDayDevotional, selectedDate, viewingPastContent]);
+  }, [
+    contentHistory.currentDayDevotional,
+    contentHistory.devotionals,
+    selectedDate,
+    viewingPastContent,
+    userPreferences.topicsOfInterest,
+  ]);
 
   const bibleVersion = getVersionById(userPreferences.bibleVersion);
   const lang = userPreferences.appLanguage;
@@ -118,7 +125,15 @@ export default function HomeScreen() {
         });
       }
     }
-  }, [devotional, isLoaded, contentHistory.currentDayDevotional, contentHistory.devotionals]);
+  }, [
+    analyzeContentInteraction,
+    contentHistory.currentDayDevotional,
+    contentHistory.devotionals,
+    devotional,
+    isLoaded,
+    markDevotionalViewed,
+    setCurrentDayDevotional,
+  ]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -224,6 +239,9 @@ export default function HomeScreen() {
               <View style={styles.timeContainer}>
                 <Clock size={18} color={colors.light.textSecondary} />
                 <Text style={styles.timeText}>{time}</Text>
+              </View>
+              <View style={styles.statusDotContainer}>
+                <NetworkStatusDot />
               </View>
             </View>
             <Text style={styles.subtitle}>{t(lang, "home.subtitle")}</Text>
@@ -433,6 +451,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     flexWrap: "wrap",
     gap: 12,
+  },
+  statusDotContainer: {
+    marginLeft: 2,
+    marginRight: 2,
+    alignItems: "center",
+    justifyContent: "center",
   },
   dateContainer: {
     flexDirection: "row",

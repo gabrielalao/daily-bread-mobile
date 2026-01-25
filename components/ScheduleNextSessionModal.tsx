@@ -332,7 +332,7 @@ export function ScheduleNextSessionModal({
                   </Text>
                 )}
                 <Text style={styles.summaryNote}>
-                  You'll receive a notification at this time
+                  You&apos;ll receive a notification at this time
                 </Text>
               </View>
             )}

@@ -10,9 +10,10 @@ import * as Notifications from "expo-notifications";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, Component, ReactNode } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { View, Text, StyleSheet, Platform } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { t } from "@/utils/i18n";
 import { preCachePopularChapters } from "@/utils/bibleAPI";
+import { useFonts } from "expo-font";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -73,6 +74,13 @@ class ErrorBoundary extends Component<
 function RootLayoutNav() {
   const { userPreferences } = useContent();
   const lang = userPreferences.appLanguage;
+
+  const [fontsLoaded] = useFonts({
+    "AtkinsonHyperlegible-Regular": require("../assets/fonts/AtkinsonHyperlegible-Regular.ttf"),
+    "AtkinsonHyperlegible-Bold": require("../assets/fonts/AtkinsonHyperlegible-Bold.ttf"),
+  });
+  void fontsLoaded;
+
   return (
     <>
       <StatusBar style="light" translucent={true} />
@@ -103,7 +111,7 @@ function RootLayoutNav() {
 export default function RootLayout() {
   useEffect(() => {
     console.log('RootLayout mounted');
-    SplashScreen.hideAsync();
+    SplashScreen.hideAsync().catch(() => {});
     
     // Pre-cache popular Bible chapters for offline use
     // This runs in the background without blocking the app

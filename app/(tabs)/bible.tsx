@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -15,12 +14,17 @@ import {
   Platform,
   Animated,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react-native';
 import colors from '@/constants/colors';
 import { BIBLE_BOOKS, BibleBook } from '@/constants/bibleBooks';
 import { fetchBibleChapter, BibleChapter, getBibleAPITranslation } from '@/utils/bibleAPI';
 import { useContent } from '@/contexts/ContentContext';
+import { NetworkStatusDot } from '@/components/NetworkStatusDot';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { BibleVersionPickerModal } from '@/components/BibleVersionPickerModal';
+import { getEffectiveBibleVersionAbbr } from '@/utils/bibleVersionPolicy';
+import { A11yText as Text } from "@/components/A11yText";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -37,13 +41,15 @@ interface ReadingPosition {
 }
 
 export default function BibleScreen() {
-  const { userPreferences } = useContent();
+  const { userPreferences, setBibleVersion, setOfflineModeEnabled } = useContent();
+  const { isOnline } = useNetworkStatus();
   const [currentBook, setCurrentBook] = useState<BibleBook>(BIBLE_BOOKS[0]); // Genesis
   const [currentChapter, setCurrentChapter] = useState(1);
   const [chapterData, setChapterData] = useState<BibleChapter | null>(null);
   const [loading, setLoading] = useState(true);
   const [showBookPicker, setShowBookPicker] = useState(false);
   const [showChapterPicker, setShowChapterPicker] = useState(false);
+  const [showVersionPicker, setShowVersionPicker] = useState(false);
   
   // Animation state
   const [verseAnimations, setVerseAnimations] = useState<Animated.Value[]>([]);
@@ -60,40 +66,21 @@ export default function BibleScreen() {
     loadReadingPosition();
   }, []);
 
-  // Fetch chapter when book or chapter changes
-  useEffect(() => {
-    loadChapter();
-  }, [currentBook, currentChapter, userPreferences.bibleVersion]);
-
-  const loadReadingPosition = async () => {
-    try {
-      const saved = await AsyncStorage.getItem(BIBLE_READING_KEY);
-      if (saved) {
-        const position: ReadingPosition = JSON.parse(saved);
-        const book = BIBLE_BOOKS.find(b => b.id === position.bookId);
-        if (book) {
-          setCurrentBook(book);
-          setCurrentChapter(position.chapter);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading reading position:', error);
-    }
-  };
-
-  const saveReadingPosition = async (bookId: string, chapter: number) => {
+  const saveReadingPosition = useCallback(async (bookId: string, chapter: number) => {
     try {
       const position: ReadingPosition = { bookId, chapter };
       await AsyncStorage.setItem(BIBLE_READING_KEY, JSON.stringify(position));
     } catch (error) {
       console.error('Error saving reading position:', error);
     }
-  };
+  }, []);
 
-  const loadChapter = async () => {
+  const loadChapter = useCallback(async () => {
     setLoading(true);
-    const translation = getBibleAPITranslation(userPreferences.bibleVersion);
-    const data = await fetchBibleChapter(currentBook.id, currentChapter, translation);
+    const translation = userPreferences.offlineModeEnabled ? "kjv" : getBibleAPITranslation(userPreferences.bibleVersion);
+    const data = await fetchBibleChapter(currentBook.id, currentChapter, translation, {
+      allowNetwork: !userPreferences.offlineModeEnabled,
+    });
     setChapterData(data);
     
     // Initialize animations for each verse
@@ -119,6 +106,44 @@ export default function BibleScreen() {
     
     setLoading(false);
     saveReadingPosition(currentBook.id, currentChapter);
+  }, [
+    currentBook.id,
+    currentChapter,
+    saveReadingPosition,
+    userPreferences.bibleVersion,
+    userPreferences.offlineModeEnabled,
+  ]);
+
+  // Fetch chapter when book or chapter changes
+  useEffect(() => {
+    loadChapter();
+  }, [loadChapter]);
+
+  const effectiveAbbr = getEffectiveBibleVersionAbbr({
+    preferredVersionId: userPreferences.bibleVersion,
+    offlineModeEnabled: userPreferences.offlineModeEnabled,
+  });
+
+  const loadReadingPosition = async () => {
+    try {
+      const saved = await AsyncStorage.getItem(BIBLE_READING_KEY);
+      if (saved) {
+        const position: ReadingPosition = JSON.parse(saved);
+        const book = BIBLE_BOOKS.find(b => b.id === position.bookId);
+        if (book) {
+          setCurrentBook(book);
+          setCurrentChapter(position.chapter);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading reading position:', error);
+    }
+  };
+
+  // (saveReadingPosition + loadChapter moved above, memoized)
+
+  const handleBibleVersionChange = async (versionId: string) => {
+    await setBibleVersion(versionId);
   };
 
   const goToPreviousChapter = () => {
@@ -228,36 +253,53 @@ export default function BibleScreen() {
       {/* Top Navigation Bar */}
       <View style={styles.topBar}>
         <View style={styles.topBarLeft}>
-          <TouchableOpacity 
-            style={styles.topPillButton} 
-            onPress={() => setShowBookPicker(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.topPillText}>
-              {currentBook.name} {currentChapter}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.pillsRow}>
+            <TouchableOpacity 
+              style={styles.topPillButton} 
+              onPress={() => setShowBookPicker(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.topPillText}>
+                {currentBook.name} {currentChapter}
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.chapterPillButton} 
-            onPress={() => setShowChapterPicker(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.chapterPillText}>
-              {chapterData && 
-               chapterData.verses.length > 0 && 
-               chapterData.chapter === currentChapter &&
-               chapterData.book === currentBook.id
-                ? `1-${chapterData.verses[chapterData.verses.length - 1].verse}`
-                : loading ? '...' : '...'
-              }
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.chapterPillButton} 
+              onPress={() => setShowChapterPicker(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.chapterPillText}>
+                {chapterData && 
+                 chapterData.verses.length > 0 && 
+                 chapterData.chapter === currentChapter &&
+                 chapterData.book === currentBook.id
+                  ? `1-${chapterData.verses[chapterData.verses.length - 1].verse}`
+                  : loading ? '...' : '...'
+                }
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.versionPillButton}
+              onPress={() => setShowVersionPicker(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.versionPillText}>{effectiveAbbr}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {userPreferences.offlineModeEnabled ? (
+            <Text style={styles.offlineHint}>Showing KJV (Offline mode)</Text>
+          ) : null}
         </View>
 
-        <TouchableOpacity style={styles.searchButton} activeOpacity={0.7} onPress={openSearch}>
-          <Search size={24} color={colors.light.text} />
-        </TouchableOpacity>
+        <View style={styles.topBarRight}>
+          <NetworkStatusDot />
+          <TouchableOpacity style={styles.searchButton} activeOpacity={0.7} onPress={openSearch}>
+            <Search size={24} color={colors.light.text} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Chapter Content */}
@@ -314,10 +356,24 @@ export default function BibleScreen() {
         ) : (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>Unable to load chapter</Text>
-            <Text style={styles.errorSubtext}>Please check your internet connection or try again later.</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={loadChapter}>
-              <Text style={styles.retryButtonText}>Retry</Text>
-            </TouchableOpacity>
+            <Text style={styles.errorSubtext}>
+              {userPreferences.offlineModeEnabled
+                ? "Offline mode is on and this chapter isn't downloaded yet. Enable Online Mode to load it once."
+                : "Please check your internet connection or try again later."}
+            </Text>
+            <View style={styles.errorButtonsRow}>
+              <TouchableOpacity style={styles.retryButton} onPress={loadChapter}>
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+              {userPreferences.offlineModeEnabled && (
+                <TouchableOpacity
+                  style={[styles.retryButton, styles.enableOnlineButton]}
+                  onPress={() => setOfflineModeEnabled(false)}
+                >
+                  <Text style={styles.retryButtonText}>Enable Online</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         )}
       </ScrollView>
@@ -452,6 +508,16 @@ export default function BibleScreen() {
         </View>
       </Modal>
 
+      <BibleVersionPickerModal
+        visible={showVersionPicker}
+        onClose={() => setShowVersionPicker(false)}
+        preferredVersionId={userPreferences.bibleVersion}
+        offlineModeEnabled={userPreferences.offlineModeEnabled}
+        isOnline={isOnline}
+        setOfflineModeEnabled={setOfflineModeEnabled}
+        setPreferredVersionId={handleBibleVersionChange}
+      />
+
       {/* Search Modal */}
       <Modal
         visible={showSearch}
@@ -582,10 +648,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.light.background,
   },
   topBarLeft: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    flex: 1,
+  },
+  pillsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    flex: 1,
+    flexWrap: 'wrap',
+  },
+  offlineHint: {
+    marginTop: 6,
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.light.textSecondary,
+  },
+  topBarRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
   topPillButton: {
     backgroundColor: '#6A4C93', // Purple
@@ -622,6 +704,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  versionPillButton: {
+    backgroundColor: '#1A1A1A', // Black
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 0,
+    minWidth: 64,
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  versionPillText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
   searchButton: {
     width: 44,
@@ -772,6 +874,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
   },
+  errorButtonsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    flexWrap: "wrap",
+  },
   retryButton: {
     backgroundColor: '#2A9D8F', // Teal
     paddingHorizontal: 24,
@@ -782,6 +891,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
+  },
+  enableOnlineButton: {
+    backgroundColor: "#6A4C93", // Purple
   },
   retryButtonText: {
     fontSize: 16,

@@ -3,7 +3,7 @@ import { useNotifications } from "@/contexts/NotificationContext";
 import { useContent } from "@/contexts/ContentContext";
 import { useScheduledSessions } from "@/contexts/ScheduledSessionsContext";
 import type { ScheduledSession } from "@/contexts/ScheduledSessionsContext";
-import { bibleVersions, getPopularVersions, getVersionById } from "@/constants/bible-versions";
+import { bibleVersions, getVersionById } from "@/constants/bible-versions";
 import { appLanguages, getAppLanguageById } from "@/constants/app-languages";
 import { t, tParams } from "@/utils/i18n";
 import { LinearGradient } from "expo-linear-gradient";
@@ -181,7 +181,7 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
 
   const handleShareApp = async () => {
     try {
-      const message = `Check out Christian Daily Bread - Christian Therapy! 🙏\n\nGet daily spiritual guidance, Bible studies, prayers, and AI-powered Christian therapy sessions.\n\n📱 Download Links:\n\n🍎 App Store:\nhttps://apps.apple.com/us/app/daily-bread-christian-therapy/id6755737219\n\n🤖 Google Play:\nhttps://play.google.com/store/apps/details?id=app.rork.daily_bread_app_mp9wlbr\n\nAvailable on both iOS and Android!`;
+      const message = `Check out Christian Daily Bread - Christian Therapy! 🙏\n\nGet daily spiritual guidance, Bible studies, prayers, and AI-powered Christian therapy sessions.\n\nDownload the app: https://daily-bread.app/\n\n📱 Download Links:\n\n🍎 App Store:\nhttps://apps.apple.com/us/app/daily-bread-christian-therapy/id6755737219\n\n🤖 Google Play:\nhttps://play.google.com/store/apps/details?id=app.rork.daily_bread_app_mp9wlbr\n\nAvailable on both iOS and Android!`;
 
       const result = await Share.share({
         message,
@@ -256,7 +256,6 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
   }
 
   const currentVersion = getVersionById(userPreferences.bibleVersion);
-  const popularVersions = getPopularVersions();
   const allVersions = bibleVersions;
   const originalLanguageVersions = allVersions.filter(v => v.language === 'Hebrew' || v.language === 'Greek');
 

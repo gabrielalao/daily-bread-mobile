@@ -22,7 +22,7 @@ export default function TermsOfServiceScreen() {
         <Text style={styles.lastModified}>Last modified on December 14, 2025</Text>
 
         <Text style={styles.paragraph}>
-          Welcome to Daily Bread! These Terms of Service ("Terms") govern your use of our mobile application, website, and services. By using Daily Bread, you agree to be bound by these Terms. Please read them carefully.
+          Welcome to Daily Bread! These Terms of Service (&quot;Terms&quot;) govern your use of our mobile application, website, and services. By using Daily Bread, you agree to be bound by these Terms. Please read them carefully.
         </Text>
 
         <Text style={styles.sectionTitle}>Use of Service</Text>
@@ -37,13 +37,13 @@ export default function TermsOfServiceScreen() {
 
         <Text style={styles.sectionTitle}>Disclaimer of Warranties</Text>
         <Text style={styles.paragraph}>
-          Daily Bread is provided on an "AS IS" and "AS AVAILABLE" basis. We disclaim all warranties, express or implied.
+          Daily Bread is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis. We disclaim all warranties, express or implied.
         </Text>
 
         <View style={styles.infoBox}>
           <Text style={styles.infoTitle}>Important Information</Text>
           <Text style={styles.infoText}>
-            Daily Bread's AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
+            Daily Bread&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
           </Text>
           <Text style={styles.infoText}>
             If you are experiencing a mental health crisis, thoughts of self-harm, or severe distress, please contact a licensed mental health professional, your healthcare provider, or a crisis hotline immediately.
@@ -59,7 +59,7 @@ export default function TermsOfServiceScreen() {
 
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>Q: Do I need to create an account to use Daily Bread?</Text>
-          <Text style={styles.faqAnswer}>A: No, you don't need to sign up or log in to use Daily Bread. Just download and start exploring!</Text>
+          <Text style={styles.faqAnswer}>A: No, you don&apos;t need to sign up or log in to use Daily Bread. Just download and start exploring!</Text>
         </View>
 
         <View style={styles.faqItem}>
@@ -82,7 +82,7 @@ export default function TermsOfServiceScreen() {
           Daily Bread is seeking partnerships with churches, Christian faith organizations, and individuals to support our mission. Your support will help us provide free therapy services and resources to those in need.
         </Text>
         <Text style={styles.paragraph}>
-          If you're interested in partnering with us, please contact us at support@dailybread.app.
+          If you&apos;re interested in partnering with us, please contact us at support@dailybread.app.
         </Text>
 
         <Text style={styles.sectionTitle}>Donations</Text>
@@ -92,12 +92,12 @@ export default function TermsOfServiceScreen() {
 
         <Text style={styles.sectionTitle}>Free Christian Therapy Services</Text>
         <Text style={styles.paragraph}>
-          Daily Bread is committed to providing free therapy services to those who cannot afford it. If you need support, please contact us at support@dailybread.app or call us at +1 512 500 5160. We'll do our best to connect you with a licensed therapist.
+          Daily Bread is committed to providing free therapy services to those who cannot afford it. If you need support, please contact us at support@dailybread.app or call us at +1 512 500 5160. We&apos;ll do our best to connect you with a licensed therapist.
         </Text>
 
         <Text style={styles.sectionTitle}>Partner with Us</Text>
         <Text style={styles.paragraph}>
-          Are you a licensed therapist passionate about providing faith-based services? We're looking for therapists to partner with us and provide Christian therapy services on our app. If you're interested in joining our team, please contact us at support@dailybread.app.
+          Are you a licensed therapist passionate about providing faith-based services? We&apos;re looking for therapists to partner with us and provide Christian therapy services on our app. If you&apos;re interested in joining our team, please contact us at support@dailybread.app.
         </Text>
         <View style={styles.requirementsList}>
           <Text style={styles.requirement}>• Must be a licensed therapist (LCSW, LPC, LMFT, etc.)</Text>
@@ -106,7 +106,7 @@ export default function TermsOfServiceScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>Get in Touch</Text>
-        <Text style={styles.paragraph}>We're here to help you the best way we can.</Text>
+        <Text style={styles.paragraph}>We&apos;re here to help you the best way we can.</Text>
 
         <TouchableOpacity 
           style={styles.contactButton}
