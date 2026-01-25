@@ -130,6 +130,33 @@ export default function HomeScreen() {
   );
 
   useEffect(() => {
+    const checkForNewDay = () => {
+      const now = new Date();
+      const currentDay = getDayOfYear(now);
+      
+      // If it's a new day and auto-play is enabled
+      if (lastDayChecked.current !== null && lastDayChecked.current !== currentDay) {
+        const hour = now.getHours();
+        // Only auto-play if it's at or after 5 AM and user has auto-play enabled
+        if (hour >= 5 && userPreferences.autoPlayDailyAudio && !viewingPastContent) {
+          console.log('New day detected at 5 AM - enabling auto-play');
+          setShouldAutoPlay(true);
+        }
+      }
+      
+      lastDayChecked.current = currentDay;
+    };
+    
+    // Check immediately
+    checkForNewDay();
+    
+    // Check every minute for day changes
+    const interval = setInterval(checkForNewDay, 60000);
+    
+    return () => clearInterval(interval);
+  }, [userPreferences.autoPlayDailyAudio, viewingPastContent]);
+
+  useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);

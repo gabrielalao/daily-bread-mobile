@@ -32,6 +32,7 @@ export type UserPreferences = {
   accessibilityLargeTextEnabled: boolean;
   accessibilityDyslexiaFontEnabled: boolean;
   accessibilityBoldTextEnabled: boolean;
+  autoPlayDailyAudio: boolean; // Auto-play music at 5 AM when content changes
 };
 
 const CONTENT_HISTORY_KEY = '@content_history';
@@ -75,6 +76,7 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     accessibilityLargeTextEnabled: false,
     accessibilityDyslexiaFontEnabled: false,
     accessibilityBoldTextEnabled: false,
+    autoPlayDailyAudio: true, // ON by default
   });
 
   const [userId, setUserId] = useState<string>('');
