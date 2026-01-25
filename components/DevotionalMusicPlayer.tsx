@@ -21,11 +21,7 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId }: Devoti
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
 
-  // Don't render if no audio source
-  if (!audioSource) {
-    return null;
-  }
-
+  // All hooks must be called before any early returns
   useEffect(() => {
     return sound
       ? () => {
@@ -33,6 +29,17 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId }: Devoti
         }
       : undefined;
   }, [sound]);
+
+  // Early returns must come AFTER all hooks
+  if (!audioSource || hasError) {
+    return null;
+  }
+
+  // If no audio source or error, don't render the player
+  // This must come AFTER all hooks are called
+  if (!audioSource || hasError) {
+    return null;
+  }
 
   const loadSound = async () => {
     try {
@@ -104,10 +111,6 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId }: Devoti
   };
 
   const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
-
-  if (hasError) {
-    return null; // Hide player if there's an error
-  }
 
   return (
     <View style={styles.container}>
