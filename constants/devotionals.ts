@@ -7,6 +7,53 @@ export type Devotional = {
   reflection: string;
 };
 
+/**
+ * Get the current day of the year (1-365)
+ * Adjusted so that content refreshes at 5 AM local time
+ */
+export function getDayOfYear(date: Date = new Date()): number {
+  const calendar = new Date(date);
+  const hour = calendar.getHours();
+  
+  // If before 5 AM, use previous day's content
+  if (hour < 5) {
+    calendar.setDate(calendar.getDate() - 1);
+  }
+  
+  const start = new Date(calendar.getFullYear(), 0, 0);
+  const diff = calendar.getTime() - start.getTime();
+  const oneDay = 1000 * 60 * 60 * 24;
+  const dayOfYear = Math.floor(diff / oneDay);
+  
+  return dayOfYear;
+}
+
+/**
+ * Get devotional for a specific day of the year (1-365)
+ */
+export function getDevotionalByDayOfYear(dayOfYear: number): Devotional {
+  // Ensure day is within bounds (1-365)
+  const adjustedDay = ((dayOfYear - 1) % 365) + 1;
+  const index = adjustedDay - 1;
+  return devotionals[index];
+}
+
+/**
+ * Get today's devotional based on the current day of the year
+ */
+export function getTodayDevotional(): Devotional {
+  const dayOfYear = getDayOfYear();
+  return getDevotionalByDayOfYear(dayOfYear);
+}
+
+/**
+ * Get devotional for a specific date
+ */
+export function getDevotionalForDate(date: Date): Devotional {
+  const dayOfYear = getDayOfYear(date);
+  return getDevotionalByDayOfYear(dayOfYear);
+}
+
 export const devotionals: Devotional[] = [
   {
     id: "1",

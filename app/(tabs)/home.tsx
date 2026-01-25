@@ -1,5 +1,5 @@
 import colors from "@/constants/colors";
-import { devotionals, getPersonalizedDevotional, type Devotional } from "@/constants/devotionals";
+import { devotionals, getTodayDevotional, getDevotionalForDate, getDayOfYear, type Devotional } from "@/constants/devotionals";
 import { useContent } from "@/contexts/ContentContext";
 import { usePersonalization } from "@/hooks/usePersonalization";
 import { useCardShare } from "@/hooks/useCardShare";
@@ -66,35 +66,18 @@ export default function HomeScreen() {
   const devotional = useMemo<Devotional>(() => {
     // If viewing a specific past date, get devotional for that date
     if (selectedDate && viewingPastContent) {
-      const startOfYear = new Date(selectedDate.getFullYear(), 0, 1);
-      const dayOfYear = Math.floor((selectedDate.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      const devotionalIndex = (dayOfYear - 1) % 365;
-      const dateDevotional = devotionals[devotionalIndex];
-      console.log(`Viewing devotional for ${selectedDate.toDateString()}: Day ${dayOfYear}, ${dateDevotional.title}`);
-      return dateDevotional;
+      const devotionalForDate = getDevotionalForDate(selectedDate);
+      console.log(`Viewing devotional for ${selectedDate.toDateString()}: ${devotionalForDate.title}`);
+      return devotionalForDate;
     }
     
-    // Otherwise, show today's devotional
-    if (contentHistory.currentDayDevotional) {
-      const cached = devotionals.find(d => d.id === contentHistory.currentDayDevotional);
-      if (cached) {
-        console.log('Using cached devotional for today:', cached.title);
-        return cached;
-      }
-    }
-    
-    const selected = getPersonalizedDevotional(
-      contentHistory.devotionals,
-      userPreferences.topicsOfInterest
-    );
-    console.log('Selected new devotional for today:', selected.title);
-    return selected;
+    // Otherwise, show today's devotional (based on day of year)
+    const todayDevotional = getTodayDevotional();
+    console.log('Showing today\'s devotional:', todayDevotional.title);
+    return todayDevotional;
   }, [
-    contentHistory.currentDayDevotional,
-    contentHistory.devotionals,
     selectedDate,
     viewingPastContent,
-    userPreferences.topicsOfInterest,
   ]);
 
   const bibleVersion = getVersionById(userPreferences.bibleVersion);
