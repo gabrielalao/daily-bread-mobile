@@ -1,4 +1,4 @@
-# Welcome to Daily Bread
+# Welcome to Daily Bread - v6.0.0
 
 ## Project info
 
