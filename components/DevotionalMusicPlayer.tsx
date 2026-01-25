@@ -12,9 +12,11 @@ interface DevotionalMusicPlayerProps {
   audioSource: any; // require() result for the audio file, or null if not available
   devotionId: string;
   albumArt?: any; // Optional album art image source
+  shouldAutoPlay?: boolean; // Auto-play flag from parent
+  onPlayStateChange?: (isPlaying: boolean) => void; // Callback when play state changes
 }
 
-export function DevotionalMusicPlayer({ title, audioSource, devotionId, albumArt }: DevotionalMusicPlayerProps) {
+export function DevotionalMusicPlayer({ title, audioSource, devotionId, albumArt, shouldAutoPlay, onPlayStateChange }: DevotionalMusicPlayerProps) {
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
@@ -30,6 +32,21 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId, albumArt
         }
       : undefined;
   }, [sound]);
+
+  // Auto-play effect when shouldAutoPlay flag is set
+  useEffect(() => {
+    if (shouldAutoPlay && audioSource && !sound && !isLoading && !hasError) {
+      console.log('Auto-playing daily audio...');
+      loadSound();
+    }
+  }, [shouldAutoPlay, audioSource]);
+
+  // Notify parent of play state changes
+  useEffect(() => {
+    if (onPlayStateChange) {
+      onPlayStateChange(isPlaying);
+    }
+  }, [isPlaying]);
 
   // Early returns must come AFTER all hooks
   if (!audioSource || hasError) {

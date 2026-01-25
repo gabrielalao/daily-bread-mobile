@@ -45,6 +45,8 @@ export default function HomeScreen() {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [activeCardType, setActiveCardType] = useState<'verse' | 'reflection' | 'prayer' | null>(null);
   const hasSetInitialDevotional = useRef(false);
+  const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
+  const lastDayChecked = useRef<number | null>(null);
   
   const handleCardPress = (cardType: 'verse' | 'reflection' | 'prayer') => {
     setActiveCardType(cardType);
@@ -291,6 +293,13 @@ export default function HomeScreen() {
             audioSource={getDynamicAudioSource(devotional.title)}
             albumArt={getAlbumArtForDevotion(devotional.title)}
             devotionId={devotional.id}
+            shouldAutoPlay={shouldAutoPlay}
+            onPlayStateChange={(playing) => {
+              // Reset auto-play flag after first play
+              if (playing && shouldAutoPlay) {
+                setShouldAutoPlay(false);
+              }
+            }}
           />
         </Animated.View>
       </ScrollView>

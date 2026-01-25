@@ -12,7 +12,7 @@ import { requireOnlineOrPrompt } from "@/utils/networkPolicy";
 import { BibleVersionPickerModal } from "@/components/BibleVersionPickerModal";
 import { getEffectiveBibleVersionId } from "@/utils/bibleVersionPolicy";
 import { A11yText as Text } from "@/components/A11yText";
-import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Share2, Edit3, Trash2, Plus } from "lucide-react-native";
+import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Share2, Edit3, Trash2, Plus, Play } from "lucide-react-native";
 import React, { useState } from "react";
 import { useFocusEffect } from "expo-router";
 import {
