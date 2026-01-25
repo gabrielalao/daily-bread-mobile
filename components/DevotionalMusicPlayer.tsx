@@ -48,7 +48,7 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId, albumArt
       setHasError(false);
       const { sound: newSound } = await Audio.Sound.createAsync(
         audioSource,
-        { shouldPlay: false },
+        { shouldPlay: true }, // Auto-play after loading
         onPlaybackStatusUpdate
       );
       setSound(newSound);
@@ -79,7 +79,9 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId, albumArt
 
   const togglePlayPause = async () => {
     if (!sound) {
+      // First time - load and play
       await loadSound();
+      // After loading, the sound will auto-play
       return;
     }
 
