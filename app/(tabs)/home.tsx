@@ -11,6 +11,7 @@ import { NetworkStatusDot } from "@/components/NetworkStatusDot";
 import { A11yText as Text } from "@/components/A11yText";
 import { DevotionalMusicPlayer } from "@/components/DevotionalMusicPlayer";
 import { getDynamicAudioSource } from "@/utils/audioHelper";
+import { getAlbumArtForDevotion } from "@/utils/albumArtHelper";
 import { BookOpen, Calendar, Clock, X, Upload } from "lucide-react-native";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Animated, ScrollView, StyleSheet, View, TouchableOpacity, Dimensions, Modal } from "react-native";
@@ -288,6 +289,7 @@ export default function HomeScreen() {
           <DevotionalMusicPlayer
             title={devotional.title}
             audioSource={getDynamicAudioSource(devotional.title)}
+            albumArt={getAlbumArtForDevotion(devotional.title)}
             devotionId={devotional.id}
           />
         </Animated.View>

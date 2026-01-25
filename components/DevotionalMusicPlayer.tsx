@@ -11,16 +11,16 @@ interface DevotionalMusicPlayerProps {
   title: string;
   audioSource: any; // require() result for the audio file, or null if not available
   devotionId: string;
+  albumArt?: any; // Optional album art image source
 }
 
-export function DevotionalMusicPlayer({ title, audioSource, devotionId }: DevotionalMusicPlayerProps) {
+export function DevotionalMusicPlayer({ title, audioSource, devotionId, albumArt }: DevotionalMusicPlayerProps) {
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [albumArt, setAlbumArt] = useState<string | null>(null);
 
   // All hooks must be called before any early returns
   useEffect(() => {
@@ -30,16 +30,6 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId }: Devoti
         }
       : undefined;
   }, [sound]);
-
-  // Try to get album art from the audio file
-  useEffect(() => {
-    if (audioSource && sound) {
-      // Expo AV doesn't easily expose metadata, so we'll use the default album art
-      // In a production app, you'd want to use expo-media-library or a custom solution
-      // For now, we'll use a placeholder that matches the devotion
-      setAlbumArt(require('@/assets/audio/finding-peace-in-the-storm.mp3'));
-    }
-  }, [audioSource, sound]);
 
   // Early returns must come AFTER all hooks
   if (!audioSource || hasError) {
@@ -128,11 +118,17 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId }: Devoti
       {/* Horizontal Layout like Spotify */}
       <View style={styles.playerContent}>
         {/* Album Art */}
-        <Image
-          source={audioSource}
-          style={styles.albumArt}
-          resizeMode="cover"
-        />
+        {albumArt ? (
+          <Image
+            source={albumArt}
+            style={styles.albumArt}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.albumArtPlaceholder}>
+            <Text style={styles.albumArtIcon}>🕊️</Text>
+          </View>
+        )}
 
         {/* Song Info & Controls Combined */}
         <View style={styles.infoAndControls}>
@@ -219,6 +215,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     marginRight: 12,
+  },
+  albumArtPlaceholder: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  albumArtIcon: {
+    fontSize: 28,
   },
   infoAndControls: {
     flex: 1,
