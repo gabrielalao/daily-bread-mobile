@@ -3,11 +3,11 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "bunx rork start -p r4qzda6e2bkihxcrpye8g --tunnel",
-    "start-web": "bunx rork start -p r4qzda6e2bkihxcrpye8g --web --tunnel",
-    "start-web-dev": "DEBUG=expo* bunx rork start -p r4qzda6e2bkihxcrpye8g --web --tunnel",
+    "start": "npm run extract-album-art && bunx rork start -p r4qzda6e2bkihxcrpye8g --tunnel",
+    "start-web": "npm run extract-album-art && bunx rork start -p r4qzda6e2bkihxcrpye8g --web --tunnel",
+    "start-web-dev": "npm run extract-album-art && DEBUG=expo* bunx rork start -p r4qzda6e2bkihxcrpye8g --web --tunnel",
     "lint": "expo lint",
-    "postinstall": "patch-package",
+    "postinstall": "patch-package && npm run extract-album-art",
     "extract-album-art": "bash scripts/extract-album-art.sh"
   },
   "dependencies": {
