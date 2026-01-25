@@ -12,6 +12,8 @@ jobs:
   ios:
     name: iOS Build & Submit
     runs-on: ubuntu-latest
+    # Skip if commit message contains [skip ci]
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
 
     steps:
       - uses: actions/checkout@v4
@@ -49,6 +51,8 @@ jobs:
   android:
     name: Android Build & Submit
     runs-on: ubuntu-latest
+    # Skip if commit message contains [skip ci]
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
 
     steps:
       - uses: actions/checkout@v4
