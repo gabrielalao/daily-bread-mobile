@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { Audio } from 'expo-av';
-import { Play, Pause, SkipBack, SkipForward } from 'lucide-react-native';
+import { Play, Pause, SkipBack, SkipForward, Repeat, Repeat1 } from 'lucide-react-native';
 
 interface DevotionalMusicPlayerProps {
   title: string;
@@ -30,6 +30,7 @@ export function DevotionalMusicPlayer({
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [isRepeating, setIsRepeating] = useState(false);
   const soundRef = useRef<Audio.Sound | null>(null);
   const isMountedRef = useRef(true);
 
@@ -210,6 +211,11 @@ export function DevotionalMusicPlayer({
     } catch (error) {
       console.error('Error skipping backward:', error);
     }
+  };
+
+  const toggleRepeat = () => {
+    setIsRepeating(!isRepeating);
+    console.log(isRepeating ? '🔁 Repeat off' : '🔁 Repeat on');
   };
 
   const formatTime = (millis: number) => {
