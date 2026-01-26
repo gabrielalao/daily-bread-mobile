@@ -23,15 +23,6 @@ config.transformer = {
   }),
 };
 
-// Cache configuration for faster rebuilds
-config.cacheStores = [
-  {
-    // Use file system cache
-    name: 'file',
-    path: '.metro-cache',
-  },
-];
-
 // Optimize resolver
 config.resolver = {
   ...config.resolver,
