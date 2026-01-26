@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { Audio } from 'expo-av';
 import { Play, Pause, SkipBack, SkipForward } from 'lucide-react-native';
 
@@ -17,7 +17,7 @@ export function DevotionalMusicPlayer({
   audioSource, 
   devotionId, 
   albumArt, 
-  shouldAutoPlay, 
+  shouldAutoPlay = false, 
   onPlayStateChange 
 }: DevotionalMusicPlayerProps) {
   const { width: windowWidth } = useWindowDimensions();
@@ -30,52 +30,68 @@ export function DevotionalMusicPlayer({
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const isMountedRef = useRef(true);
 
+  // Configure audio mode on mount
   useEffect(() => {
-    return sound ? () => { sound.unloadAsync(); } : undefined;
-  }, [sound]);
+    const configureAudio = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+        });
+      } catch (error) {
+        console.log('Error configuring audio mode:', error);
+      }
+    };
+    
+    configureAudio();
 
+    return () => {
+      isMountedRef.current = false;
+      if (soundRef.current) {
+        soundRef.current.unloadAsync().catch(() => {});
+      }
+    };
+  }, []);
+
+  // Auto-play effect
   useEffect(() => {
     if (shouldAutoPlay && audioSource && !sound && !isLoading && !hasError) {
-      loadSound();
+      console.log('🎵 Auto-playing daily audio...');
+      loadAndPlaySound();
     }
   }, [shouldAutoPlay, audioSource]);
 
+  // Notify parent of play state changes
   useEffect(() => {
     if (onPlayStateChange) {
       onPlayStateChange(isPlaying);
     }
   }, [isPlaying]);
 
+  // Cleanup when devotionId changes
+  useEffect(() => {
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync().catch(() => {});
+        soundRef.current = null;
+      }
+    };
+  }, [devotionId]);
+
   if (!audioSource || hasError) {
     return null;
   }
 
-  const loadSound = async () => {
-    try {
-      setIsLoading(true);
-      setHasError(false);
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        audioSource,
-        { shouldPlay: true },
-        onPlaybackStatusUpdate
-      );
-      setSound(newSound);
-      const status = await newSound.getStatusAsync();
-      if (status.isLoaded) {
-        setDuration(status.durationMillis || 0);
-      }
-    } catch (error) {
-      console.error('Error loading sound:', error);
-      setHasError(true);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const onPlaybackStatusUpdate = (status: any) => {
+    if (!isMountedRef.current) return;
+    
     if (status.isLoaded) {
-      setPosition(status.positionMillis);
+      setPosition(status.positionMillis || 0);
       setDuration(status.durationMillis || 0);
       setIsPlaying(status.isPlaying);
 
@@ -83,32 +99,116 @@ export function DevotionalMusicPlayer({
         setIsPlaying(false);
         setPosition(0);
       }
+    } else if (status.error) {
+      console.error('Playback error:', status.error);
+      setHasError(true);
+      setIsLoading(false);
+    }
+  };
+
+  const loadAndPlaySound = async () => {
+    if (isLoading) return;
+    
+    try {
+      setIsLoading(true);
+      setHasError(false);
+
+      // Unload existing sound if any
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+
+      console.log('🎵 Loading audio...');
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        audioSource,
+        { 
+          shouldPlay: true,
+          progressUpdateIntervalMillis: 500,
+        },
+        onPlaybackStatusUpdate
+      );
+
+      if (!isMountedRef.current) {
+        await newSound.unloadAsync();
+        return;
+      }
+
+      soundRef.current = newSound;
+      setSound(newSound);
+      
+      const status = await newSound.getStatusAsync();
+      if (status.isLoaded) {
+        setDuration(status.durationMillis || 0);
+        setIsPlaying(status.isPlaying);
+        console.log('✅ Audio loaded successfully');
+      }
+    } catch (error) {
+      console.error('❌ Error loading sound:', error);
+      setHasError(true);
+      setIsPlaying(false);
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
   const togglePlayPause = async () => {
-    if (!sound) {
-      await loadSound();
-      return;
-    }
-    if (isPlaying) {
-      await sound.pauseAsync();
-    } else {
-      await sound.playAsync();
+    try {
+      if (!sound || !soundRef.current) {
+        // First time - load and play
+        await loadAndPlaySound();
+        return;
+      }
+
+      const status = await soundRef.current.getStatusAsync();
+      
+      if (!status.isLoaded) {
+        // Sound was unloaded, reload it
+        await loadAndPlaySound();
+        return;
+      }
+
+      if (isPlaying) {
+        await soundRef.current.pauseAsync();
+        console.log('⏸️ Paused');
+      } else {
+        await soundRef.current.playAsync();
+        console.log('▶️ Playing');
+      }
+    } catch (error) {
+      console.error('Error toggling play/pause:', error);
+      // Try to reload on error
+      await loadAndPlaySound();
     }
   };
 
   const skipForward = async () => {
-    if (sound) {
-      const newPosition = Math.min(position + 15000, duration);
-      await sound.setPositionAsync(newPosition);
+    if (!soundRef.current) return;
+    
+    try {
+      const status = await soundRef.current.getStatusAsync();
+      if (status.isLoaded) {
+        const newPosition = Math.min(position + 15000, duration);
+        await soundRef.current.setPositionAsync(newPosition);
+      }
+    } catch (error) {
+      console.error('Error skipping forward:', error);
     }
   };
 
   const skipBackward = async () => {
-    if (sound) {
-      const newPosition = Math.max(position - 15000, 0);
-      await sound.setPositionAsync(newPosition);
+    if (!soundRef.current) return;
+    
+    try {
+      const status = await soundRef.current.getStatusAsync();
+      if (status.isLoaded) {
+        const newPosition = Math.max(position - 15000, 0);
+        await soundRef.current.setPositionAsync(newPosition);
+      }
+    } catch (error) {
+      console.error('Error skipping backward:', error);
     }
   };
 
@@ -189,9 +289,10 @@ export function DevotionalMusicPlayer({
             ]}
             onPress={togglePlayPause}
             disabled={isLoading}
+            activeOpacity={0.7}
           >
             {isLoading ? (
-              <Text style={styles.loadingDot}>...</Text>
+              <ActivityIndicator size="small" color="#1F1F1F" />
             ) : isPlaying ? (
               <Pause size={playIconSize} color='#1F1F1F' fill='#1F1F1F' />
             ) : (
@@ -224,6 +325,7 @@ export function DevotionalMusicPlayer({
           style={[styles.skipButton, { padding: isSmallPhone ? 6 : 8, gap: isSmallPhone ? 2 : 4 }]}
           onPress={skipBackward}
           disabled={!sound || isLoading}
+          activeOpacity={0.7}
         >
           <SkipBack
             size={skipIconSize}
@@ -236,6 +338,7 @@ export function DevotionalMusicPlayer({
           style={[styles.skipButton, { padding: isSmallPhone ? 6 : 8, gap: isSmallPhone ? 2 : 4 }]}
           onPress={skipForward}
           disabled={!sound || isLoading}
+          activeOpacity={0.7}
         >
           <SkipForward
             size={skipIconSize}
@@ -300,11 +403,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
-  },
-  loadingDot: {
-    color: '#1F1F1F',
-    fontSize: 24,
-    fontWeight: 'bold',
   },
   progressContainer: {
     flexDirection: 'row',
