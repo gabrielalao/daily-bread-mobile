@@ -1,22 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions } from 'react-native';
 import { Audio } from 'expo-av';
 import { Play, Pause, SkipBack, SkipForward } from 'lucide-react-native';
-import colors from '@/constants/colors';
-
-const { width: screenWidth } = Dimensions.get('window');
-const isTablet = screenWidth >= 768;
 
 interface DevotionalMusicPlayerProps {
   title: string;
-  audioSource: any; // require() result for the audio file, or null if not available
+  audioSource: any;
   devotionId: string;
-  albumArt?: any; // Optional album art image source
-  shouldAutoPlay?: boolean; // Auto-play flag from parent
-  onPlayStateChange?: (isPlaying: boolean) => void; // Callback when play state changes
+  albumArt?: any;
+  shouldAutoPlay?: boolean;
+  onPlayStateChange?: (isPlaying: boolean) => void;
 }
 
-export function DevotionalMusicPlayer({ title, audioSource, devotionId, albumArt, shouldAutoPlay, onPlayStateChange }: DevotionalMusicPlayerProps) {
+export function DevotionalMusicPlayer({ 
+  title, 
+  audioSource, 
+  devotionId, 
+  albumArt, 
+  shouldAutoPlay, 
+  onPlayStateChange 
+}: DevotionalMusicPlayerProps) {
+  const { width: windowWidth } = useWindowDimensions();
+  const isTablet = windowWidth >= 768;
+  const isSmallPhone = windowWidth < 375;
+
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
@@ -24,37 +31,22 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId, albumArt
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
 
-  // All hooks must be called before any early returns
   useEffect(() => {
-    return sound
-      ? () => {
-          sound.unloadAsync();
-        }
-      : undefined;
+    return sound ? () => { sound.unloadAsync(); } : undefined;
   }, [sound]);
 
-  // Auto-play effect when shouldAutoPlay flag is set
   useEffect(() => {
     if (shouldAutoPlay && audioSource && !sound && !isLoading && !hasError) {
-      console.log('Auto-playing daily audio...');
       loadSound();
     }
   }, [shouldAutoPlay, audioSource]);
 
-  // Notify parent of play state changes
   useEffect(() => {
     if (onPlayStateChange) {
       onPlayStateChange(isPlaying);
     }
   }, [isPlaying]);
 
-  // Early returns must come AFTER all hooks
-  if (!audioSource || hasError) {
-    return null;
-  }
-
-  // If no audio source or error, don't render the player
-  // This must come AFTER all hooks are called
   if (!audioSource || hasError) {
     return null;
   }
@@ -65,7 +57,7 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId, albumArt
       setHasError(false);
       const { sound: newSound } = await Audio.Sound.createAsync(
         audioSource,
-        { shouldPlay: true }, // Auto-play after loading
+        { shouldPlay: true },
         onPlaybackStatusUpdate
       );
       setSound(newSound);
@@ -96,12 +88,9 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId, albumArt
 
   const togglePlayPause = async () => {
     if (!sound) {
-      // First time - load and play
       await loadSound();
-      // After loading, the sound will auto-play
       return;
     }
-
     if (isPlaying) {
       await sound.pauseAsync();
     } else {
@@ -132,79 +121,127 @@ export function DevotionalMusicPlayer({ title, audioSource, devotionId, albumArt
 
   const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
 
+  // Responsive sizes
+  const albumArtSize = isTablet ? 96 : isSmallPhone ? 56 : 64;
+  const playButtonSize = isTablet ? 64 : isSmallPhone ? 44 : 48;
+  const playIconSize = isTablet ? 32 : isSmallPhone ? 22 : 24;
+  const skipIconSize = isTablet ? 24 : isSmallPhone ? 16 : 20;
+  const containerPadding = isTablet ? 24 : isSmallPhone ? 12 : 16;
+  const titleFontSize = isTablet ? 20 : isSmallPhone ? 14 : 16;
+  const artistFontSize = isTablet ? 16 : isSmallPhone ? 12 : 14;
+  const timeFontSize = isTablet ? 14 : isSmallPhone ? 10 : 12;
+  const skipTextSize = isTablet ? 14 : isSmallPhone ? 10 : 12;
+
   return (
-    <View style={styles.container}>
-      {/* Horizontal Layout like Spotify */}
-      <View style={styles.playerContent}>
-        {/* Album Art */}
+    <View style={[
+      styles.container,
+      {
+        padding: containerPadding,
+        maxWidth: isTablet ? 800 : '100%',
+        marginHorizontal: isTablet ? 20 : 0,
+      }
+    ]}>
+      <View style={[styles.playerContent, { marginBottom: isSmallPhone ? 8 : 12 }]}>
         {albumArt ? (
           <Image
             source={albumArt}
-            style={styles.albumArt}
+            style={[
+              styles.albumArt,
+              {
+                width: albumArtSize,
+                height: albumArtSize,
+                marginRight: isSmallPhone ? 8 : 12,
+              }
+            ]}
             resizeMode="cover"
           />
         ) : (
-          <View style={styles.albumArtPlaceholder}>
-            <Text style={styles.albumArtIcon}>🕊️</Text>
+          <View style={[
+            styles.albumArtPlaceholder,
+            {
+              width: albumArtSize,
+              height: albumArtSize,
+              marginRight: isSmallPhone ? 8 : 12,
+            }
+          ]}>
+            <Text style={{ fontSize: isTablet ? 48 : isSmallPhone ? 28 : 32 }}>🕊️</Text>
           </View>
         )}
 
-        {/* Song Info & Controls Combined */}
         <View style={styles.infoAndControls}>
-          {/* Song Title and Artist */}
           <View style={styles.songInfo}>
-            <Text style={styles.songTitle} numberOfLines={1}>
+            <Text style={[styles.songTitle, { fontSize: titleFontSize, marginBottom: isSmallPhone ? 2 : 4 }]} numberOfLines={1}>
               {title}
             </Text>
-            <Text style={styles.artistName} numberOfLines={1}>
+            <Text style={[styles.artistName, { fontSize: artistFontSize }]} numberOfLines={1}>
               Christian Daily Bread
             </Text>
           </View>
 
-          {/* Play/Pause Button */}
           <TouchableOpacity
-            style={styles.playButton}
+            style={[
+              styles.playButton,
+              {
+                width: playButtonSize,
+                height: playButtonSize,
+                borderRadius: playButtonSize / 2,
+              }
+            ]}
             onPress={togglePlayPause}
             disabled={isLoading}
           >
             {isLoading ? (
               <Text style={styles.loadingDot}>...</Text>
             ) : isPlaying ? (
-              <Pause size={24} color='#1F1F1F' fill='#1F1F1F' />
+              <Pause size={playIconSize} color='#1F1F1F' fill='#1F1F1F' />
             ) : (
-              <Play size={24} color='#1F1F1F' fill='#1F1F1F' />
+              <Play size={playIconSize} color='#1F1F1F' fill='#1F1F1F' />
             )}
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Progress Bar - Full Width Below */}
-      <View style={styles.progressContainer}>
-        <Text style={styles.timeText}>{formatTime(position)}</Text>
-        <View style={styles.progressBar}>
+      <View style={[styles.progressContainer, { marginBottom: isSmallPhone ? 6 : 8 }]}>
+        <Text style={[styles.timeText, { fontSize: timeFontSize, width: isTablet ? 50 : isSmallPhone ? 40 : 45 }]}>
+          {formatTime(position)}
+        </Text>
+        <View style={[
+          styles.progressBar,
+          {
+            height: isTablet ? 6 : isSmallPhone ? 3 : 4,
+            marginHorizontal: isSmallPhone ? 6 : 8,
+          }
+        ]}>
           <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
         </View>
-        <Text style={styles.timeText}>{formatTime(duration)}</Text>
+        <Text style={[styles.timeText, { fontSize: timeFontSize, width: isTablet ? 50 : isSmallPhone ? 40 : 45 }]}>
+          {formatTime(duration)}
+        </Text>
       </View>
 
-      {/* Skip Controls */}
-      <View style={styles.skipControls}>
+      <View style={[styles.skipControls, { gap: isTablet ? 32 : isSmallPhone ? 16 : 24 }]}>
         <TouchableOpacity
-          style={styles.skipButton}
+          style={[styles.skipButton, { padding: isSmallPhone ? 6 : 8, gap: isSmallPhone ? 2 : 4 }]}
           onPress={skipBackward}
           disabled={!sound || isLoading}
         >
-          <SkipBack size={20} color={!sound || isLoading ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.7)'} />
-          <Text style={styles.skipText}>15s</Text>
+          <SkipBack
+            size={skipIconSize}
+            color={!sound || isLoading ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.7)'}
+          />
+          <Text style={[styles.skipText, { fontSize: skipTextSize }]}>15s</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.skipButton}
+          style={[styles.skipButton, { padding: isSmallPhone ? 6 : 8, gap: isSmallPhone ? 2 : 4 }]}
           onPress={skipForward}
           disabled={!sound || isLoading}
         >
-          <SkipForward size={20} color={!sound || isLoading ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.7)'} />
-          <Text style={styles.skipText}>15s</Text>
+          <SkipForward
+            size={skipIconSize}
+            color={!sound || isLoading ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.7)'}
+          />
+          <Text style={[styles.skipText, { fontSize: skipTextSize }]}>15s</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -215,37 +252,27 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#1F1F1F',
     borderRadius: 16,
-    padding: 16,
-    marginTop: 20,
+    marginTop: 16,
+    alignSelf: 'center',
+    width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowRadius: 8,
+    elevation: 8,
   },
   playerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
   },
   albumArt: {
-    width: 64,
-    height: 64,
     borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    marginRight: 12,
   },
   albumArtPlaceholder: {
-    width: 64,
-    height: 64,
     borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    marginRight: 12,
-    alignItems: 'center',
+    backgroundColor: '#2A2A2A',
     justifyContent: 'center',
-  },
-  albumArtIcon: {
-    fontSize: 28,
+    alignItems: 'center',
   },
   infoAndControls: {
     flex: 1,
@@ -255,27 +282,20 @@ const styles = StyleSheet.create({
   },
   songInfo: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 8,
   },
   songTitle: {
-    fontSize: 15,
-    fontWeight: '700' as const,
     color: '#FFFFFF',
-    marginBottom: 4,
+    fontWeight: '600',
   },
   artistName: {
-    fontSize: 12,
     color: 'rgba(255, 255, 255, 0.6)',
-    fontWeight: '500' as const,
   },
   playButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
     backgroundColor: '#FFFFFF',
-    alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#FFFFFF',
+    alignItems: 'center',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -283,47 +303,37 @@ const styles = StyleSheet.create({
   },
   loadingDot: {
     color: '#1F1F1F',
-    fontSize: 16,
-    fontWeight: '700' as const,
+    fontSize: 24,
+    fontWeight: 'bold',
   },
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+  },
+  timeText: {
+    color: 'rgba(255, 255, 255, 0.6)',
   },
   progressBar: {
     flex: 1,
-    height: 4,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 2,
     overflow: 'hidden',
-    marginHorizontal: 8,
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#FFFFFF',
     borderRadius: 2,
   },
-  timeText: {
-    fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontWeight: '500' as const,
-    width: 35,
-    textAlign: 'center',
-  },
   skipControls: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 32,
+    alignItems: 'center',
   },
   skipButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
   },
   skipText: {
-    fontSize: 10,
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontWeight: '600' as const,
+    color: 'rgba(255, 255, 255, 0.7)',
   },
 });
