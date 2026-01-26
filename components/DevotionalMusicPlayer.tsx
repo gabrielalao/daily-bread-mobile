@@ -341,6 +341,18 @@ export function DevotionalMusicPlayer({
         </TouchableOpacity>
 
         <TouchableOpacity
+          style={[styles.repeatButton, { padding: isSmallPhone ? 6 : 8 }]}
+          onPress={toggleRepeat}
+          activeOpacity={0.7}
+        >
+          <Repeat1
+            size={skipIconSize}
+            color={isRepeating ? '#1DB954' : 'rgba(255, 255, 255, 0.4)'}
+            fill={isRepeating ? '#1DB954' : 'none'}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={[styles.skipButton, { padding: isSmallPhone ? 6 : 8, gap: isSmallPhone ? 2 : 4 }]}
           onPress={skipForward}
           disabled={!sound || isLoading}
@@ -435,6 +447,10 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     flexDirection: 'row',
+    alignItems: 'center',
+  },
+  repeatButton: {
+    justifyContent: 'center',
     alignItems: 'center',
   },
   skipText: {
