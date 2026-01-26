@@ -51,6 +51,10 @@ export function getAlbumArtForDevotion(devotionTitle: string): any | null {
       case 'contentment-is-wealth':
         return require('@/assets/audio/contentment-is-wealth.jpg');
       
+      // Day 7: Generosity Opens Heaven's Windows
+      case 'generosity-opens-heavens-windows':
+        return require('@/assets/audio/generosity-opens-heavens-windows.jpg');
+      
       // Day 8: Your Business Is Your Ministry
       case 'your-business-is-your-ministry':
         return require('@/assets/audio/your-business-is-your-ministry.jpg');
@@ -75,6 +79,14 @@ export function getAlbumArtForDevotion(devotionTitle: string): any | null {
       case 'excellence-as-worship':
         return require('@/assets/audio/excellence-as-worship.jpg');
       
+      // Day 14: Building Wealth God's Way
+      case 'building-wealth-gods-way':
+        return require('@/assets/audio/building-wealth-gods-way.jpg');
+      
+      // Day 15: Your Body, God's Temple
+      case 'your-body-gods-temple':
+        return require('@/assets/audio/your-body-gods-temple.jpg');
+      
       // Day 16: Parenting as Discipleship
       case 'parenting-as-discipleship':
         return require('@/assets/audio/parenting-as-discipleship.jpg');
@@ -87,6 +99,10 @@ export function getAlbumArtForDevotion(devotionTitle: string): any | null {
       case 'the-debt-free-dream':
         return require('@/assets/audio/the-debt-free-dream.jpg');
       
+      // Day 19: Your Career, God's Calling
+      case 'your-career-gods-calling':
+        return require('@/assets/audio/your-career-gods-calling.jpg');
+      
       // Day 20: The Freedom of a Budget
       case 'the-freedom-of-a-budget':
         return require('@/assets/audio/the-freedom-of-a-budget.jpg');
@@ -94,6 +110,10 @@ export function getAlbumArtForDevotion(devotionTitle: string): any | null {
       // Day 21: Words That Heal
       case 'words-that-heal':
         return require('@/assets/audio/words-that-heal.jpg');
+      
+      // Day 22: Increasing Your Income, God's Way
+      case 'increasing-your-income-gods-way':
+        return require('@/assets/audio/increasing-your-income-gods-way.jpg');
       
       // Day 23: True Financial Freedom
       case 'true-financial-freedom':
