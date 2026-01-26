@@ -12,7 +12,7 @@ import { requireOnlineOrPrompt } from "@/utils/networkPolicy";
 import { BibleVersionPickerModal } from "@/components/BibleVersionPickerModal";
 import { getEffectiveBibleVersionId } from "@/utils/bibleVersionPolicy";
 import { A11yText as Text } from "@/components/A11yText";
-import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Share2, Edit3, Trash2, Plus } from "lucide-react-native";
+import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Share2, Edit3, Trash2, Plus, Play } from "lucide-react-native";
 import React, { useState } from "react";
 import { useFocusEffect } from "expo-router";
 import {
@@ -45,6 +45,7 @@ export default function SettingsScreen() {
     setAccessibilityLargeTextEnabled,
     setAccessibilityDyslexiaFontEnabled,
     setAccessibilityBoldTextEnabled,
+    setAutoPlayDailyAudio,
   } = useContent();
   const { scheduleSession, cancelSession, updateSession, getUpcomingSessions } = useScheduledSessions();
   const { isOnline } = useNetworkStatus();
@@ -493,6 +494,24 @@ export default function SettingsScreen() {
                 <Switch
                   value={userPreferences.accessibilityBoldTextEnabled}
                   onValueChange={setAccessibilityBoldTextEnabled}
+                  trackColor={{ false: colors.light.borderLight, true: colors.light.primary }}
+                  thumbColor={Platform.OS === 'android' ? colors.light.text : undefined}
+                />
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.settingRow}>
+                <View style={styles.iconContainer}>
+                  <Play size={20} color={colors.light.primary} />
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingLabel}>Auto-Play Daily Audio</Text>
+                  <Text style={styles.settingDescription}>Automatically play music at 5 AM when content changes</Text>
+                </View>
+                <Switch
+                  value={userPreferences.autoPlayDailyAudio}
+                  onValueChange={setAutoPlayDailyAudio}
                   trackColor={{ false: colors.light.borderLight, true: colors.light.primary }}
                   thumbColor={Platform.OS === 'android' ? colors.light.text : undefined}
                 />
@@ -1056,6 +1075,7 @@ export default function SettingsScreen() {
               <Text style={styles.legalSectionTitle}>What works offline</Text>
               <Text style={styles.legalParagraph}>
                 • Home (daily devotionals, reflection, prayer prompt){'\n'}
+                • Daily Music Player (all 33 tracks + album art){'\n'}
                 • Prayers (daily prayer + guides){'\n'}
                 • Study (plans + insights) and reading passages in KJV{'\n'}
                 • Bible reading in KJV (fully offline){'\n'}

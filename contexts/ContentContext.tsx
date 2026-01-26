@@ -32,6 +32,7 @@ export type UserPreferences = {
   accessibilityLargeTextEnabled: boolean;
   accessibilityDyslexiaFontEnabled: boolean;
   accessibilityBoldTextEnabled: boolean;
+  autoPlayDailyAudio: boolean; // Auto-play music at 5 AM when content changes
 };
 
 const CONTENT_HISTORY_KEY = '@content_history';
@@ -75,6 +76,7 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     accessibilityLargeTextEnabled: false,
     accessibilityDyslexiaFontEnabled: false,
     accessibilityBoldTextEnabled: false,
+    autoPlayDailyAudio: true, // ON by default
   });
 
   const [userId, setUserId] = useState<string>('');
@@ -367,6 +369,10 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     await updatePreferences({ accessibilityBoldTextEnabled: enabled });
   };
 
+  const setAutoPlayDailyAudio = async (enabled: boolean) => {
+    await updatePreferences({ autoPlayDailyAudio: enabled });
+  };
+
   const setAppLanguage = async (languageId: string) => {
     // If the user selects a non-English UI language, auto-enable content translation so
     // the app reads fully in that language (they can still turn it off manually).
@@ -415,6 +421,7 @@ export const [ContentProvider, useContent] = createContextHook(() => {
     setAccessibilityLargeTextEnabled,
     setAccessibilityDyslexiaFontEnabled,
     setAccessibilityBoldTextEnabled,
+    setAutoPlayDailyAudio,
     setAppLanguage,
     setAutoTranslateContent,
     getStudyPlanCycle,

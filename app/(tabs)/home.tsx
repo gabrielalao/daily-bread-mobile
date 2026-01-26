@@ -11,6 +11,7 @@ import { NetworkStatusDot } from "@/components/NetworkStatusDot";
 import { A11yText as Text } from "@/components/A11yText";
 import { DevotionalMusicPlayer } from "@/components/DevotionalMusicPlayer";
 import { getDynamicAudioSource } from "@/utils/audioHelper";
+import { getAlbumArtForDevotion } from "@/utils/albumArtHelper";
 import { BookOpen, Calendar, Clock, X, Upload } from "lucide-react-native";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Animated, ScrollView, StyleSheet, View, TouchableOpacity, Dimensions, Modal } from "react-native";
@@ -44,6 +45,8 @@ export default function HomeScreen() {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [activeCardType, setActiveCardType] = useState<'verse' | 'reflection' | 'prayer' | null>(null);
   const hasSetInitialDevotional = useRef(false);
+  const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
+  const lastDayChecked = useRef<number | null>(null);
   
   const handleCardPress = (cardType: 'verse' | 'reflection' | 'prayer') => {
     setActiveCardType(cardType);
@@ -125,6 +128,33 @@ export default function HomeScreen() {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
     }, [])
   );
+
+  useEffect(() => {
+    const checkForNewDay = () => {
+      const now = new Date();
+      const currentDay = getDayOfYear(now);
+      
+      // If it's a new day and auto-play is enabled
+      if (lastDayChecked.current !== null && lastDayChecked.current !== currentDay) {
+        const hour = now.getHours();
+        // Only auto-play if it's at or after 5 AM and user has auto-play enabled
+        if (hour >= 5 && userPreferences.autoPlayDailyAudio && !viewingPastContent) {
+          console.log('New day detected at 5 AM - enabling auto-play');
+          setShouldAutoPlay(true);
+        }
+      }
+      
+      lastDayChecked.current = currentDay;
+    };
+    
+    // Check immediately
+    checkForNewDay();
+    
+    // Check every minute for day changes
+    const interval = setInterval(checkForNewDay, 60000);
+    
+    return () => clearInterval(interval);
+  }, [userPreferences.autoPlayDailyAudio, viewingPastContent]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -288,7 +318,15 @@ export default function HomeScreen() {
           <DevotionalMusicPlayer
             title={devotional.title}
             audioSource={getDynamicAudioSource(devotional.title)}
+            albumArt={getAlbumArtForDevotion(devotional.title)}
             devotionId={devotional.id}
+            shouldAutoPlay={shouldAutoPlay}
+            onPlayStateChange={(playing) => {
+              // Reset auto-play flag after first play
+              if (playing && shouldAutoPlay) {
+                setShouldAutoPlay(false);
+              }
+            }}
           />
         </Animated.View>
       </ScrollView>
@@ -314,7 +352,9 @@ export default function HomeScreen() {
 
             <RNCalendar
               onDayPress={(day) => {
-                const selected = new Date(day.dateString);
+                // Parse date string correctly in local timezone
+                const [year, month, dayNum] = day.dateString.split('-').map(Number);
+                const selected = new Date(year, month - 1, dayNum, 12, 0, 0); // Set to noon to avoid timezone issues
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 
@@ -323,6 +363,7 @@ export default function HomeScreen() {
                   setSelectedDate(selected);
                   setViewingPastContent(selected.toDateString() !== today.toDateString());
                   setShowCalendar(false);
+                  console.log(`Selected date: ${selected.toDateString()}, Day of year: ${getDayOfYear(selected)}`);
                 }
               }}
               maxDate={new Date().toISOString().split('T')[0]}
