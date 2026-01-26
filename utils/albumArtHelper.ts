@@ -59,6 +59,10 @@ export function getAlbumArtForDevotion(devotionTitle: string): any | null {
       case 'integrity-over-profit':
         return require('@/assets/audio/integrity-over-profit.jpg');
       
+      // Day 10: Faithful With Little, Trusted With Much
+      case 'faithful-with-little-trusted-with-much':
+        return require('@/assets/audio/faithful-with-little-trusted-with-much.jpg');
+      
       // Day 11: God-Sized Vision
       case 'god-sized-vision':
         return require('@/assets/audio/god-sized-vision.jpg');
