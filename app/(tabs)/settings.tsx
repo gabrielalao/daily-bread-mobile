@@ -1075,6 +1075,7 @@ export default function SettingsScreen() {
               <Text style={styles.legalSectionTitle}>What works offline</Text>
               <Text style={styles.legalParagraph}>
                 • Home (daily devotionals, reflection, prayer prompt){'\n'}
+                • Daily Music Player (all 33 tracks + album art){'\n'}
                 • Prayers (daily prayer + guides){'\n'}
                 • Study (plans + insights) and reading passages in KJV{'\n'}
                 • Bible reading in KJV (fully offline){'\n'}
