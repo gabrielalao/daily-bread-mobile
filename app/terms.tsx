@@ -25,6 +25,13 @@ export default function TermsOfServiceScreen() {
           Welcome to Daily Bread! These Terms of Service (&quot;Terms&quot;) govern your use of our mobile application, website, and services. By using Daily Bread, you agree to be bound by these Terms. Please read them carefully.
         </Text>
 
+        <View style={styles.infoBox}>
+          <Text style={styles.infoTitle}>No Subscriptions Required</Text>
+          <Text style={styles.infoText}>
+            Daily Bread is completely free to download and use. We do not currently offer any paid subscriptions or in-app purchases. All features are available at no cost.
+          </Text>
+        </View>
+
         <Text style={styles.sectionTitle}>Use of Service</Text>
         <Text style={styles.paragraph}>
           Daily Bread is available for personal, non-commercial use. You are responsible for complying with these Terms.
@@ -54,7 +61,12 @@ export default function TermsOfServiceScreen() {
 
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>Q: Is Daily Bread free to download and use?</Text>
-          <Text style={styles.faqAnswer}>A: Yes, Daily Bread is completely free to download and use, with no hidden fees or subscriptions.</Text>
+          <Text style={styles.faqAnswer}>A: Yes, Daily Bread is completely free to download and use. All core features including devotionals, prayers, Bible study, and the AI therapy chat are available at no cost, with no hidden fees.</Text>
+        </View>
+
+        <View style={styles.faqItem}>
+          <Text style={styles.faqQuestion}>Q: Does Daily Bread have any subscriptions or in-app purchases?</Text>
+          <Text style={styles.faqAnswer}>A: No, Daily Bread does not currently offer any paid subscriptions or in-app purchases. The app is completely free to use.</Text>
         </View>
 
         <View style={styles.faqItem}>

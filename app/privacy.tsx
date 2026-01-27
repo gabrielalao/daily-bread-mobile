@@ -54,7 +54,12 @@ export default function PrivacyPolicyScreen() {
 
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>Q: Is Daily Bread free to download and use?</Text>
-          <Text style={styles.faqAnswer}>A: Yes, Daily Bread is completely free to download and use, with no hidden fees or subscriptions.</Text>
+          <Text style={styles.faqAnswer}>A: Yes, Daily Bread is completely free to download and use. All features are available at no cost, with no hidden fees.</Text>
+        </View>
+
+        <View style={styles.faqItem}>
+          <Text style={styles.faqQuestion}>Q: Does Daily Bread have any subscriptions or in-app purchases?</Text>
+          <Text style={styles.faqAnswer}>A: No, Daily Bread does not currently offer any paid subscriptions or in-app purchases. The app is completely free to use.</Text>
         </View>
 
         <View style={styles.faqItem}>
