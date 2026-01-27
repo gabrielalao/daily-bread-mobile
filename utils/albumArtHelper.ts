@@ -51,10 +51,6 @@ export function getAlbumArtForDevotion(devotionTitle: string): any | null {
       case 'contentment-is-wealth':
         return require('@/assets/audio/contentment-is-wealth.jpg');
       
-      // Day 7: Generosity Opens Heaven's Windows
-      case 'generosity-opens-heavens-windows':
-        return require('@/assets/audio/generosity-opens-heavens-windows.jpg');
-      
       // Day 8: Your Business Is Your Ministry
       case 'your-business-is-your-ministry':
         return require('@/assets/audio/your-business-is-your-ministry.jpg');
@@ -79,14 +75,6 @@ export function getAlbumArtForDevotion(devotionTitle: string): any | null {
       case 'excellence-as-worship':
         return require('@/assets/audio/excellence-as-worship.jpg');
       
-      // Day 14: Building Wealth God's Way
-      case 'building-wealth-gods-way':
-        return require('@/assets/audio/building-wealth-gods-way.jpg');
-      
-      // Day 15: Your Body, God's Temple
-      case 'your-body-gods-temple':
-        return require('@/assets/audio/your-body-gods-temple.jpg');
-      
       // Day 16: Parenting as Discipleship
       case 'parenting-as-discipleship':
         return require('@/assets/audio/parenting-as-discipleship.jpg');
@@ -99,10 +87,6 @@ export function getAlbumArtForDevotion(devotionTitle: string): any | null {
       case 'the-debt-free-dream':
         return require('@/assets/audio/the-debt-free-dream.jpg');
       
-      // Day 19: Your Career, God's Calling
-      case 'your-career-gods-calling':
-        return require('@/assets/audio/your-career-gods-calling.jpg');
-      
       // Day 20: The Freedom of a Budget
       case 'the-freedom-of-a-budget':
         return require('@/assets/audio/the-freedom-of-a-budget.jpg');
@@ -110,10 +94,6 @@ export function getAlbumArtForDevotion(devotionTitle: string): any | null {
       // Day 21: Words That Heal
       case 'words-that-heal':
         return require('@/assets/audio/words-that-heal.jpg');
-      
-      // Day 22: Increasing Your Income, God's Way
-      case 'increasing-your-income-gods-way':
-        return require('@/assets/audio/increasing-your-income-gods-way.jpg');
       
       // Day 23: True Financial Freedom
       case 'true-financial-freedom':
@@ -159,6 +139,254 @@ export function getAlbumArtForDevotion(devotionTitle: string): any | null {
       case 'breaking-the-comparison-trap':
         return require('@/assets/audio/breaking-the-comparison-trap.jpg');
       
+      // Day 34: Guard Your Heart
+      case 'guard-your-heart':
+        return require('@/assets/audio/guard-your-heart.jpg');
+      
+      // Day 35: The Power of Gratitude
+      case 'the-power-of-gratitude':
+        return require('@/assets/audio/the-power-of-gratitude.jpg');
+      
+      // Day 36: When You Feel Inadequate
+      case 'when-you-feel-inadequate':
+        return require('@/assets/audio/when-you-feel-inadequate.jpg');
+      
+      // Day 37: The Cost of Unforgiveness
+      case 'the-cost-of-unforgiveness':
+        return require('@/assets/audio/the-cost-of-unforgiveness.jpg');
+      
+      // Day 38: Your Words Create Worlds
+      case 'your-words-create-worlds':
+        return require('@/assets/audio/your-words-create-worlds.jpg');
+      
+      // Day 39: The Battle for Your Mind
+      case 'the-battle-for-your-mind':
+        return require('@/assets/audio/the-battle-for-your-mind.jpg');
+      
+      // Day 40: Patience in the Process
+      case 'patience-in-the-process':
+        return require('@/assets/audio/patience-in-the-process.jpg');
+      
+      // Day 41: You Are Not Alone
+      case 'you-are-not-alone':
+        return require('@/assets/audio/you-are-not-alone.jpg');
+      
+      // Day 44: When Prayer Feels Pointless
+      case 'when-prayer-feels-pointless':
+        return require('@/assets/audio/when-prayer-feels-pointless.jpg');
+      
+      // Day 45: Your Identity in Christ
+      case 'your-identity-in-christ':
+        return require('@/assets/audio/your-identity-in-christ.jpg');
+      
+      // Day 46: Investing in Eternity
+      case 'investing-in-eternity':
+        return require('@/assets/audio/investing-in-eternity.jpg');
+      
+      // Day 47: The Gift of Difficult People
+      case 'the-gift-of-difficult-people':
+        return require('@/assets/audio/the-gift-of-difficult-people.jpg');
+      
+      // Day 48: Overcoming Fear with Faith
+      case 'overcoming-fear-with-faith':
+        return require('@/assets/audio/overcoming-fear-with-faith.jpg');
+      
+      // Day 49: The Discipline of Margin
+      case 'the-discipline-of-margin':
+        return require('@/assets/audio/the-discipline-of-margin.jpg');
+      
+      // Day 51: The Sacrifice of Praise
+      case 'the-sacrifice-of-praise':
+        return require('@/assets/audio/the-sacrifice-of-praise.jpg');
+      
+      // Day 52: Breaking Generational Curses
+      case 'breaking-generational-curses':
+        return require('@/assets/audio/breaking-generational-curses.jpg');
+      
+      // Day 54: Your Scars Tell a Story
+      case 'your-scars-tell-a-story':
+        return require('@/assets/audio/your-scars-tell-a-story.jpg');
+      
+      // Day 55: When God Closes Doors
+      case 'when-god-closes-doors':
+        return require('@/assets/audio/when-god-closes-doors.jpg');
+      
+      // Day 56: Stewarding Your Mental Health
+      case 'stewarding-your-mental-health':
+        return require('@/assets/audio/stewarding-your-mental-health.jpg');
+      
+      // Day 57: Fighting for Your Marriage
+      case 'fighting-for-your-marriage':
+        return require('@/assets/audio/fighting-for-your-marriage.jpg');
+      
+      // Day 58: Your Calling Is Costly
+      case 'your-calling-is-costly':
+        return require('@/assets/audio/your-calling-is-costly.jpg');
+      
+      // Day 59: Raising Kingdom Kids
+      case 'raising-kingdom-kids':
+        return require('@/assets/audio/raising-kingdom-kids.jpg');
+      
+      // Day 61: Walking in Humility
+      case 'walking-in-humility':
+        return require('@/assets/audio/walking-in-humility.jpg');
+      
+      // Day 62: Finding Your Community
+      case 'finding-your-community':
+        return require('@/assets/audio/finding-your-community.jpg');
+      
+      // Day 63: The Blessing of Boundaries
+      case 'the-blessing-of-boundaries':
+        return require('@/assets/audio/the-blessing-of-boundaries.jpg');
+      
+      // Day 65: Celebrating Small Wins
+      case 'celebrating-small-wins':
+        return require('@/assets/audio/celebrating-small-wins.jpg');
+      
+      // Day 66: Living with Intentionality
+      case 'living-with-intentionality':
+        return require('@/assets/audio/living-with-intentionality.jpg');
+      
+      // Day 67: The Gift of Mentorship
+      case 'the-gift-of-mentorship':
+        return require('@/assets/audio/the-gift-of-mentorship.jpg');
+      
+      // Day 68: Breaking Free from Addiction
+      case 'breaking-free-from-addiction':
+        return require('@/assets/audio/breaking-free-from-addiction.jpg');
+      
+      // Day 69: Your Unique Gifting
+      case 'your-unique-gifting':
+        return require('@/assets/audio/your-unique-gifting.jpg');
+      
+      // Day 70: Hope for the Prodigal
+      case 'hope-for-the-prodigal':
+        return require('@/assets/audio/hope-for-the-prodigal.jpg');
+      
+      // Day 71: The Power of Fasting
+      case 'the-power-of-fasting':
+        return require('@/assets/audio/the-power-of-fasting.jpg');
+      
+      // Day 72: Transforming Your Thought Life
+      case 'transforming-your-thought-life':
+        return require('@/assets/audio/transforming-your-thought-life.jpg');
+      
+      // Day 73: When God Redirects Your Plans
+      case 'when-god-redirects-your-plans':
+        return require('@/assets/audio/when-god-redirects-your-plans.jpg');
+      
+      // Day 74: Honoring Your Parents
+      case 'honoring-your-parents':
+        return require('@/assets/audio/honoring-your-parents.jpg');
+      
+      // Day 75: Stewarding Your Resources Wisely
+      case 'stewarding-your-resources-wisely':
+        return require('@/assets/audio/stewarding-your-resources-wisely.jpg');
+      
+      // Day 76: The Gift of Singleness
+      case 'the-gift-of-singleness':
+        return require('@/assets/audio/the-gift-of-singleness.jpg');
+      
+      // Day 77: Bearing Good Fruit
+      case 'bearing-good-fruit':
+        return require('@/assets/audio/bearing-good-fruit.jpg');
+      
+      // Day 78: Trusting God With Your Kids
+      case 'trusting-god-with-your-kids':
+        return require('@/assets/audio/trusting-god-with-your-kids.jpg');
+      
+      // Day 79: Overcoming Past Trauma
+      case 'overcoming-past-trauma':
+        return require('@/assets/audio/overcoming-past-trauma.jpg');
+      
+      // Day 80: Living Generously
+      case 'living-generously':
+        return require('@/assets/audio/living-generously.jpg');
+      
+      // Day 81: Your God-Given Purpose
+      case 'your-god-given-purpose':
+        return require('@/assets/audio/your-god-given-purpose.jpg');
+      
+      // Day 82: The Ministry of Listening
+      case 'the-ministry-of-listening':
+        return require('@/assets/audio/the-ministry-of-listening.jpg');
+      
+      // Day 83: Breaking Free from Comparison
+      case 'breaking-free-from-comparison':
+        return require('@/assets/audio/breaking-free-from-comparison.jpg');
+      
+      // Day 84: The Importance of Confession
+      case 'the-importance-of-confession':
+        return require('@/assets/audio/the-importance-of-confession.jpg');
+      
+      // Day 85: Fighting Spiritual Warfare
+      case 'fighting-spiritual-warfare':
+        return require('@/assets/audio/fighting-spiritual-warfare.jpg');
+      
+      // Day 86: Redeeming Your Time
+      case 'redeeming-your-time':
+        return require('@/assets/audio/redeeming-your-time.jpg');
+      
+      // Day 87: The Power of Corporate Worship
+      case 'the-power-of-corporate-worship':
+        return require('@/assets/audio/the-power-of-corporate-worship.jpg');
+      
+      // Day 88: When Your Faith Is Tested
+      case 'when-your-faith-is-tested':
+        return require('@/assets/audio/when-your-faith-is-tested.jpg');
+      
+      // Day 89: The Blessing of Contentment
+      case 'the-blessing-of-contentment':
+        return require('@/assets/audio/the-blessing-of-contentment.jpg');
+      
+      // Day 90: Living on Mission
+      case 'living-on-mission':
+        return require('@/assets/audio/living-on-mission.jpg');
+      
+      // Day 91: The Power of Consistency
+      case 'the-power-of-consistency':
+        return require('@/assets/audio/the-power-of-consistency.jpg');
+      
+      // Day 92: Extending Grace
+      case 'extending-grace':
+        return require('@/assets/audio/extending-grace.jpg');
+      
+      // Day 93: The Danger of Pride
+      case 'the-danger-of-pride':
+        return require('@/assets/audio/the-danger-of-pride.jpg');
+      
+      // Day 95: Practicing Patience
+      case 'practicing-patience':
+        return require('@/assets/audio/practicing-patience.jpg');
+      
+      // Day 96: Authenticity Over Perfection
+      case 'authenticity-over-perfection':
+        return require('@/assets/audio/authenticity-over-perfection.jpg');
+      
+      // Day 97: Hope in Dark Times
+      case 'hope-in-dark-times':
+        return require('@/assets/audio/hope-in-dark-times.jpg');
+      
+      // Day 100: Embracing Change
+      case 'embracing-change':
+        return require('@/assets/audio/embracing-change.jpg');
+      
+      // Day 101: The Blessing of Obedience
+      case 'the-blessing-of-obedience':
+        return require('@/assets/audio/the-blessing-of-obedience.jpg');
+      
+      // Day 102: Letting God Fight
+      case 'letting-god-fight':
+        return require('@/assets/audio/letting-god-fight.jpg');
+      
+      // Day 103: Faithful in Obscurity
+      case 'faithful-in-obscurity':
+        return require('@/assets/audio/faithful-in-obscurity.jpg');
+      
+      // Day 104: The Ministry of Encouragement
+      case 'the-ministry-of-encouragement':
+        return require('@/assets/audio/the-ministry-of-encouragement.jpg');
+      
       // Day 125: The Gift of Today
       case 'the-gift-of-today':
         return require('@/assets/audio/the-gift-of-today.jpg');
@@ -166,6 +394,26 @@ export function getAlbumArtForDevotion(devotionTitle: string): any | null {
       // Day 132: The Ministry of Presence
       case 'the-ministry-of-presence':
         return require('@/assets/audio/the-ministry-of-presence.jpg');
+      
+      // Day 203: Practicing Patience
+      case 'practicing-patience':
+        return require('@/assets/audio/practicing-patience.jpg');
+      
+      // Day 205: Living Generously
+      case 'living-generously':
+        return require('@/assets/audio/living-generously.jpg');
+      
+      // Day 229: Walking in Humility
+      case 'walking-in-humility':
+        return require('@/assets/audio/walking-in-humility.jpg');
+      
+      // Day 271: The Power of Gratitude
+      case 'the-power-of-gratitude':
+        return require('@/assets/audio/the-power-of-gratitude.jpg');
+      
+      // Day 347: Living Generously
+      case 'living-generously':
+        return require('@/assets/audio/living-generously.jpg');
       
       default:
         console.log(`ℹ️  No album art found for: ${fileName}.jpg`);
