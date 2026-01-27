@@ -827,7 +827,7 @@ export default function SettingsScreen() {
               <Text style={styles.legalDate}>Last modified on December 14, 2025</Text>
 
               <Text style={styles.legalParagraph}>
-                Welcome to Daily Bread! These Terms of Service (&quot;Terms&quot;) govern your use of our mobile application, website, and services. By using Daily Bread, you agree to be bound by these Terms. Please read them carefully.
+                Welcome to Christian Daily Bread! These Terms of Service (&quot;Terms&quot;) govern your use of our mobile application, website, and services. By using Christian Daily Bread, you agree to be bound by these Terms. Please read them carefully.
               </Text>
 
               <Text style={styles.legalSectionTitle}>Use of Service</Text>
@@ -837,18 +837,18 @@ export default function SettingsScreen() {
 
               <Text style={styles.legalSubsectionTitle}>Intellectual Property</Text>
               <Text style={styles.legalParagraph}>
-                All content on Daily Bread is protected by intellectual property laws and cannot be copied, reproduced, or distributed without prior written consent.
+                All content on Christian Daily Bread is protected by intellectual property laws and cannot be copied, reproduced, or distributed without prior written consent.
               </Text>
 
               <Text style={styles.legalSectionTitle}>Disclaimer of Warranties</Text>
               <Text style={styles.legalParagraph}>
-                Daily Bread is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis. We disclaim all warranties, express or implied.
+                Christian Daily Bread is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis. We disclaim all warranties, express or implied.
               </Text>
 
               <View style={styles.legalInfoBox}>
                 <Text style={styles.legalInfoTitle}>Important Information</Text>
                 <Text style={styles.legalInfoText}>
-                  Daily Bread&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
+                  Christian Daily Bread&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
                 </Text>
                 <Text style={styles.legalInfoText}>
                   If you are experiencing a mental health crisis, thoughts of self-harm, or severe distress, please contact a licensed mental health professional, your healthcare provider, or a crisis hotline immediately.
@@ -857,20 +857,26 @@ export default function SettingsScreen() {
 
               <Text style={styles.legalSectionTitle}>FAQ</Text>
 
-              <Text style={styles.legalQuestion}>Q: Is Daily Bread free to download and use?</Text>
-              <Text style={styles.legalAnswer}>A: Yes, Daily Bread is completely free to download and use, with no hidden fees or subscriptions.</Text>
+              <Text style={styles.legalQuestion}>Q: Is Christian Daily Bread free to download and use?</Text>
+              <Text style={styles.legalAnswer}>A: Yes, Christian Daily Bread is free to download. Basic features are available for free. Premium subscriptions with enhanced features are available for users in the US, Canada, and Europe, with a 7-day free trial. Users in other regions get all premium features free.</Text>
 
-              <Text style={styles.legalQuestion}>Q: Do I need to create an account to use Daily Bread?</Text>
-              <Text style={styles.legalAnswer}>A: No, you don&apos;t need to sign up or log in to use Daily Bread. Just download and start exploring!</Text>
+              <Text style={styles.legalQuestion}>Q: What are the subscription options?</Text>
+              <Text style={styles.legalAnswer}>A: We offer Monthly and Annual premium subscriptions for users in the US, Canada, and Europe. Both include a 7-day free trial. Prices are shown in the app. Users in other regions get premium features free.</Text>
+
+              <Text style={styles.legalQuestion}>Q: How do I cancel my subscription?</Text>
+              <Text style={styles.legalAnswer}>A: For iOS: Go to Settings → [Your Name] → Subscriptions. Select Christian Daily Bread and tap &quot;Cancel Subscription&quot;. For Android: Open Play Store → Menu → Subscriptions. Select Christian Daily Bread and tap &quot;Cancel Subscription&quot;. Cancellation takes effect at the end of your current billing period.</Text>
+
+              <Text style={styles.legalQuestion}>Q: Do I need to create an account to use Christian Daily Bread?</Text>
+              <Text style={styles.legalAnswer}>A: No, you don&apos;t need to sign up or log in to use Christian Daily Bread. Just download and start exploring!</Text>
 
               <Text style={styles.legalQuestion}>Q: How often is new content added?</Text>
               <Text style={styles.legalAnswer}>A: We refresh our therapy resources and devotions daily to support your ongoing journey.</Text>
 
               <Text style={styles.legalQuestion}>Q: What kind of therapy resources are available?</Text>
-              <Text style={styles.legalAnswer}>A: Daily Bread offers Christ-centered therapy resources, including devotions, scriptural reflections, and spiritual guidance for mental and emotional well-being.</Text>
+              <Text style={styles.legalAnswer}>A: Christian Daily Bread offers Christ-centered therapy resources, including devotions, scriptural reflections, and spiritual guidance for mental and emotional well-being.</Text>
 
-              <Text style={styles.legalQuestion}>Q: Is Daily Bread available on multiple devices?</Text>
-              <Text style={styles.legalAnswer}>A: Yes, Daily Bread is available on iOS and Android devices.</Text>
+              <Text style={styles.legalQuestion}>Q: Is Christian Daily Bread available on multiple devices?</Text>
+              <Text style={styles.legalAnswer}>A: Yes, Christian Daily Bread is available on iOS and Android devices.</Text>
 
               <Text style={styles.legalFooter}>© {new Date().getFullYear()} Christian Daily Bread. All rights reserved.</Text>
             </ScrollView>
@@ -905,12 +911,12 @@ export default function SettingsScreen() {
               <Text style={styles.legalDate}>Last modified on December 14, 2025</Text>
 
               <Text style={styles.legalParagraph}>
-                At Daily Bread, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data.
+                At Christian Daily Bread, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data.
               </Text>
 
               <Text style={styles.legalSectionTitle}>Data Collection</Text>
               <Text style={styles.legalParagraph}>
-                We collect minimal data to improve our services. No personal data is required to use Daily Bread.
+                We collect minimal data to improve our services. No personal data is required to use Christian Daily Bread.
               </Text>
 
               <Text style={styles.legalSectionTitle}>Data Use</Text>
@@ -926,7 +932,7 @@ export default function SettingsScreen() {
               <View style={styles.legalInfoBox}>
                 <Text style={styles.legalInfoTitle}>Important Information</Text>
                 <Text style={styles.legalInfoText}>
-                  Daily Bread&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
+                  Christian Daily Bread&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
                 </Text>
                 <Text style={styles.legalInfoText}>
                   If you are experiencing a mental health crisis, thoughts of self-harm, or severe distress, please contact a licensed mental health professional, your healthcare provider, or a crisis hotline immediately.
@@ -935,20 +941,23 @@ export default function SettingsScreen() {
 
               <Text style={styles.legalSectionTitle}>FAQ</Text>
 
-              <Text style={styles.legalQuestion}>Q: Is Daily Bread free to download and use?</Text>
-              <Text style={styles.legalAnswer}>A: Yes, Daily Bread is completely free to download and use, with no hidden fees or subscriptions.</Text>
+              <Text style={styles.legalQuestion}>Q: Is Christian Daily Bread free to download and use?</Text>
+              <Text style={styles.legalAnswer}>A: Yes, Christian Daily Bread is free to download. Basic features are available for free. Premium subscriptions are available for users in the US, Canada, and Europe, with a 7-day free trial. Users in other regions get all premium features free.</Text>
 
-              <Text style={styles.legalQuestion}>Q: Do I need to create an account to use Daily Bread?</Text>
-              <Text style={styles.legalAnswer}>A: No, you don&apos;t need to sign up or log in to use Daily Bread. Just download and start exploring!</Text>
+              <Text style={styles.legalQuestion}>Q: What subscription data do you collect?</Text>
+              <Text style={styles.legalAnswer}>A: We only receive basic subscription status from Apple/Google (active/expired, start date, renewal date). We never have access to your payment information or credit card details. All payments are processed securely by Apple/Google.</Text>
+
+              <Text style={styles.legalQuestion}>Q: Do I need to create an account to use Christian Daily Bread?</Text>
+              <Text style={styles.legalAnswer}>A: No, you don&apos;t need to sign up or log in to use Christian Daily Bread. Just download and start exploring!</Text>
 
               <Text style={styles.legalQuestion}>Q: How often is new content added?</Text>
               <Text style={styles.legalAnswer}>A: We refresh our therapy resources and devotions daily to support your ongoing journey.</Text>
 
               <Text style={styles.legalQuestion}>Q: What kind of therapy resources are available?</Text>
-              <Text style={styles.legalAnswer}>A: Daily Bread offers Christ-centered therapy resources, including devotions, scriptural reflections, and spiritual guidance for mental and emotional well-being.</Text>
+              <Text style={styles.legalAnswer}>A: Christian Daily Bread offers Christ-centered therapy resources, including devotions, scriptural reflections, and spiritual guidance for mental and emotional well-being.</Text>
 
-              <Text style={styles.legalQuestion}>Q: Is Daily Bread available on multiple devices?</Text>
-              <Text style={styles.legalAnswer}>A: Yes, Daily Bread is available on iOS and Android devices.</Text>
+              <Text style={styles.legalQuestion}>Q: Is Christian Daily Bread available on multiple devices?</Text>
+              <Text style={styles.legalAnswer}>A: Yes, Christian Daily Bread is available on iOS and Android devices.</Text>
 
               <Text style={styles.legalFooter}>© {new Date().getFullYear()} Christian Daily Bread. All rights reserved.</Text>
             </ScrollView>
@@ -1007,7 +1016,7 @@ export default function SettingsScreen() {
               <View style={styles.legalInfoBox}>
                 <Text style={styles.legalInfoTitle}>Free Christian Therapy Services</Text>
                 <Text style={styles.legalInfoText}>
-                  Daily Bread is committed to providing free therapy services to those who cannot afford it. If you need support, please contact us. We&apos;ll do our best to connect you with a licensed therapist.
+                  Christian Daily Bread is committed to providing free therapy services to those who cannot afford it. If you need support, please contact us. We&apos;ll do our best to connect you with a licensed therapist.
                 </Text>
               </View>
 
@@ -1023,7 +1032,7 @@ export default function SettingsScreen() {
 
               <Text style={styles.legalSectionTitle}>Partnerships</Text>
               <Text style={styles.legalParagraph}>
-                Daily Bread is seeking partnerships with churches, Christian faith organizations, and individuals to support our mission. Your support will help us provide free therapy services and resources to those in need.
+                Christian Daily Bread is seeking partnerships with churches, Christian faith organizations, and individuals to support our mission. Your support will help us provide free therapy services and resources to those in need.
               </Text>
 
               <Text style={styles.legalSectionTitle}>Support Our Mission</Text>
@@ -1075,7 +1084,7 @@ export default function SettingsScreen() {
               <Text style={styles.legalSectionTitle}>What works offline</Text>
               <Text style={styles.legalParagraph}>
                 • Home (daily devotionals, reflection, prayer prompt){'\n'}
-                • Daily Music Player (all 33 tracks + album art){'\n'}
+                • Daily Music Player (all 100 tracks + album art){'\n'}
                 • Prayers (daily prayer + guides){'\n'}
                 • Study (plans + insights) and reading passages in KJV{'\n'}
                 • Bible reading in KJV (fully offline){'\n'}
