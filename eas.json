@@ -19,7 +19,12 @@
         "resourceClass": "m-medium"
       },
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle",
+        "resourceClass": "large",
+        "gradleCommand": ":app:bundleRelease",
+        "env": {
+          "ANDROID_SDK_ROOT": "/usr/lib/android-sdk"
+        }
       },
       "env": {
         "EXPO_PUBLIC_TOOLKIT_URL": "https://toolkit.rork.com"

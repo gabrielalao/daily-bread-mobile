@@ -86,12 +86,17 @@ export default function TermsOfServiceScreen() {
 
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>Q: Is Daily Bread free to download and use?</Text>
-          <Text style={styles.faqAnswer}>A: Yes, Daily Bread is completely free to download and use. All core features including devotionals, prayers, Bible study, and the AI therapy chat are available at no cost, with no hidden fees.</Text>
+          <Text style={styles.faqAnswer}>A: Yes, Daily Bread is free to download. Basic features are available for free. Premium subscriptions with enhanced features are available for users in the US, Canada, and Europe, with a 7-day free trial. Users in other regions get all premium features free.</Text>
         </View>
 
         <View style={styles.faqItem}>
-          <Text style={styles.faqQuestion}>Q: Does Daily Bread have any subscriptions or in-app purchases?</Text>
-          <Text style={styles.faqAnswer}>A: No, Daily Bread does not currently offer any paid subscriptions or in-app purchases. The app is completely free to use.</Text>
+          <Text style={styles.faqQuestion}>Q: What are the subscription options?</Text>
+          <Text style={styles.faqAnswer}>A: We offer Monthly and Annual premium subscriptions for users in the US, Canada, and Europe. Both include a 7-day free trial. Prices are shown in the app. Users in other regions get premium features free.</Text>
+        </View>
+
+        <View style={styles.faqItem}>
+          <Text style={styles.faqQuestion}>Q: How do I cancel my subscription?</Text>
+          <Text style={styles.faqAnswer}>A: Go to Settings → [Your Name] → Subscriptions on your iOS device. Select Christian Daily Bread and tap &quot;Cancel Subscription&quot;. Cancellation takes effect at the end of your current billing period.</Text>
         </View>
 
         <View style={styles.faqItem}>
