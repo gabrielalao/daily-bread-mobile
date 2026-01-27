@@ -25,12 +25,37 @@ export default function TermsOfServiceScreen() {
           Welcome to Daily Bread! These Terms of Service (&quot;Terms&quot;) govern your use of our mobile application, website, and services. By using Daily Bread, you agree to be bound by these Terms. Please read them carefully.
         </Text>
 
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>No Subscriptions Required</Text>
-          <Text style={styles.infoText}>
-            Daily Bread is completely free to download and use. We do not currently offer any paid subscriptions or in-app purchases. All features are available at no cost.
-          </Text>
+        <Text style={styles.sectionTitle}>Subscription Services</Text>
+        
+        <Text style={styles.subsectionTitle}>Premium Subscription Plans</Text>
+        <Text style={styles.paragraph}>
+          Christian Daily Bread offers premium subscription plans with enhanced features:
+        </Text>
+        
+        <View style={styles.requirementsList}>
+          <Text style={styles.requirement}>• <Text style={{ fontWeight: '700' }}>Monthly Subscription:</Text> Billed monthly at the price shown in the app</Text>
+          <Text style={styles.requirement}>• <Text style={{ fontWeight: '700' }}>Annual Subscription:</Text> Billed yearly at the price shown in the app (best value)</Text>
+          <Text style={styles.requirement}>• <Text style={{ fontWeight: '700' }}>7-Day Free Trial:</Text> Try premium features risk-free for 7 days</Text>
         </View>
+
+        <Text style={styles.subsectionTitle}>Regional Availability</Text>
+        <Text style={styles.paragraph}>
+          Premium subscriptions are available for users in the United States, Canada, and Europe. Users in other regions have free access to all premium features at no cost.
+        </Text>
+
+        <Text style={styles.subsectionTitle}>Auto-Renewal Terms</Text>
+        <Text style={styles.paragraph}>
+          • Your subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period.{'\n'}
+          • Your account will be charged for renewal within 24 hours prior to the end of the current period.{'\n'}
+          • You can manage your subscription and turn off auto-renewal by going to your App Store Account Settings after purchase.{'\n'}
+          • Any unused portion of a free trial period will be forfeited when you purchase a subscription.{'\n'}
+          • Payment will be charged to your Apple ID account at confirmation of purchase.
+        </Text>
+
+        <Text style={styles.subsectionTitle}>Cancellation</Text>
+        <Text style={styles.paragraph}>
+          You may cancel your subscription at any time through your App Store account settings. Cancellation takes effect at the end of the current billing period. No refunds are provided for partial subscription periods.
+        </Text>
 
         <Text style={styles.sectionTitle}>Use of Service</Text>
         <Text style={styles.paragraph}>

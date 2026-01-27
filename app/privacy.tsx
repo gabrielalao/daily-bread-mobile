@@ -50,16 +50,21 @@ export default function PrivacyPolicyScreen() {
           </Text>
         </View>
 
+        <Text style={styles.sectionTitle}>Subscription and Payment Data</Text>
+        <Text style={styles.paragraph}>
+          If you subscribe to premium features, Apple processes your payment through your Apple ID. We receive basic subscription information (subscription status, start date, renewal date) but never receive your payment details or credit card information.
+        </Text>
+
         <Text style={styles.sectionTitle}>FAQ</Text>
 
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>Q: Is Daily Bread free to download and use?</Text>
-          <Text style={styles.faqAnswer}>A: Yes, Daily Bread is completely free to download and use. All features are available at no cost, with no hidden fees.</Text>
+          <Text style={styles.faqAnswer}>A: Yes, Daily Bread is free to download. Basic features are available for free. Premium subscriptions are available for users in the US, Canada, and Europe with a 7-day free trial. Users in other regions get all premium features free.</Text>
         </View>
 
         <View style={styles.faqItem}>
-          <Text style={styles.faqQuestion}>Q: Does Daily Bread have any subscriptions or in-app purchases?</Text>
-          <Text style={styles.faqAnswer}>A: No, Daily Bread does not currently offer any paid subscriptions or in-app purchases. The app is completely free to use.</Text>
+          <Text style={styles.faqQuestion}>Q: What subscription data do you collect?</Text>
+          <Text style={styles.faqAnswer}>A: We only receive basic subscription status from Apple (active/expired, start date, renewal date). We never have access to your payment information or credit card details. All payments are processed securely by Apple.</Text>
         </View>
 
         <View style={styles.faqItem}>
