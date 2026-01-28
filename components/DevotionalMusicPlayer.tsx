@@ -1,7 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions, ActivityIndicator, Alert } from 'react-native';
 import { Audio } from 'expo-av';
-import { Play, Pause, SkipBack, SkipForward, Repeat, Repeat1 } from 'lucide-react-native';
+import { Play, Pause, SkipBack, SkipForward, Repeat1 } from 'lucide-react-native';
+import { documentDirectory, makeDirectoryAsync, getInfoAsync, downloadAsync } from "expo-file-system";
+import { getAudioFileForDevotion } from "@/utils/audioHelper";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { useContent } from "@/contexts/ContentContext";
+import { requireOnlineOrPrompt } from "@/utils/networkPolicy";
 
 interface DevotionalMusicPlayerProps {
   title: string;
@@ -23,6 +28,8 @@ export function DevotionalMusicPlayer({
   const { width: windowWidth } = useWindowDimensions();
   const isTablet = windowWidth >= 768;
   const isSmallPhone = windowWidth < 375;
+  const { isOnline, isOffline } = useNetworkStatus();
+  const { userPreferences, setOfflineModeEnabled } = useContent();
 
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -31,8 +38,39 @@ export function DevotionalMusicPlayer({
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isRepeating, setIsRepeating] = useState(false);
+  const [resolvedAudioSource, setResolvedAudioSource] = useState<any | null>(audioSource);
+  const [resolvedAlbumArt, setResolvedAlbumArt] = useState<any | null>(albumArt ?? null);
+  const [offlineAudioBlocked, setOfflineAudioBlocked] = useState(false);
   const soundRef = useRef<Audio.Sound | null>(null);
   const isMountedRef = useRef(true);
+
+  const getCachePaths = useCallback(() => {
+    const fileName = getAudioFileForDevotion(title);
+    const baseDir = `${documentDirectory ?? ""}devotional-audio/`;
+    return {
+      baseDir,
+      audioPath: `${baseDir}${fileName}.mp3`,
+      artPath: `${baseDir}${fileName}.jpg`,
+      fileName,
+    };
+  }, [title]);
+
+  const isRemoteHttpAudio = useCallback((): boolean => {
+    if (!resolvedAudioSource) return false;
+    if (typeof resolvedAudioSource === "number") return false;
+    const uri: string | undefined = resolvedAudioSource?.uri;
+    return Boolean(uri && /^https?:\/\//i.test(uri));
+  }, [resolvedAudioSource]);
+
+  const isAudioCached = useCallback(async (): Promise<boolean> => {
+    const { audioPath } = getCachePaths();
+    try {
+      const info = await getInfoAsync(audioPath);
+      return Boolean(info.exists);
+    } catch {
+      return false;
+    }
+  }, [getCachePaths]);
 
   // Configure audio mode on mount
   useEffect(() => {
@@ -61,18 +99,42 @@ export function DevotionalMusicPlayer({
 
   // Auto-play effect
   useEffect(() => {
-    if (shouldAutoPlay && audioSource && !sound && !isLoading && !hasError) {
+    const run = async () => {
+      if (!shouldAutoPlay || !resolvedAudioSource || sound || isLoading || hasError) return;
+
+      // Avoid popping alerts for auto-play. Only auto-play if it can play now.
+      if (isRemoteHttpAudio()) {
+        const cached = await isAudioCached();
+        if (!cached && (isOffline || userPreferences.offlineModeEnabled)) {
+          setOfflineAudioBlocked(true);
+          return;
+        }
+      }
+
       console.log('🎵 Auto-playing daily audio...');
-      loadAndPlaySound();
-    }
-  }, [shouldAutoPlay, audioSource]);
+      await loadAndPlaySound();
+    };
+
+    void run();
+  }, [
+    shouldAutoPlay,
+    resolvedAudioSource,
+    sound,
+    isLoading,
+    hasError,
+    loadAndPlaySound,
+    isAudioCached,
+    isOffline,
+    isRemoteHttpAudio,
+    userPreferences.offlineModeEnabled,
+  ]);
 
   // Notify parent of play state changes
   useEffect(() => {
     if (onPlayStateChange) {
       onPlayStateChange(isPlaying);
     }
-  }, [isPlaying]);
+  }, [isPlaying, onPlayStateChange]);
 
   // Cleanup when devotionId changes
   useEffect(() => {
@@ -84,11 +146,7 @@ export function DevotionalMusicPlayer({
     };
   }, [devotionId]);
 
-  if (!audioSource || hasError) {
-    return null;
-  }
-
-  const onPlaybackStatusUpdate = (status: any) => {
+  const onPlaybackStatusUpdate = useCallback((status: any) => {
     if (!isMountedRef.current) return;
     
     if (status.isLoaded) {
@@ -105,14 +163,70 @@ export function DevotionalMusicPlayer({
       setHasError(true);
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const loadAndPlaySound = async () => {
+  // Resolve and cache remote audio/art on demand (Android AAB size optimization)
+  const ensureCachedRemoteMedia = useCallback(async (): Promise<{ audio: any; art: any | null } | null> => {
+    // If audioSource is a local require (number), just use it.
+    if (typeof resolvedAudioSource === "number") {
+      return { audio: resolvedAudioSource, art: resolvedAlbumArt ?? null };
+    }
+
+    const uri: string | undefined = resolvedAudioSource?.uri;
+    if (!uri) return null;
+
+    // Only cache http(s) URIs
+    if (!/^https?:\/\//i.test(uri)) {
+      return { audio: resolvedAudioSource, art: resolvedAlbumArt ?? null };
+    }
+
+    const { baseDir, audioPath, artPath } = getCachePaths();
+
+    try {
+      await makeDirectoryAsync(baseDir, { intermediates: true });
+    } catch {
+      // ignore (may already exist)
+    }
+
+    // Audio
+    let audioUriToUse = uri;
+    const audioInfo = await getInfoAsync(audioPath);
+    if (audioInfo.exists) {
+      audioUriToUse = audioPath;
+    } else {
+      // Download then play locally (gives offline after first play)
+      await downloadAsync(uri, audioPath);
+      audioUriToUse = audioPath;
+    }
+
+    // Album art (optional)
+    let artToUse: any | null = resolvedAlbumArt ?? null;
+    const artUri = resolvedAlbumArt?.uri;
+    const guessArtRemote = uri.replace(/\.mp3(\?.*)?$/i, ".jpg");
+    const remoteArt = typeof artUri === "string" && /^https?:\/\//i.test(artUri) ? artUri : guessArtRemote;
+
+    try {
+      const artInfo = await getInfoAsync(artPath);
+      if (artInfo.exists) {
+        artToUse = { uri: artPath };
+      } else if (/^https?:\/\//i.test(remoteArt)) {
+        await downloadAsync(remoteArt, artPath);
+        artToUse = { uri: artPath };
+      }
+    } catch {
+      // ignore art failures
+    }
+
+    return { audio: { uri: audioUriToUse }, art: artToUse };
+  }, [getCachePaths, resolvedAudioSource, resolvedAlbumArt]);
+
+  const loadAndPlaySound = useCallback(async () => {
     if (isLoading) return;
     
     try {
       setIsLoading(true);
       setHasError(false);
+      setOfflineAudioBlocked(false);
 
       // Unload existing sound if any
       if (soundRef.current) {
@@ -120,9 +234,19 @@ export function DevotionalMusicPlayer({
         soundRef.current = null;
       }
 
+      // If this is a remote URI, cache it first (Android app size optimization)
+      const cached = await ensureCachedRemoteMedia();
+      if (!cached) {
+        throw new Error("No playable audio source");
+      }
+      if (isMountedRef.current) {
+        setResolvedAlbumArt(cached.art);
+        setResolvedAudioSource(cached.audio);
+      }
+
       console.log('🎵 Loading audio...');
       const { sound: newSound } = await Audio.Sound.createAsync(
-        audioSource,
+        cached.audio,
         { 
           shouldPlay: true,
           progressUpdateIntervalMillis: 500,
@@ -153,13 +277,49 @@ export function DevotionalMusicPlayer({
         setIsLoading(false);
       }
     }
-  };
+  }, [ensureCachedRemoteMedia, isLoading, onPlaybackStatusUpdate]);
+
+  const handlePlayPress = useCallback(async () => {
+    setHasError(false);
+    setOfflineAudioBlocked(false);
+
+    // Only gate remote streaming audio (Android).
+    if (isRemoteHttpAudio()) {
+      const cached = await isAudioCached();
+      if (!cached) {
+        // If device has no internet, switching modes won't help — prompt to connect.
+        if (isOffline) {
+          setOfflineAudioBlocked(true);
+          Alert.alert(
+            "Audio needs internet",
+            "To listen to devotional audio, connect to the internet to download it the first time. After that, it works offline.",
+            [{ text: "OK", style: "default" }]
+          );
+          return;
+        }
+
+        // Device is online, but user may have Offline Mode enabled.
+        await requireOnlineOrPrompt({
+          feature: "other",
+          offlineModeEnabled: userPreferences.offlineModeEnabled,
+          isOnline,
+          setOfflineModeEnabled,
+          onContinue: async () => {
+            await loadAndPlaySound();
+          },
+        });
+        return;
+      }
+    }
+
+    await loadAndPlaySound();
+  }, [isAudioCached, isOffline, isOnline, isRemoteHttpAudio, loadAndPlaySound, setOfflineModeEnabled, userPreferences.offlineModeEnabled]);
 
   const togglePlayPause = async () => {
     try {
       if (!sound || !soundRef.current) {
         // First time - load and play
-        await loadAndPlaySound();
+        await handlePlayPress();
         return;
       }
 
@@ -167,7 +327,7 @@ export function DevotionalMusicPlayer({
       
       if (!status.isLoaded) {
         // Sound was unloaded, reload it
-        await loadAndPlaySound();
+        await handlePlayPress();
         return;
       }
 
@@ -181,7 +341,7 @@ export function DevotionalMusicPlayer({
     } catch (error) {
       console.error('Error toggling play/pause:', error);
       // Try to reload on error
-      await loadAndPlaySound();
+      await handlePlayPress();
     }
   };
 
@@ -238,6 +398,10 @@ export function DevotionalMusicPlayer({
   const timeFontSize = isTablet ? 14 : isSmallPhone ? 10 : 12;
   const skipTextSize = isTablet ? 14 : isSmallPhone ? 10 : 12;
 
+  if (!resolvedAudioSource) {
+    return null;
+  }
+
   return (
     <View style={[
       styles.container,
@@ -248,9 +412,9 @@ export function DevotionalMusicPlayer({
       }
     ]}>
       <View style={[styles.playerContent, { marginBottom: isSmallPhone ? 8 : 12 }]}>
-        {albumArt ? (
+        {resolvedAlbumArt ? (
           <Image
-            source={albumArt}
+            source={resolvedAlbumArt}
             style={[
               styles.albumArt,
               {
@@ -307,6 +471,36 @@ export function DevotionalMusicPlayer({
           </TouchableOpacity>
         </View>
       </View>
+
+      {(offlineAudioBlocked || hasError) && (
+        <View style={styles.noticeContainer}>
+          <Text style={styles.noticeTitle}>
+            {offlineAudioBlocked
+              ? "Go online to download audio"
+              : "Audio couldn’t load"}
+          </Text>
+          <Text style={styles.noticeText}>
+            {offlineAudioBlocked
+              ? "Connect to the internet to download this devotional audio once. After that, it works offline."
+              : "Please try again. If you’re offline, go online once to download the audio."}
+          </Text>
+          <TouchableOpacity
+            style={styles.noticeButton}
+            onPress={() => {
+              setHasError(false);
+              setOfflineAudioBlocked(false);
+              void handlePlayPress();
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.noticeButtonText}>
+              {offlineAudioBlocked && userPreferences.offlineModeEnabled && isOnline
+                ? "Enable Online Mode & Download"
+                : "Try Again"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <View style={[styles.progressContainer, { marginBottom: isSmallPhone ? 6 : 8 }]}>
         <Text style={[styles.timeText, { fontSize: timeFontSize, width: isTablet ? 50 : isSmallPhone ? 40 : 45 }]}>
@@ -421,6 +615,40 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
+  },
+  noticeContainer: {
+    marginTop: 10,
+    marginBottom: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+  },
+  noticeTitle: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700" as const,
+    marginBottom: 4,
+  },
+  noticeText: {
+    color: "rgba(255, 255, 255, 0.75)",
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  noticeButton: {
+    marginTop: 10,
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+  },
+  noticeButtonText: {
+    color: "#1F1F1F",
+    fontSize: 12,
+    fontWeight: "800" as const,
   },
   progressContainer: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
 import colors from "@/constants/colors";
-import { devotionals, getTodayDevotional, getDevotionalForDate, getDayOfYear, type Devotional } from "@/constants/devotionals";
+import { getTodayDevotional, getDevotionalForDate, getDayOfYear, type Devotional } from "@/constants/devotionals";
 import { useContent } from "@/contexts/ContentContext";
 import { usePersonalization } from "@/hooks/usePersonalization";
 import { useCardShare } from "@/hooks/useCardShare";

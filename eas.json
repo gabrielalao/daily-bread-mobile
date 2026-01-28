@@ -27,7 +27,8 @@
         }
       },
       "env": {
-        "EXPO_PUBLIC_TOOLKIT_URL": "https://toolkit.rork.com"
+        "EXPO_PUBLIC_TOOLKIT_URL": "https://toolkit.rork.com",
+        "EXPO_PUBLIC_AUDIO_BASE_URL": "https://pub-97b92dd7dc4e4dde87b09ccea5e8c079.r2.dev"
       }
     }
   },
