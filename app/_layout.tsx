@@ -3,6 +3,8 @@ import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { ContentProvider, useContent } from "@/contexts/ContentContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ScheduledSessionsProvider } from "@/contexts/ScheduledSessionsContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { TrialProvider } from "@/contexts/TrialContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -100,6 +102,7 @@ function RootLayoutNav() {
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="paywall" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="terms" options={{ title: t(lang, "headers.terms") }} />
         <Stack.Screen name="privacy" options={{ title: t(lang, "headers.privacy") }} />
         <Stack.Screen name="support" options={{ title: t(lang, "headers.support") }} />
@@ -126,9 +129,13 @@ export default function RootLayout() {
         <NotificationProvider>
           <ScheduledSessionsProvider>
             <ContentProvider>
-              <GestureHandlerRootView style={{ flex: 1 }}>
-                <RootLayoutNav />
-              </GestureHandlerRootView>
+              <SubscriptionProvider>
+                <TrialProvider>
+                  <GestureHandlerRootView style={{ flex: 1 }}>
+                    <RootLayoutNav />
+                  </GestureHandlerRootView>
+                </TrialProvider>
+              </SubscriptionProvider>
             </ContentProvider>
           </ScheduledSessionsProvider>
         </NotificationProvider>

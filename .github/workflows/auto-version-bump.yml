@@ -14,7 +14,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          persist-credentials: true
 
       - uses: actions/setup-node@v4
         with:
@@ -93,10 +94,10 @@ jobs:
       - name: Commit Version Bump
         run: |
           git add app.json
-          git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }} [skip ci]"
-          git push origin main
+          git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }} [skip ci]" || exit 0
+          git push origin main || echo "Push failed, but continuing..."
 
       - name: Create Git Tag
         run: |
-          git tag -a "v${{ steps.version.outputs.new_version }}" -m "Release v${{ steps.version.outputs.new_version }}"
-          git push origin "v${{ steps.version.outputs.new_version }}"
+          git tag -a "v${{ steps.version.outputs.new_version }}" -m "Release v${{ steps.version.outputs.new_version }}" || exit 0
+          git push origin "v${{ steps.version.outputs.new_version }}" || echo "Tag push failed, but continuing..."
