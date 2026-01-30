@@ -1,40 +1,57 @@
 import colors from "@/constants/colors";
 import { Tabs } from "expo-router";
 import { BookOpen, BookMarked, Brain, HandHeart, Book, Settings } from "lucide-react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import { useContent } from "@/contexts/ContentContext";
+import { useTrial } from "@/contexts/TrialContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useRouter } from "expo-router";
 import { t } from "@/utils/i18n";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { View } from "react-native";
+import { TrialBanner } from "@/components/TrialBanner";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { userPreferences } = useContent();
+  const { isTrialExpired } = useTrial();
+  const { isSubscribed } = useSubscription();
+  const router = useRouter();
   const lang = userPreferences.appLanguage;
   
+  // Auto-open paywall when trial expires
+  useEffect(() => {
+    if (isTrialExpired && !isSubscribed) {
+      router.push('/paywall');
+    }
+  }, [isTrialExpired, isSubscribed]);
+  
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: colors.light.primary,
-        tabBarInactiveTintColor: colors.light.tabIconDefault,
-        headerShown: false, // Remove all headers
-        tabBarStyle: {
-          backgroundColor: colors.light.background,
-          borderTopColor: colors.light.border,
-          borderTopWidth: 1,
-          paddingTop: 6,
-          paddingBottom: Math.max(insets.bottom, 6),
-          height: 60 + Math.max(insets.bottom, 0),
-        },
-        tabBarLabelStyle: {
-          fontSize: 9,
-          fontWeight: "600" as const,
-          marginTop: 2,
-        },
-        tabBarIconStyle: {
-          marginTop: 2,
-        },
-      }}
-    >
+    <View style={{ flex: 1 }}>
+      <TrialBanner />
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: colors.light.primary,
+          tabBarInactiveTintColor: colors.light.tabIconDefault,
+          headerShown: false, // Remove all headers
+          tabBarStyle: {
+            backgroundColor: colors.light.background,
+            borderTopColor: colors.light.border,
+            borderTopWidth: 1,
+            paddingTop: 6,
+            paddingBottom: Math.max(insets.bottom, 6),
+            height: 60 + Math.max(insets.bottom, 0),
+          },
+          tabBarLabelStyle: {
+            fontSize: 9,
+            fontWeight: "600" as const,
+            marginTop: 2,
+          },
+          tabBarIconStyle: {
+            marginTop: 2,
+          },
+        }}
+      >
       <Tabs.Screen
         name="home"
         options={{
@@ -78,5 +95,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </View>
   );
 }
