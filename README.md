@@ -1,4 +1,4 @@
-# Welcome to Daily Bread - 
+# Christian Daily Bread
 
 ## Project info
 
