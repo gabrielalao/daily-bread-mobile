@@ -28,6 +28,11 @@ jobs:
           npm install --legacy-peer-deps
           npm run postinstall --if-present
 
+      - name: Setup Environment Variables
+        run: |
+          echo "EXPO_PUBLIC_REVENUECAT_IOS_KEY=${{ secrets.EXPO_PUBLIC_REVENUECAT_IOS_KEY }}" >> $GITHUB_ENV
+          echo "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY=${{ secrets.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY }}" >> $GITHUB_ENV
+
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
@@ -73,6 +78,11 @@ jobs:
         run: |
           npm install --legacy-peer-deps
           npm run postinstall --if-present
+
+      - name: Setup Environment Variables
+        run: |
+          echo "EXPO_PUBLIC_REVENUECAT_IOS_KEY=${{ secrets.EXPO_PUBLIC_REVENUECAT_IOS_KEY }}" >> $GITHUB_ENV
+          echo "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY=${{ secrets.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY }}" >> $GITHUB_ENV
 
       - name: Setup EAS
         uses: expo/expo-github-action@v8
