@@ -24,9 +24,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: |
-          npm install --legacy-peer-deps
-          npm run postinstall --if-present
+        run: npm ci --legacy-peer-deps
 
       - name: Setup Environment Variables
         run: |
@@ -75,9 +73,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: |
-          npm install --legacy-peer-deps
-          npm run postinstall --if-present
+        run: npm ci --legacy-peer-deps
 
       - name: Setup Environment Variables
         run: |
