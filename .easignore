@@ -1,0 +1,55 @@
+# EAS Build Ignore File
+# Reduce upload size by excluding unnecessary files
+
+# Documentation
+*.md
+!README.md
+MAIN-REVERTED.md
+TESTFLIGHT-DEPLOYMENT.md
+CI-CD-*.md
+SUBSCRIPTION-*.md
+XCODE-BUILD-GUIDE.md
+BUILD-INSTRUCTIONS.md
+IOS-FIRST-TESTING-PLAN.md
+REVENUECAT-CONFIGURATION-GUIDE.md
+
+# Development files
+.cursor/
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Node modules (will be reinstalled on EAS)
+node_modules/
+
+# iOS build artifacts (will be rebuilt on EAS)
+ios/build/
+ios/Pods/
+ios/.xcode.env.local
+
+# Android build artifacts
+android/build/
+android/.gradle/
+android/app/build/
+
+# Expo
+.expo/
+.expo-shared/
+
+# Temporary files
+*.log
+*.tmp
+.DS_Store
+
+# Scripts (not needed for build)
+scripts/
+
+# AppStore assets (not needed for build)
+AppStore/
+
+# Audio file lists
+audio-file-checklist.txt
+audio-file-list.txt
