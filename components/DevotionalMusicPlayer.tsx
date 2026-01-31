@@ -7,6 +7,8 @@ import { getAudioFileForDevotion } from "@/utils/audioHelper";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useContent } from "@/contexts/ContentContext";
 import { requireOnlineOrPrompt } from "@/utils/networkPolicy";
+import { usePremiumAccess } from "@/hooks/usePremiumAccess";
+import { useRouter } from "expo-router";
 
 interface DevotionalMusicPlayerProps {
   title: string;
@@ -25,11 +27,34 @@ export function DevotionalMusicPlayer({
   shouldAutoPlay = false, 
   onPlayStateChange 
 }: DevotionalMusicPlayerProps) {
+  const router = useRouter();
+  const { isPremiumLocked } = usePremiumAccess();
   const { width: windowWidth } = useWindowDimensions();
   const isTablet = windowWidth >= 768;
   const isSmallPhone = windowWidth < 375;
   const { isOnline, isOffline } = useNetworkStatus();
   const { userPreferences, setOfflineModeEnabled } = useContent();
+
+  if (isPremiumLocked) {
+    return (
+      <View style={styles.premiumLockCard}>
+        <View style={styles.premiumLockHeader}>
+          <Text style={styles.premiumLockTitle}>Worship Music</Text>
+          <Text style={styles.premiumLockBadge}>Premium</Text>
+        </View>
+        <Text style={styles.premiumLockBody}>
+          Your free trial has ended. Subscribe to keep listening to daily worship music.
+        </Text>
+        <TouchableOpacity
+          style={styles.premiumLockCta}
+          onPress={() => router.push("/paywall")}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.premiumLockCtaText}>Subscribe to Premium</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -564,6 +589,56 @@ export function DevotionalMusicPlayer({
 }
 
 const styles = StyleSheet.create({
+  premiumLockCard: {
+    backgroundColor: "#1F1F1F",
+    borderRadius: 16,
+    marginTop: 16,
+    alignSelf: "center",
+    width: "100%",
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  premiumLockHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  premiumLockTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  premiumLockBadge: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#264653",
+    backgroundColor: "#4ECDC4",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  premiumLockBody: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: "rgba(255,255,255,0.85)",
+    marginBottom: 12,
+  },
+  premiumLockCta: {
+    backgroundColor: "#4ECDC4",
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  premiumLockCtaText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#264653",
+  },
   container: {
     backgroundColor: '#1F1F1F',
     borderRadius: 16,

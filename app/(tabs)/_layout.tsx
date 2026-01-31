@@ -3,32 +3,36 @@ import { Tabs } from "expo-router";
 import { BookOpen, BookMarked, Brain, HandHeart, Book, Settings } from "lucide-react-native";
 import React, { useEffect } from "react";
 import { useContent } from "@/contexts/ContentContext";
-import { useTrial } from "@/contexts/TrialContext";
-import { useSubscription } from "@/contexts/SubscriptionContext";
+import { usePremiumAccess } from "@/hooks/usePremiumAccess";
 import { useRouter } from "expo-router";
 import { t } from "@/utils/i18n";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { View } from "react-native";
-import { TrialBanner } from "@/components/TrialBanner";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const TRIAL_EXPIRED_PAYWALL_SHOWN_KEY = "@trial_expired_paywall_shown";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { userPreferences } = useContent();
-  const { isTrialExpired } = useTrial();
-  const { isSubscribed } = useSubscription();
+  const { isPremiumLocked } = usePremiumAccess();
   const router = useRouter();
   const lang = userPreferences.appLanguage;
   
-  // Auto-open paywall when trial expires
+  // Auto-open paywall ONCE when trial expires (paid regions only).
   useEffect(() => {
-    if (isTrialExpired && !isSubscribed) {
-      router.push('/paywall');
-    }
-  }, [isTrialExpired, isSubscribed]);
+    const run = async () => {
+      if (!isPremiumLocked) return;
+      const alreadyShown = await AsyncStorage.getItem(TRIAL_EXPIRED_PAYWALL_SHOWN_KEY);
+      if (alreadyShown === "1") return;
+      await AsyncStorage.setItem(TRIAL_EXPIRED_PAYWALL_SHOWN_KEY, "1");
+      router.push("/paywall");
+    };
+    void run();
+  }, [isPremiumLocked, router]);
   
   return (
     <View style={{ flex: 1 }}>
-      <TrialBanner />
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: colors.light.primary,
@@ -71,6 +75,14 @@ export default function TabLayout() {
         options={{
           title: t(lang, "tabs.study"),
           tabBarIcon: ({ color }) => <BookMarked size={22} color={color} />,
+          listeners: {
+            tabPress: (e) => {
+              if (isPremiumLocked) {
+                e.preventDefault();
+                router.push("/paywall");
+              }
+            },
+          },
         }}
       />
       <Tabs.Screen
@@ -78,6 +90,14 @@ export default function TabLayout() {
         options={{
           title: t(lang, "tabs.therapy"),
           tabBarIcon: ({ color }) => <Brain size={22} color={color} />,
+          listeners: {
+            tabPress: (e) => {
+              if (isPremiumLocked) {
+                e.preventDefault();
+                router.push("/paywall");
+              }
+            },
+          },
         }}
       />
       <Tabs.Screen

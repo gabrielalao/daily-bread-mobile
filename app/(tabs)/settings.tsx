@@ -12,9 +12,12 @@ import { requireOnlineOrPrompt } from "@/utils/networkPolicy";
 import { BibleVersionPickerModal } from "@/components/BibleVersionPickerModal";
 import { getEffectiveBibleVersionId } from "@/utils/bibleVersionPolicy";
 import { A11yText as Text } from "@/components/A11yText";
-import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Share2, Edit3, Trash2, Plus, Play } from "lucide-react-native";
+import { TrialBanner } from "@/components/TrialBanner";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import Constants from "expo-constants";
+import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Share2, Edit3, Trash2, Plus, Play, CreditCard, RefreshCw, ArrowRightLeft } from "lucide-react-native";
 import React, { useState } from "react";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import {
   Alert,
   Platform,
@@ -35,7 +38,9 @@ const { width: screenWidth } = Dimensions.get('window');
 const isTablet = screenWidth >= 768;
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const { settings, enableNotifications, disableNotifications, updateNotificationTime } = useNotifications();
+  const { isSubscribed, restorePurchases } = useSubscription();
   const {
     userPreferences,
     setBibleVersion,
@@ -66,6 +71,45 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   
   const upcomingSessions = getUpcomingSessions();
+
+  const openManageSubscriptions = async () => {
+    if (Platform.OS === "web") {
+      Alert.alert("Not Available", "Subscription management is available on iOS/Android.");
+      return;
+    }
+
+    const iosUrl = "https://apps.apple.com/account/subscriptions";
+
+    const androidPackage =
+      Constants.expoConfig?.android?.package ??
+      // fallback to known value from app.json
+      "app.rork.daily_bread_app_mp9wlbr";
+    const androidUrl = `https://play.google.com/store/account/subscriptions?package=${encodeURIComponent(androidPackage)}`;
+
+    const url = Platform.OS === "ios" ? iosUrl : androidUrl;
+
+    const canOpen = await Linking.canOpenURL(url);
+    if (!canOpen) {
+      Alert.alert("Unable to open", "Could not open subscription management on this device.");
+      return;
+    }
+    await Linking.openURL(url);
+  };
+
+  const openChangePlan = () => {
+    router.push("/paywall");
+  };
+
+  const handleRestore = async () => {
+    try {
+      const success = await restorePurchases();
+      if (success) {
+        Alert.alert("Restored", "Your subscription has been restored.");
+      }
+    } catch (e: any) {
+      Alert.alert("Restore failed", e?.message ?? "Unable to restore purchases. Please try again.");
+    }
+  };
 
   const handleToggleNotifications = async (value: boolean) => {
     if (Platform.OS === 'web') {
@@ -283,6 +327,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <TrialBanner />
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}
@@ -300,6 +345,75 @@ export default function SettingsScreen() {
               <NetworkStatusDot />
             </View>
             <Text style={styles.subtitle}>{t(tLang, "settings.subtitle")}</Text>
+          </View>
+
+          {/* Billing & Subscription Management */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Billing &amp; Subscription Management</Text>
+            <Text style={styles.sectionSubtitle}>
+              {isSubscribed
+                ? "Manage your subscription, switch plans, or restore purchases."
+                : "Manage your plan, subscribe, or restore purchases."}
+            </Text>
+
+            <View style={styles.settingCard}>
+              <TouchableOpacity style={styles.settingRow} onPress={openManageSubscriptions}>
+                <View style={styles.iconContainer}>
+                  <CreditCard size={22} color={colors.light.primary} />
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingLabel}>Manage subscription</Text>
+                  <Text style={styles.settingDescription}>Open App Store / Google Play subscription settings</Text>
+                </View>
+                <ChevronRight size={20} color={colors.light.textSecondary} />
+              </TouchableOpacity>
+
+              <View style={styles.divider} />
+
+              <TouchableOpacity style={styles.settingRow} onPress={openChangePlan}>
+                <View style={styles.iconContainer}>
+                  <ArrowRightLeft size={22} color={colors.light.primary} />
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingLabel}>Change plan</Text>
+                  <Text style={styles.settingDescription}>Switch between monthly and annual</Text>
+                </View>
+                <ChevronRight size={20} color={colors.light.textSecondary} />
+              </TouchableOpacity>
+
+              <View style={styles.divider} />
+
+              <TouchableOpacity style={styles.settingRow} onPress={handleRestore}>
+                <View style={styles.iconContainer}>
+                  <RefreshCw size={22} color={colors.light.primary} />
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingLabel}>Restore purchases</Text>
+                  <Text style={styles.settingDescription}>If you already subscribed on this Apple/Google account</Text>
+                </View>
+                <ChevronRight size={20} color={colors.light.textSecondary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* What's Free vs Premium */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>What&apos;s free?</Text>
+            <View style={styles.infoBox}>
+              <Text style={styles.infoTitle}>Free forever</Text>
+              <Text style={styles.infoText}>
+                • Daily Devotionals{'\n'}
+                • Prayer Guidance{'\n'}
+                • KJV Bible
+              </Text>
+              <Text style={[styles.infoTitle, { marginTop: 14 }]}>Premium</Text>
+              <Text style={styles.infoText}>
+                • AI Therapy{'\n'}
+                • Worship Music{'\n'}
+                • Study Plans{'\n'}
+                • Bible translations (NIV and more)
+              </Text>
+            </View>
           </View>
 
           {/* Daily Notifications Section */}

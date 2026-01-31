@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import Purchases, { 
   CustomerInfo, 
-  PurchasesOffering, 
+  PurchasesOfferings,
   PurchasesPackage,
   LOG_LEVEL 
 } from 'react-native-purchases';
@@ -18,7 +18,7 @@ const REVENUECAT_API_KEY = {
 interface SubscriptionContextType {
   isSubscribed: boolean;
   isPro: boolean;
-  offerings: PurchasesOffering | null;
+  offerings: PurchasesOfferings | null;
   customerInfo: CustomerInfo | null;
   isLoading: boolean;
   purchase: (pkg: PurchasesPackage) => Promise<boolean>;
@@ -30,7 +30,7 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [offerings, setOfferings] = useState<PurchasesOffering | null>(null);
+  const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -67,10 +67,22 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
       updateCustomerInfo(info);
 
       // Get available offerings
-      const offerings = await Purchases.getOfferings();
-      if (offerings.current) {
-        setOfferings(offerings.current);
-        console.log('✅ Loaded subscription offerings:', offerings.current.availablePackages.length, 'packages');
+      const fetchedOfferings = await Purchases.getOfferings();
+      setOfferings(fetchedOfferings);
+
+      const currentCount = fetchedOfferings.current?.availablePackages?.length ?? 0;
+      const allOfferings: any =
+        // Most SDKs expose offerings by identifier under `all`
+        (fetchedOfferings as any).all ??
+        // Fallback if shape differs
+        (fetchedOfferings as any).offerings ??
+        {};
+      const allCount = Object.values(allOfferings).reduce((sum: number, o: any) => {
+        return sum + ((o?.availablePackages?.length ?? 0) as number);
+      }, 0);
+
+      if (fetchedOfferings.current) {
+        console.log('✅ Loaded subscription offerings:', currentCount, 'packages in current offering;', allCount, 'packages across all offerings');
       } else {
         console.warn('⚠️ No current offering found. Make sure products are configured in RevenueCat.');
       }

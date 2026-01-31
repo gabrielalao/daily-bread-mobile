@@ -3,9 +3,12 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "npm run extract-album-art && bunx rork start -p r4qzda6e2bkihxcrpye8g --tunnel",
-    "start-web": "npm run extract-album-art && bunx rork start -p r4qzda6e2bkihxcrpye8g --web --tunnel",
-    "start-web-dev": "npm run extract-album-art && DEBUG=expo* bunx rork start -p r4qzda6e2bkihxcrpye8g --web --tunnel",
+    "start": "npm run extract-album-art && bunx rork start -p r4qzda6e2bkihxcrpye8g",
+    "start:tunnel": "npm run extract-album-art && bunx rork start -p r4qzda6e2bkihxcrpye8g --tunnel",
+    "start:expo": "npm run extract-album-art && npx expo start --dev-client",
+    "start:expo:tunnel": "npm run extract-album-art && npx expo start --dev-client --tunnel",
+    "start-web": "npm run extract-album-art && bunx rork start -p r4qzda6e2bkihxcrpye8g --web",
+    "start-web-dev": "npm run extract-album-art && DEBUG=expo* bunx rork start -p r4qzda6e2bkihxcrpye8g --web",
     "lint": "expo lint",
     "postinstall": "patch-package",
     "extract-album-art": "bash scripts/extract-album-art.sh",
@@ -65,12 +68,16 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@expo/cli": "^54.0.22",
     "@expo/ngrok": "^4.1.0",
     "@types/react": "~19.1.10",
     "eslint": "^9.31.0",
     "eslint-config-expo": "~10.0.0",
     "patch-package": "^8.0.1",
     "typescript": "~5.9.2"
+  },
+  "engines": {
+    "node": ">=20.19.4"
   },
   "private": true
 }

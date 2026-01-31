@@ -25,7 +25,10 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { BibleVersionPickerModal } from '@/components/BibleVersionPickerModal';
 import { getEffectiveBibleVersionAbbr } from '@/utils/bibleVersionPolicy';
 import { A11yText as Text } from "@/components/A11yText";
+import { usePremiumAccess } from "@/hooks/usePremiumAccess";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from "expo-router";
+import { Alert } from "react-native";
 
 const { width: screenWidth } = Dimensions.get('window');
 const isTablet = screenWidth >= 768;
@@ -41,8 +44,12 @@ interface ReadingPosition {
 }
 
 export default function BibleScreen() {
+  const { isPremiumLocked } = usePremiumAccess();
+  const router = useRouter();
+
   const { userPreferences, setBibleVersion, setOfflineModeEnabled } = useContent();
   const { isOnline } = useNetworkStatus();
+  const premiumPreferredVersionId = isPremiumLocked ? "kjv" : userPreferences.bibleVersion;
   const [currentBook, setCurrentBook] = useState<BibleBook>(BIBLE_BOOKS[0]); // Genesis
   const [currentChapter, setCurrentChapter] = useState(1);
   const [chapterData, setChapterData] = useState<BibleChapter | null>(null);
@@ -61,6 +68,14 @@ export default function BibleScreen() {
   const [selectedSearchBook, setSelectedSearchBook] = useState<BibleBook | null>(null);
   const [filteredBooks, setFilteredBooks] = useState<BibleBook[]>(BIBLE_BOOKS);
 
+  // If premium is locked (trial ended + not subscribed), keep preferences consistent by
+  // snapping the user's preferred Bible version back to KJV.
+  useEffect(() => {
+    if (!isPremiumLocked) return;
+    if (userPreferences.bibleVersion === "kjv") return;
+    void setBibleVersion("kjv");
+  }, [isPremiumLocked, setBibleVersion, userPreferences.bibleVersion]);
+
   // Load saved reading position on mount
   useEffect(() => {
     loadReadingPosition();
@@ -77,9 +92,12 @@ export default function BibleScreen() {
 
   const loadChapter = useCallback(async () => {
     setLoading(true);
-    const translation = userPreferences.offlineModeEnabled ? "kjv" : getBibleAPITranslation(userPreferences.bibleVersion);
+    const translation =
+      userPreferences.offlineModeEnabled || isPremiumLocked
+        ? "kjv"
+        : getBibleAPITranslation(userPreferences.bibleVersion);
     const data = await fetchBibleChapter(currentBook.id, currentChapter, translation, {
-      allowNetwork: !userPreferences.offlineModeEnabled,
+      allowNetwork: !userPreferences.offlineModeEnabled && !isPremiumLocked,
     });
     setChapterData(data);
     
@@ -112,6 +130,7 @@ export default function BibleScreen() {
     saveReadingPosition,
     userPreferences.bibleVersion,
     userPreferences.offlineModeEnabled,
+    isPremiumLocked,
   ]);
 
   // Fetch chapter when book or chapter changes
@@ -120,8 +139,8 @@ export default function BibleScreen() {
   }, [loadChapter]);
 
   const effectiveAbbr = getEffectiveBibleVersionAbbr({
-    preferredVersionId: userPreferences.bibleVersion,
-    offlineModeEnabled: userPreferences.offlineModeEnabled,
+    preferredVersionId: premiumPreferredVersionId,
+    offlineModeEnabled: userPreferences.offlineModeEnabled || isPremiumLocked,
   });
 
   const loadReadingPosition = async () => {
@@ -143,6 +162,17 @@ export default function BibleScreen() {
   // (saveReadingPosition + loadChapter moved above, memoized)
 
   const handleBibleVersionChange = async (versionId: string) => {
+    if (isPremiumLocked && versionId !== "kjv") {
+      Alert.alert(
+        "Unlock more Bible versions",
+        "KJV is free. Subscribe to unlock NIV and other translations.",
+        [
+          { text: "Not now", style: "cancel" },
+          { text: "Subscribe", onPress: () => router.push("/paywall") },
+        ]
+      );
+      return;
+    }
     await setBibleVersion(versionId);
   };
 
@@ -282,7 +312,20 @@ export default function BibleScreen() {
 
             <TouchableOpacity
               style={styles.versionPillButton}
-              onPress={() => setShowVersionPicker(true)}
+              onPress={() => {
+                if (isPremiumLocked) {
+                  Alert.alert(
+                    "KJV is free",
+                    "Subscribe to unlock NIV and other Bible versions.",
+                    [
+                      { text: "Continue with KJV", style: "cancel" },
+                      { text: "Subscribe", onPress: () => router.push("/paywall") },
+                    ]
+                  );
+                  return;
+                }
+                setShowVersionPicker(true);
+              }}
               activeOpacity={0.7}
             >
               <Text style={styles.versionPillText}>{effectiveAbbr}</Text>
@@ -291,6 +334,18 @@ export default function BibleScreen() {
 
           {userPreferences.offlineModeEnabled ? (
             <Text style={styles.offlineHint}>Showing KJV (Offline mode)</Text>
+          ) : null}
+
+          {isPremiumLocked ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => router.push("/paywall")}
+              style={{ marginTop: 6 }}
+            >
+              <Text style={styles.kjvFreeHint}>
+                KJV is free. Subscribe to unlock NIV and other versions.
+              </Text>
+            </TouchableOpacity>
           ) : null}
         </View>
 
@@ -663,6 +718,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: colors.light.textSecondary,
+  },
+  kjvFreeHint: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.light.primary,
   },
   topBarRight: {
     flexDirection: "row",

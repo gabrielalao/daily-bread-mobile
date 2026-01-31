@@ -12,7 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTrial } from '@/contexts/TrialContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { Check } from 'lucide-react-native';
+import { SUBSCRIPTION_PRODUCTS } from '@/constants/subscriptions';
+import { Check, X } from 'lucide-react-native';
 
 export default function PaywallScreen() {
   const router = useRouter();
@@ -21,6 +22,26 @@ export default function PaywallScreen() {
   
   const [selectedProduct, setSelectedProduct] = useState<'monthly' | 'annual'>('annual');
   const [isPurchasing, setIsPurchasing] = useState(false);
+
+  const getAllAvailablePackages = (): any[] => {
+    if (!offerings) return [];
+
+    const fromCurrent: any[] = (offerings as any)?.current?.availablePackages ?? [];
+    const fromAllOfferingsObj: any =
+      (offerings as any)?.all ??
+      (offerings as any)?.offerings ??
+      {};
+    const fromAll: any[] = Object.values(fromAllOfferingsObj).flatMap((o: any) => o?.availablePackages ?? []);
+
+    const merged = [...fromCurrent, ...fromAll];
+    const seen = new Set<string>();
+    return merged.filter((p: any) => {
+      const key = `${p?.identifier ?? ''}:${p?.product?.identifier ?? ''}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
 
   // If user is subscribed, go back
   React.useEffect(() => {
@@ -35,9 +56,16 @@ export default function PaywallScreen() {
     setIsPurchasing(true);
     
     try {
-      // Find the selected package
-      const pkg = offerings.availablePackages.find(p => 
-        p.product.identifier === (selectedProduct === 'monthly' ? 'monthly_30' : 'yearly_365')
+      const targetId =
+        selectedProduct === 'monthly'
+          ? SUBSCRIPTION_PRODUCTS.MONTHLY
+          : SUBSCRIPTION_PRODUCTS.ANNUAL;
+
+      // Find the selected package (RevenueCat package identifiers and store product identifiers
+      // are not always the same, so check both).
+      const allPackages = getAllAvailablePackages();
+      const pkg = allPackages.find(
+        (p) => p.identifier === targetId || p.product.identifier === targetId
       );
       
       if (pkg) {
@@ -45,6 +73,22 @@ export default function PaywallScreen() {
         if (success) {
           router.back();
         }
+      } else {
+        console.warn(
+          '❌ Selected package not found in current offering.',
+          JSON.stringify(
+            {
+              selectedProduct,
+              targetId,
+              availablePackages: getAllAvailablePackages().map((p) => ({
+                packageIdentifier: p.identifier,
+                productIdentifier: p.product.identifier,
+              })),
+            },
+            null,
+            2
+          )
+        );
       }
     } finally {
       setIsPurchasing(false);
@@ -81,6 +125,19 @@ export default function PaywallScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* Close */}
+          <View style={styles.closeRow}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Close paywall"
+              style={styles.closeButton}
+              activeOpacity={0.8}
+            >
+              <X size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.emoji}>🍃</Text>
@@ -98,12 +155,16 @@ export default function PaywallScreen() {
           {/* Features */}
           <View style={styles.features}>
             <Feature text="Daily Devotionals" />
-            <Feature text="Complete Bible" />
+            <Feature text="All Bible translations" />
             <Feature text="AI Therapy" />
             <Feature text="Worship Music" />
             <Feature text="Prayer Guidance" />
             <Feature text="Study Plans" />
           </View>
+
+          <Text style={styles.freeNote}>
+            Free forever: Daily Devotionals, Prayer Guidance, and KJV Bible.
+          </Text>
 
           {/* Subscription Options */}
           <View style={styles.plans}>
@@ -208,6 +269,19 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
+  closeRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginBottom: 8,
+  },
+  closeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -245,6 +319,14 @@ const styles = StyleSheet.create({
   },
   features: {
     marginBottom: 32,
+  },
+  freeNote: {
+    marginTop: -12,
+    marginBottom: 24,
+    textAlign: "center",
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.85)",
+    fontWeight: "600",
   },
   feature: {
     flexDirection: 'row',
