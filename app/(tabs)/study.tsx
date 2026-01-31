@@ -13,6 +13,8 @@ import { getStudyInsight, mergeInsightOverrides } from "@/utils/studyInsights";
 import { t, tParams } from "@/utils/i18n";
 import { NetworkStatusDot } from "@/components/NetworkStatusDot";
 import { A11yText as Text } from "@/components/A11yText";
+import { usePremiumAccess } from "@/hooks/usePremiumAccess";
+import { PremiumLockedScreen } from "@/components/PremiumLockedScreen";
 import { Book, Calendar, ChevronRight, X, Upload, ChevronDown, ChevronUp, Lightbulb, BookOpen, Heart, Clock, Share2 } from "lucide-react-native";
 import React, { useState, useRef } from "react";
 import { useFocusEffect } from "expo-router";
@@ -91,6 +93,16 @@ type FormattedVerse = {
 };
 
 export default function BibleStudyScreen() {
+  const { isPremiumLocked } = usePremiumAccess();
+  if (isPremiumLocked) {
+    return (
+      <PremiumLockedScreen
+        title="Study Plans are Premium"
+        body="Your free trial has ended. Subscribe to continue accessing Study Plans and daily study insights."
+      />
+    );
+  }
+
   const { contentHistory, userPreferences, markStudyViewed, addStudyCategory, isLoaded, getStudyPlanCycle, getStudyPlanCompletedDays, markStudyDayCompleted, advanceStudyPlanCycle, setCurrentDayStudy } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
   

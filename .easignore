@@ -44,6 +44,9 @@ android/app/build/
 *.tmp
 .DS_Store
 
+# Prefer npm on EAS (package-lock.json exists)
+bun.lock
+
 # Scripts (not needed for build)
 scripts/
 

@@ -10,6 +10,8 @@ import { getVersionById } from "@/constants/bible-versions";
 import { translateTextCached } from "@/utils/translate";
 import { TypingIndicator } from "@/components/TypingIndicator";
 import { ScheduleNextSessionModal } from "@/components/ScheduleNextSessionModal";
+import { usePremiumAccess } from "@/hooks/usePremiumAccess";
+import { PremiumLockedScreen } from "@/components/PremiumLockedScreen";
 import { useRorkAgent, generateObject } from "@rork-ai/toolkit-sdk";
 import { LinearGradient } from "expo-linear-gradient";
 import Constants from "expo-constants";
@@ -62,6 +64,16 @@ const MOODS = [
 ];
 
 export default function TherapyScreen() {
+  const { isPremiumLocked } = usePremiumAccess();
+  if (isPremiumLocked) {
+    return (
+      <PremiumLockedScreen
+        title="AI Therapy is Premium"
+        body="Your free trial has ended. Subscribe to continue with AI Therapy sessions and supportive conversations."
+      />
+    );
+  }
+
   const { contentHistory, userPreferences, markTherapyViewed, isLoaded, setCurrentDayTherapy } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
   const { isOffline } = useNetworkStatus();
