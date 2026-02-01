@@ -114,16 +114,15 @@ Before testing subscriptions, you need to configure products in RevenueCat dashb
 
 ### 2. Add Products
 - Go to Products
-- Add product: `monthly_30` (link to App Store Connect product)
-- Add product: `yearly_365` (link to App Store Connect product)
+- Add product: `cdb_premium` (link to App Store Connect / Play Console product)
 
 ### 3. Link Products to Entitlement
 - Go to Entitlements → `pro`
-- Add both products to the `pro` entitlement
+- Add `cdb_premium` to the `pro` entitlement
 
 ### 4. Create Offering (Optional)
 - Go to Offerings
-- Create a default offering with both products
+- Create a default offering with the Premium product
 - This makes them available in `offerings.current` in your app
 
 ---
@@ -146,8 +145,7 @@ Once you have the development build installed:
 - [ ] Cannot dismiss paywall without subscribing
 
 ### Purchase Flow (iOS Sandbox)
-- [ ] Select Annual plan (radio button)
-- [ ] Click "Subscribe Now"
+- [ ] Tap "Start Premium"
 - [ ] Purchase sheet appears
 - [ ] Complete purchase with sandbox account
 - [ ] Paywall dismisses
@@ -172,7 +170,7 @@ Once you have the development build installed:
 ### "Purchase failed"
 **Solution:** 
 1. Make sure you're using a sandbox account on iOS
-2. Check that product IDs match exactly: `monthly_30`, `yearly_365`
+2. Check that product ID matches exactly: `cdb_premium`
 3. Verify agreements are signed in App Store Connect
 
 ### "Cannot find module 'react-native-purchases'"

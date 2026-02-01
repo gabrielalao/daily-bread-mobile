@@ -22,9 +22,9 @@ Contains your RevenueCat API keys:
 **Purpose:** Product IDs and configuration
 
 **Contains:**
-- Product IDs: `monthly_30`, `yearly_365`
+- Product ID: `cdb_premium`
 - Trial duration: 7 days
-- Pricing: $1.99/month, $9.99/year
+- Pricing: $9.99/year
 - Regional restrictions (US, CA, GB, etc.)
 
 ---
@@ -261,11 +261,11 @@ npx tsc --noEmit
 2. **RevenueCat Setup:** Make sure you've configured your iOS and Android apps in RevenueCat dashboard (you already did this for the API keys).
 
 3. **Product Configuration:** In RevenueCat dashboard, you'll need to:
-   - Add products: `monthly_30` and `yearly_365`
+   - Add product: `cdb_premium`
    - Create entitlement: `pro`
-   - Link products to entitlement
+   - Link product to entitlement
 
-4. **App Store Connect:** You need to create the actual subscription products in App Store Connect (monthly_30, yearly_365) before they'll work.
+4. **App Store Connect:** You need to create the actual subscription product in App Store Connect (`cdb_premium`) before it will work.
 
 5. **Google Play Console:** Same for Android - create subscriptions in Play Console.
 

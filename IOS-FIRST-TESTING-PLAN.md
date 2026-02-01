@@ -13,18 +13,13 @@
 3. Click **"+ New"** to add products
 
 **Add Product 1: Monthly (iOS)**
-- Identifier: `monthly_30`
+- Identifier: `cdb_premium`
 - Store: **App Store** (NOT Google Play yet)
 - Type: Subscription
-- Product ID: `monthly_30`
+- Product ID: `cdb_premium`
 - Click **Save**
 
-**Add Product 2: Annual (iOS)**
-- Identifier: `yearly_365`
-- Store: **App Store**
-- Type: Subscription
-- Product ID: `yearly_365`
-- Click **Save**
+That’s it — you only need one Premium product.
 
 ### Step 2: Create Entitlement
 
@@ -36,9 +31,8 @@
 4. Click **Save**
 5. Click on the **"pro"** entitlement
 6. Click **"Attach Products"**
-7. Select BOTH iOS products:
-   - ✅ `monthly_30` [App Store]
-   - ✅ `yearly_365` [App Store]
+7. Select the Premium product:
+   - ✅ `cdb_premium` [App Store]
 8. Click **Save**
 
 ### Step 3: Create Offering
@@ -53,16 +47,12 @@
 5. Inside the offering, click **"Add Package"**
 
 **Add Package 1: Annual (Default)**
-- Identifier: `annual`
-- Product: `yearly_365`
+- Identifier: `premium`
+- Product: `cdb_premium`
 - **Make this the default package** (toggle on)
 - Click **Save**
 
-**Add Package 2: Monthly**
-- Click **"Add Package"** again
-- Identifier: `monthly`
-- Product: `monthly_30`
-- Click **Save**
+Skip adding a second package — the paywall uses a single Premium option now.
 
 6. Set offering as **"Current"** (there should be a toggle/button at the top)
 
@@ -86,12 +76,12 @@ This will take 15-20 minutes. Once done:
 - [ ] App launches, trial starts automatically
 - [ ] Banner shows "🎁 Free Trial: 7 days remaining"
 - [ ] Click banner opens paywall
-- [ ] Paywall shows both subscription options
+- [ ] Paywall shows Premium plan
 
 **Purchase Flow (Use Sandbox Account):**
 1. Settings → App Store → Sandbox Account (add test Apple ID)
-2. In your app, select Annual plan
-3. Click "Subscribe Now"
+2. In your app, tap "Start Premium"
+3. Complete checkout
 4. Complete with sandbox account
 5. Should work! 🎉
 
@@ -125,17 +115,15 @@ Then:
 
 Now you can access the Subscriptions page:
 1. **Monetize with Play** → **Subscriptions**
-2. Create `monthly_30` ($1.99/month, 7-day trial)
-3. Create `yearly_365` ($9.99/year, 7-day trial)
-4. Activate both
+2. Create `cdb_premium` ($9.99/year, 7-day trial)
+3. Activate it
 
 ### Step 3: Add Android Products to RevenueCat
 
 1. Go to RevenueCat → **Products** → **"+ New"**
-2. Add `monthly_30` [Google Play]
-3. Add `yearly_365` [Google Play]
+2. Add `cdb_premium` [Google Play]
 4. Go to **Entitlements** → **"pro"** → **Attach Products**
-5. Add both Android products
+5. Add the Android product
 6. Done!
 
 ### Step 4: Build & Test Android

@@ -1,14 +1,12 @@
 // Product IDs - MUST match App Store Connect & Play Console
 export const SUBSCRIPTION_PRODUCTS = {
-  MONTHLY: 'monthly_30',
-  ANNUAL: 'yearly_365',
+  PREMIUM: 'cdb_premium',
 } as const;
 
 export const SUBSCRIPTION_CONFIG = {
   TRIAL_DAYS: 7,
-  MONTHLY_PRICE: '$1.99',
-  ANNUAL_PRICE: '$9.99',
-  ANNUAL_MONTHLY_EQUIVALENT: '$0.83',
+  PREMIUM_PRICE: '$9.99',
+  PREMIUM_PERIOD: 'year',
   
   // Regional restrictions (same as macOS app)
   PAID_REGIONS: [

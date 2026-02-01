@@ -137,7 +137,7 @@ In Xcode bottom panel (View → Debug Area → Show Debug Area):
 Example:
 ```
 ✅ RevenueCat configured for ios
-✅ Loaded subscription offerings: 2 packages
+✅ Loaded subscription offerings: 1 package
 🎁 Trial active: 7 days, 0 hours remaining
 ```
 
@@ -150,7 +150,7 @@ Example:
 
 **"Purchase failed: Product not found"**
 - Products must exist in App Store Connect
-- Product IDs must match exactly: `monthly_30`, `yearly_365`
+- Product ID must match exactly: `cdb_premium`
 
 **"Team not found"**
 - Go to Xcode → Settings → Accounts

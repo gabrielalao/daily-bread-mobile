@@ -352,8 +352,8 @@ export default function SettingsScreen() {
             <Text style={styles.sectionTitle}>Billing &amp; Subscription Management</Text>
             <Text style={styles.sectionSubtitle}>
               {isSubscribed
-                ? "Manage your subscription, switch plans, or restore purchases."
-                : "Manage your plan, subscribe, or restore purchases."}
+                ? "Manage your subscription or restore purchases."
+                : "Subscribe to Premium or restore purchases."}
             </Text>
 
             <View style={styles.settingCard}>
@@ -363,7 +363,7 @@ export default function SettingsScreen() {
                 </View>
                 <View style={styles.settingTextContainer}>
                   <Text style={styles.settingLabel}>Manage subscription</Text>
-                  <Text style={styles.settingDescription}>Open App Store / Google Play subscription settings</Text>
+                  <Text style={styles.settingDescription}>Open your device subscription settings</Text>
                 </View>
                 <ChevronRight size={20} color={colors.light.textSecondary} />
               </TouchableOpacity>
@@ -375,8 +375,8 @@ export default function SettingsScreen() {
                   <ArrowRightLeft size={22} color={colors.light.primary} />
                 </View>
                 <View style={styles.settingTextContainer}>
-                  <Text style={styles.settingLabel}>Change plan</Text>
-                  <Text style={styles.settingDescription}>Switch between monthly and annual</Text>
+                  <Text style={styles.settingLabel}>Premium</Text>
+                  <Text style={styles.settingDescription}>View Premium plan ($9.99/year)</Text>
                 </View>
                 <ChevronRight size={20} color={colors.light.textSecondary} />
               </TouchableOpacity>
@@ -389,7 +389,7 @@ export default function SettingsScreen() {
                 </View>
                 <View style={styles.settingTextContainer}>
                   <Text style={styles.settingLabel}>Restore purchases</Text>
-                  <Text style={styles.settingDescription}>If you already subscribed on this Apple/Google account</Text>
+                  <Text style={styles.settingDescription}>If you already subscribed on this device/account</Text>
                 </View>
                 <ChevronRight size={20} color={colors.light.textSecondary} />
               </TouchableOpacity>
@@ -975,7 +975,7 @@ export default function SettingsScreen() {
               <Text style={styles.legalAnswer}>A: Yes, Christian Daily Bread is free to download. Basic features are available for free. Premium subscriptions with enhanced features are available for users in the US, Canada, and Europe, with a 7-day free trial. Users in other regions get all premium features free.</Text>
 
               <Text style={styles.legalQuestion}>Q: What are the subscription options?</Text>
-              <Text style={styles.legalAnswer}>A: We offer Monthly and Annual premium subscriptions for users in the US, Canada, and Europe. Both include a 7-day free trial. Prices are shown in the app. Users in other regions get premium features free.</Text>
+              <Text style={styles.legalAnswer}>A: We offer a Premium subscription for users in supported paid regions. It includes a 7-day free trial and renews yearly. Prices are shown in the app. Users in other regions get premium features free.</Text>
 
               <Text style={styles.legalQuestion}>Q: How do I cancel my subscription?</Text>
               <Text style={styles.legalAnswer}>A: For iOS: Go to Settings → [Your Name] → Subscriptions. Select Christian Daily Bread and tap &quot;Cancel Subscription&quot;. For Android: Open Play Store → Menu → Subscriptions. Select Christian Daily Bread and tap &quot;Cancel Subscription&quot;. Cancellation takes effect at the end of your current billing period.</Text>
