@@ -23,6 +23,13 @@ export default function PaywallScreen() {
   
   const [isPurchasing, setIsPurchasing] = useState(false);
   const premiumProductId = SUBSCRIPTION_PRODUCTS.PREMIUM;
+  const premiumMatchIds = [premiumProductId, `${premiumProductId}:yearly`];
+
+  const matchesPremium = (p: any) => {
+    const pkgId = String(p?.identifier ?? '');
+    const productId = String(p?.product?.identifier ?? '');
+    return premiumMatchIds.includes(pkgId) || premiumMatchIds.includes(productId);
+  };
 
   const getAllAvailablePackages = (): any[] => {
     if (!offerings) return [];
@@ -60,9 +67,7 @@ export default function PaywallScreen() {
       // Find the selected package (RevenueCat package identifiers and store product identifiers
       // are not always the same, so check both).
       const allPackages = getAllAvailablePackages();
-      const pkg = allPackages.find(
-        (p) => p?.identifier === premiumProductId || p?.product?.identifier === premiumProductId
-      );
+      const pkg = allPackages.find(matchesPremium);
       
       if (pkg) {
         const success = await purchase(pkg);
@@ -80,6 +85,7 @@ export default function PaywallScreen() {
           JSON.stringify(
             {
               premiumProductId,
+              premiumMatchIds,
               availablePackages: getAllAvailablePackages().map((p) => ({
                 packageIdentifier: p.identifier,
                 productIdentifier: p.product.identifier,
@@ -116,9 +122,7 @@ export default function PaywallScreen() {
   }
 
   const premiumPkg = offerings
-    ? getAllAvailablePackages().find(
-        (p) => p?.identifier === premiumProductId || p?.product?.identifier === premiumProductId
-      )
+    ? getAllAvailablePackages().find(matchesPremium)
     : null;
   const premiumPrice = premiumPkg?.product?.priceString ?? "$9.99";
 
