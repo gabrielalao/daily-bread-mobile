@@ -165,14 +165,13 @@ What to test:
 ### Before TestFlight Testing:
 
 1. **App Store Connect Products**
-   - ✅ `monthly_30` ($1.99/month, 7-day trial)
-   - ✅ `yearly_365` ($9.99/year, 7-day trial)
+   - ✅ `cdb_premium` ($9.99/year, 7-day trial)
    - Status: Created in App Store Connect
 
 2. **RevenueCat Dashboard**
    - ✅ Products configured (iOS only)
    - ✅ Entitlement `pro` created
-   - ✅ Offering `monthly_30` set as default
+   - ✅ Offering `default` set as current
    - ✅ API keys added to `.env` (not committed)
 
 3. **Environment Variables (Not in Git)**
@@ -233,7 +232,7 @@ Consider bumping version for subscription release:
 - Check internet connection
 
 ### "Purchase failed: Product not found"
-- Verify product IDs match exactly: `monthly_30`, `yearly_365`
+- Verify product ID matches exactly: `cdb_premium`
 - Check products are linked to entitlement in RevenueCat
 - Ensure products are Active in App Store Connect
 

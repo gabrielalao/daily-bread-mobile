@@ -6,6 +6,7 @@ import {
   ScrollView, 
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,8 +21,8 @@ export default function PaywallScreen() {
   const { isTrialExpired } = useTrial();
   const { offerings, purchase, restorePurchases, isSubscribed, isLoading } = useSubscription();
   
-  const [selectedProduct, setSelectedProduct] = useState<'monthly' | 'annual'>('annual');
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const premiumProductId = SUBSCRIPTION_PRODUCTS.PREMIUM;
 
   const getAllAvailablePackages = (): any[] => {
     if (!offerings) return [];
@@ -56,16 +57,11 @@ export default function PaywallScreen() {
     setIsPurchasing(true);
     
     try {
-      const targetId =
-        selectedProduct === 'monthly'
-          ? SUBSCRIPTION_PRODUCTS.MONTHLY
-          : SUBSCRIPTION_PRODUCTS.ANNUAL;
-
       // Find the selected package (RevenueCat package identifiers and store product identifiers
       // are not always the same, so check both).
       const allPackages = getAllAvailablePackages();
       const pkg = allPackages.find(
-        (p) => p.identifier === targetId || p.product.identifier === targetId
+        (p) => p?.identifier === premiumProductId || p?.product?.identifier === premiumProductId
       );
       
       if (pkg) {
@@ -74,12 +70,16 @@ export default function PaywallScreen() {
           router.back();
         }
       } else {
+        Alert.alert(
+          "Unable to load Premium",
+          "We couldn't find the Premium subscription in the store. Please try again in a moment.",
+          [{ text: "OK" }]
+        );
         console.warn(
           '❌ Selected package not found in current offering.',
           JSON.stringify(
             {
-              selectedProduct,
-              targetId,
+              premiumProductId,
               availablePackages: getAllAvailablePackages().map((p) => ({
                 packageIdentifier: p.identifier,
                 productIdentifier: p.product.identifier,
@@ -114,6 +114,13 @@ export default function PaywallScreen() {
       </View>
     );
   }
+
+  const premiumPkg = offerings
+    ? getAllAvailablePackages().find(
+        (p) => p?.identifier === premiumProductId || p?.product?.identifier === premiumProductId
+      )
+    : null;
+  const premiumPrice = premiumPkg?.product?.priceString ?? "$9.99";
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -168,49 +175,18 @@ export default function PaywallScreen() {
 
           {/* Subscription Options */}
           <View style={styles.plans}>
-            {/* Annual Plan */}
-            <TouchableOpacity
-              style={[
-                styles.planCard,
-                selectedProduct === 'annual' && styles.planCardSelected
-              ]}
-              onPress={() => setSelectedProduct('annual')}
-              activeOpacity={0.8}
-            >
+            <View style={[styles.planCard, styles.planCardSelected]}>
               <View style={styles.planHeader}>
-                <View style={styles.radioOuter}>
-                  {selectedProduct === 'annual' && <View style={styles.radioInner} />}
-                </View>
                 <View style={styles.planInfo}>
-                  <Text style={styles.planName}>Annual - $9.99/year</Text>
-                  <Text style={styles.planDetail}>Only $0.83/month</Text>
+                  <Text style={styles.planName}>Premium - {premiumPrice}/year</Text>
+                  <Text style={styles.planDetail}>7-day free trial • Cancel anytime</Text>
                 </View>
                 <View style={styles.bestValue}>
-                  <Text style={styles.bestValueText}>Best Value</Text>
+                  <Text style={styles.bestValueText}>Premium</Text>
                 </View>
               </View>
               <Text style={styles.familyBadge}>👥 Family</Text>
-            </TouchableOpacity>
-
-            {/* Monthly Plan */}
-            <TouchableOpacity
-              style={[
-                styles.planCard,
-                selectedProduct === 'monthly' && styles.planCardSelected
-              ]}
-              onPress={() => setSelectedProduct('monthly')}
-              activeOpacity={0.8}
-            >
-              <View style={styles.planHeader}>
-                <View style={styles.radioOuter}>
-                  {selectedProduct === 'monthly' && <View style={styles.radioInner} />}
-                </View>
-                <View style={styles.planInfo}>
-                  <Text style={styles.planName}>Monthly - $1.99/month</Text>
-                </View>
-              </View>
-              <Text style={styles.familyBadge}>👥 Family</Text>
-            </TouchableOpacity>
+            </View>
           </View>
 
           {/* Subscribe Button */}
@@ -223,7 +199,7 @@ export default function PaywallScreen() {
             {isPurchasing ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.subscribeButtonText}>✓ Subscribe Now</Text>
+              <Text style={styles.subscribeButtonText}>✓ Start Premium</Text>
             )}
           </TouchableOpacity>
 

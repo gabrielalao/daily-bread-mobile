@@ -63,9 +63,9 @@ Your macOS Swift implementation maps directly to React Native:
 
 ### What Stays the Same
 
-✅ Product IDs: `monthly_30`, `yearly_365`
+✅ Product ID: `cdb_premium`
 ✅ Trial duration: 7 days
-✅ Pricing: $1.99/month, $9.99/year
+✅ Pricing: $9.99/year
 ✅ App Store Connect setup (identical for macOS and iOS)
 ✅ Trial logic and countdown
 ✅ Regional restrictions
@@ -171,10 +171,9 @@ eas build:run --profile development --platform ios
    - **iOS API Key:** `appl_xxxxxxxxxxxxxx`
    - **Android API Key:** `goog_xxxxxxxxxxxxxx`
 5. Configure products:
-   - Product ID: `monthly_30`
-   - Product ID: `yearly_365`
+   - Product ID: `cdb_premium`
 6. Create entitlement: `pro`
-7. Link products to entitlement
+7. Link product to entitlement
 
 ### Step 5: Add Environment Variables
 
@@ -220,15 +219,13 @@ Create these new files:
 ```typescript
 // Product IDs - MUST match App Store Connect & Play Console
 export const SUBSCRIPTION_PRODUCTS = {
-  MONTHLY: 'monthly_30',
-  ANNUAL: 'yearly_365',
+  PREMIUM: 'cdb_premium',
 } as const;
 
 export const SUBSCRIPTION_CONFIG = {
   TRIAL_DAYS: 7,
-  MONTHLY_PRICE: '$1.99',
-  ANNUAL_PRICE: '$9.99',
-  ANNUAL_MONTHLY_EQUIVALENT: '$0.83',
+  PREMIUM_PRICE: '$9.99',
+  PREMIUM_PERIOD: 'year',
   
   // Regional restrictions (from macOS app)
   PAID_REGIONS: [
@@ -684,7 +681,6 @@ export default function PaywallScreen() {
   const { isTrialExpired } = useTrial();
   const { offerings, purchase, restorePurchases, isSubscribed, isLoading } = useSubscription();
   
-  const [selectedProduct, setSelectedProduct] = useState<'monthly' | 'annual'>('annual');
   const [isPurchasing, setIsPurchasing] = useState(false);
 
   // If user is subscribed, go back
@@ -700,9 +696,9 @@ export default function PaywallScreen() {
     setIsPurchasing(true);
     
     try {
-      // Find the selected package
-      const pkg = offerings.availablePackages.find(p => 
-        p.product.identifier === (selectedProduct === 'monthly' ? 'monthly_30' : 'yearly_365')
+      // Find the Premium package by product ID
+      const pkg = offerings.current?.availablePackages?.find(
+        (p) => p.product.identifier === 'cdb_premium'
       );
       
       if (pkg) {
@@ -1139,28 +1135,19 @@ export default function TabLayout() {
 3. Name: "Premium Access"
 4. Click "Create"
 
-### Step 3: Create Monthly Subscription
+### Step 3: Create Premium Subscription (Yearly)
 
 1. Click "+" inside the group
-2. **Product ID:** `monthly_30` ⚠️ **MUST BE EXACTLY THIS**
-3. **Reference Name:** Monthly Premium
-4. **Duration:** 1 month
-5. **Pricing:** $1.99
+2. **Product ID:** `cdb_premium` ⚠️ **MUST BE EXACTLY THIS**
+3. **Reference Name:** Premium
+4. **Duration:** 1 year
+5. **Pricing:** $9.99
 6. **Localization:**
-   - Display Name: Monthly Premium
-   - Description: Premium access with monthly billing. Includes 7-day free trial.
+   - Display Name: Premium
+   - Description: Premium access. Includes 7-day free trial.
 7. **Free Trial:** 7 days
 8. **Family Sharing:** ON
 9. Status: "Ready to Submit"
-
-### Step 4: Create Annual Subscription
-
-1. Repeat above steps
-2. **Product ID:** `yearly_365` ⚠️ **MUST BE EXACTLY THIS**
-3. **Duration:** 1 year
-4. **Pricing:** $9.99
-5. **Free Trial:** 7 days
-6. **Family Sharing:** ON
 
 ### Step 5: Link Subscriptions to App Version ⚠️
 
@@ -1169,9 +1156,8 @@ export default function TabLayout() {
 1. App Store Connect → App Store → **[Your Version]**
 2. Scroll to "In-App Purchases and Subscriptions"
 3. Click "+"
-4. Select both:
-   - ✅ monthly_30
-   - ✅ yearly_365
+4. Select:
+   - ✅ cdb_premium
 5. Click "Done"
 6. **Save**
 
@@ -1215,18 +1201,18 @@ Same code works on Android with Google Play Billing.
 1. **Google Play Console** → Your App → **Monetize → Subscriptions**
 2. Click **"Create subscription"**
 
-**Monthly Subscription:**
+**Premium Subscription (Yearly):**
 ```
-Subscription ID: monthly_30
-Name: Monthly Premium
-Description: Premium access with monthly billing
+Subscription ID: cdb_premium
+Name: Premium
+Description: Premium access (yearly)
 ```
 
 3. Click **"Add base plan"**
 ```
-Base plan ID: monthly
-Billing period: 1 month (P1M)
-Price: $1.99 USD
+Base plan ID: yearly
+Billing period: 1 year (P1Y)
+Price: $9.99 USD
 ```
 
 4. Click **"Add offer"** (Free trial)
@@ -1237,15 +1223,6 @@ Free trial: 7 days
 ```
 
 5. Click **"Activate"**
-
-**Annual Subscription:**
-```
-Subscription ID: yearly_365
-Base plan: yearly
-Billing period: 1 year (P1Y)
-Price: $9.99 USD
-Free trial: 7 days
-```
 
 ### Step 2: Set Up License Testers
 
@@ -1374,7 +1351,7 @@ await resetTrial();
 **Cause:** Product IDs mismatch or not linked to version
 
 **Solution:**
-1. Verify code product IDs: `monthly_30`, `yearly_365`
+1. Verify code product ID: `cdb_premium`
 2. Verify App Store Connect product IDs match
 3. Verify subscriptions are linked to version
 4. Rebuild and resubmit
@@ -1453,10 +1430,10 @@ const TRIAL_DURATION_MS = -1;
 ## 🚨 Critical Reminders
 
 1. **Product IDs must be identical everywhere:**
-   - Code: `monthly_30`, `yearly_365`
-   - App Store Connect: `monthly_30`, `yearly_365`
-   - Play Console: `monthly_30`, `yearly_365`
-   - RevenueCat: `monthly_30`, `yearly_365`
+   - Code: `cdb_premium`
+   - App Store Connect: `cdb_premium`
+   - Play Console: `cdb_premium`
+   - RevenueCat: `cdb_premium`
 
 2. **Custom development build required**
    - Expo Go does NOT support IAP
@@ -1502,15 +1479,13 @@ const TRIAL_DURATION_MS = -1;
 ### iOS Setup
 - [ ] Accept Paid Apps Agreement
 - [ ] Create subscription group
-- [ ] Create monthly_30 subscription
-- [ ] Create yearly_365 subscription
+- [ ] Create `cdb_premium` subscription
 - [ ] Enable family sharing
 - [ ] Link to app version
 - [ ] Build and submit
 
 ### Android Setup
-- [ ] Create monthly_30 subscription
-- [ ] Create yearly_365 subscription
+- [ ] Create `cdb_premium` subscription
 - [ ] Add license testers
 - [ ] Test internal testing
 - [ ] Submit for review

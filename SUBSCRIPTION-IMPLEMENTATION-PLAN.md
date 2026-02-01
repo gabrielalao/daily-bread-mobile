@@ -310,15 +310,13 @@ File: `constants/subscriptions.ts`
 ```typescript
 // Product IDs - MUST match App Store Connect & Play Console
 export const SUBSCRIPTION_PRODUCTS = {
-  MONTHLY: 'monthly_30',
-  ANNUAL: 'yearly_365',
+  PREMIUM: 'cdb_premium',
 } as const;
 
 export const SUBSCRIPTION_CONFIG = {
   TRIAL_DAYS: 7,
-  MONTHLY_PRICE: '$1.99',
-  ANNUAL_PRICE: '$9.99',
-  ANNUAL_MONTHLY_EQUIVALENT: '$0.83',
+  PREMIUM_PRICE: '$9.99',
+  PREMIUM_PERIOD: 'year',
   
   // Regional restrictions (from macOS app)
   PAID_REGIONS: [
@@ -843,29 +841,29 @@ If you find bugs:
 - [ ] Reference Name: `Premium Access`
 - [ ] Click "Create"
 
-**Task 8.3: Create Monthly Subscription**
+**Task 8.3: Create Premium Subscription (Yearly)**
 
 Inside the subscription group:
 
 1. Click "+" (Create Subscription)
 2. Fill in details:
-   - **Product ID:** `monthly_30` ⚠️ MUST BE EXACT
-   - **Reference Name:** `Monthly Premium`
-   - **Subscription Duration:** `1 month`
+   - **Product ID:** `cdb_premium` ⚠️ MUST BE EXACT
+   - **Reference Name:** `Premium`
+   - **Subscription Duration:** `1 year`
 3. Click "Create"
 
 4. Configure Pricing:
    - Click "Add Pricing"
    - Country: United States
-   - Price: `$1.99`
+   - Price: `$9.99`
    - Click "Equalize Worldwide" (auto-calculates other countries)
    - Click "Next" → "Create"
 
 5. Add Localization:
    - Click "Add Localization"
    - Language: English (U.S.)
-   - Display Name: `Monthly Premium`
-   - Description: `Premium access to all features with monthly billing. Includes 7-day free trial.`
+   - Display Name: `Premium`
+   - Description: `Premium access to all features. Includes 7-day free trial.`
    - Click "Save"
 
 6. Add Free Trial:
@@ -883,32 +881,13 @@ Inside the subscription group:
 8. Verify Status:
    - Status should show: **"Ready to Submit"**
 
-- [ ] Product ID is `monthly_30`
-- [ ] Price is $1.99
+- [ ] Product ID is `cdb_premium`
+- [ ] Price is $9.99
 - [ ] 7-day free trial configured
 - [ ] Family Sharing enabled
 - [ ] Status: "Ready to Submit"
 
 #### Afternoon (2-3 hours)
-
-**Task 8.4: Create Annual Subscription**
-
-Repeat above steps with these changes:
-
-- **Product ID:** `yearly_365` ⚠️ MUST BE EXACT
-- **Reference Name:** `Annual Premium`
-- **Subscription Duration:** `1 year`
-- **Price:** `$9.99`
-- **Display Name:** `Annual Premium`
-- **Description:** `Premium access to all features with annual billing. Best value - only $0.83/month! Includes 7-day free trial.`
-- **Free Trial:** 7 days
-- **Family Sharing:** ON
-
-- [ ] Product ID is `yearly_365`
-- [ ] Price is $9.99
-- [ ] 7-day free trial configured
-- [ ] Family Sharing enabled
-- [ ] Status: "Ready to Submit"
 
 **Task 8.5: Link Subscriptions to App Version** ⚠️ CRITICAL
 
@@ -917,11 +896,10 @@ This is the #1 reason for rejections!
 1. App Store Connect → App Store → [Your Version] (e.g., 6.0.2)
 2. Scroll down to: **"In-App Purchases and Subscriptions"**
 3. Click the **"+"** button
-4. Select both subscriptions:
-   - ✅ Monthly Premium (monthly_30)
-   - ✅ Annual Premium (yearly_365)
+4. Select your subscription:
+   - ✅ Premium (cdb_premium)
 5. Click "Done"
-6. Verify both appear in the list
+6. Verify it appears in the list
 7. Click **"Save"** (top right)
 
 - [ ] Both subscriptions listed under version
@@ -944,9 +922,8 @@ Still on version page:
 **Deliverables:**
 - ✅ Paid Apps Agreement is Active
 - ✅ Subscription group created
-- ✅ Monthly subscription (monthly_30) configured
-- ✅ Annual subscription (yearly_365) configured
-- ✅ Both subscriptions linked to app version
+- ✅ Premium subscription (cdb_premium) configured
+- ✅ Subscription linked to app version
 - ✅ Production build selected
 - ✅ Ready to submit iOS app
 
@@ -1014,25 +991,18 @@ Now that App Store Connect products exist, configure RevenueCat:
 3. Click: **Products** (left sidebar)
 4. Click: **"+ New"**
 
-**Add iOS Products:**
-- [ ] Product ID: `monthly_30`
+**Add iOS Product:**
+- [ ] Product ID: `cdb_premium`
   - Platform: iOS
   - Product Type: Auto-renewable subscription
-  - Store Product ID: `monthly_30`
-  - Click "Save"
-
-- [ ] Product ID: `yearly_365`
-  - Platform: iOS
-  - Product Type: Auto-renewable subscription
-  - Store Product ID: `yearly_365`
+  - Store Product ID: `cdb_premium`
   - Click "Save"
 
 5. Click: **Entitlements** (left sidebar)
 6. Click: **"+ New"**
 7. Entitlement ID: `pro`
 8. Attach products:
-   - ✅ monthly_30
-   - ✅ yearly_365
+   - ✅ cdb_premium
 9. Click "Save"
 
 - [ ] iOS products added to RevenueCat
@@ -1048,16 +1018,16 @@ Now we configure Android subscriptions:
 3. Navigate to: **Monetize → Subscriptions**
 4. Click: **"Create subscription"**
 
-**Create Monthly Subscription:**
-- Subscription ID: `monthly_30` ⚠️ MUST BE EXACT
-- Name: `Monthly Premium`
-- Description: `Premium access to all features with monthly billing`
+**Create Premium Subscription (Yearly):**
+- Subscription ID: `cdb_premium` ⚠️ MUST BE EXACT
+- Name: `Premium`
+- Description: `Premium access to all features (yearly)`
 - Click "Continue"
 
 5. Click: **"Add base plan"**
-   - Base plan ID: `monthly`
-   - Billing period: `1 month (P1M)`
-   - Price: `$1.99 USD`
+   - Base plan ID: `yearly`
+   - Billing period: `1 year (P1Y)`
+   - Price: `$9.99 USD`
    - Click "Equalize prices" (auto-calculates other countries)
    - Click "Save"
 
@@ -1066,27 +1036,12 @@ Now we configure Android subscriptions:
    - Eligibility: New customers only
    - Phases:
      - Phase 1: Free for 7 days
-     - Phase 2: $1.99/month (recurring)
+     - Phase 2: $9.99/year (recurring)
    - Click "Save"
 
 7. Click: **"Activate"**
 
-- [ ] Subscription ID is `monthly_30`
-- [ ] Base plan created
-- [ ] 7-day free trial configured
-- [ ] Status: Active
-
-**Create Annual Subscription:**
-
-Repeat with:
-- Subscription ID: `yearly_365`
-- Name: `Annual Premium`
-- Base plan ID: `yearly`
-- Billing period: `1 year (P1Y)`
-- Price: `$9.99 USD`
-- 7-day free trial
-
-- [ ] Subscription ID is `yearly_365`
+- [ ] Subscription ID is `cdb_premium`
 - [ ] Base plan created
 - [ ] 7-day free trial configured
 - [ ] Status: Active
@@ -1097,12 +1052,9 @@ Back in RevenueCat Dashboard:
 
 1. Products → "+ New"
 2. Add Android products:
-   - [ ] Product ID: `monthly_30`
+   - [ ] Product ID: `cdb_premium`
      - Platform: Android
-     - Store Product ID: `monthly_30`
-   - [ ] Product ID: `yearly_365`
-     - Platform: Android
-     - Store Product ID: `yearly_365`
+     - Store Product ID: `cdb_premium`
 3. Link to "pro" entitlement (already done)
 
 - [ ] Android products added to RevenueCat

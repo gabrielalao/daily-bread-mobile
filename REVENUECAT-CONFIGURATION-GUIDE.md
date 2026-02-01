@@ -1,6 +1,6 @@
 # RevenueCat Product Configuration Guide
 
-**Goal:** Configure `monthly_30` and `yearly_365` subscription products in RevenueCat dashboard
+**Goal:** Configure `cdb_premium` subscription product in RevenueCat dashboard
 
 **Time Required:** 10-15 minutes
 
@@ -18,7 +18,7 @@ Before starting, make sure you have:
 
 ---
 
-## Part 1: Create Products in App Store Connect (iOS)
+## Part 1: Create Product in App Store Connect (iOS)
 
 ### Step 1: Go to App Store Connect
 
@@ -34,46 +34,14 @@ Before starting, make sure you have:
 3. Name the group: `Premium Subscription` (or whatever you prefer)
 4. Click **"Create"**
 
-### Step 3: Create Monthly Subscription
+### Step 3: Create Premium Subscription (Yearly)
 
 1. Inside the subscription group, click **"Create Subscription"** (the + button)
 2. Fill in the details:
 
 **Product Details:**
-- **Reference Name:** `Monthly Premium`
-- **Product ID:** `monthly_30` ⚠️ **MUST match exactly!**
-
-3. Click **"Create"**
-
-4. Fill in **Subscription Prices:**
-   - Click **"Add Subscription Price"**
-   - Select **United States**
-   - Enter price: **$1.99**
-   - Start Date: Today
-   - Click **"Next"** and **"Add"**
-
-5. Fill in **Localization (at least one required):**
-   - Click **"Create in Default Localization"** or **"Add Localization"**
-   - **Subscription Display Name:** `Monthly Premium`
-   - **Description:** `Access all premium features with monthly billing. Cancel anytime.`
-
-6. Fill in **Subscription Duration:**
-   - Select **"1 month"**
-
-7. Fill in **Free Trial:**
-   - Select **"7 days"**
-   - Check **"Only for first subscription"** (optional, recommended)
-
-8. Click **"Save"** in the top right
-
-### Step 4: Create Annual Subscription
-
-1. Click **"Create Subscription"** again (the + button)
-2. Fill in the details:
-
-**Product Details:**
-- **Reference Name:** `Annual Premium`
-- **Product ID:** `yearly_365` ⚠️ **MUST match exactly!**
+- **Reference Name:** `Premium`
+- **Product ID:** `cdb_premium` ⚠️ **MUST match exactly!**
 
 3. Click **"Create"**
 
@@ -84,10 +52,10 @@ Before starting, make sure you have:
    - Start Date: Today
    - Click **"Next"** and **"Add"**
 
-5. Fill in **Localization:**
+5. Fill in **Localization (at least one required):**
    - Click **"Create in Default Localization"** or **"Add Localization"**
-   - **Subscription Display Name:** `Annual Premium`
-   - **Description:** `Access all premium features with annual billing. Best value - save 58%! Cancel anytime.`
+   - **Subscription Display Name:** `Premium`
+   - **Description:** `Access all premium features. Cancel anytime.`
 
 6. Fill in **Subscription Duration:**
    - Select **"1 year"**
@@ -98,7 +66,7 @@ Before starting, make sure you have:
 
 8. Click **"Save"** in the top right
 
-### Step 5: Submit for Review (Later)
+### Step 4: Submit for Review (Later)
 
 For now, products are in "Missing Metadata" or "Ready to Submit" status. That's OK for testing!
 
@@ -106,7 +74,7 @@ For now, products are in "Missing Metadata" or "Ready to Submit" status. That's 
 
 ---
 
-## Part 2: Create Products in Google Play Console (Android)
+## Part 2: Create Product in Google Play Console (Android)
 
 ### Step 1: Go to Google Play Console
 
@@ -119,48 +87,23 @@ For now, products are in "Missing Metadata" or "Ready to Submit" status. That's 
 1. In the left sidebar, click **"Monetize"** → **"Subscriptions"**
 2. Click **"Create subscription"**
 
-### Step 3: Create Monthly Subscription
+### Step 3: Create Premium Subscription (Yearly)
 
 1. Fill in the details:
 
 **Product details:**
-- **Product ID:** `monthly_30` ⚠️ **MUST match exactly!**
-- **Name:** `Monthly Premium`
-- **Description:** `Access all premium features with monthly billing. Cancel anytime.`
+- **Product ID:** `cdb_premium` ⚠️ **MUST match exactly!**
+- **Name:** `Premium`
+- **Description:** `Access all premium features. Cancel anytime.`
 
 2. Fill in **Pricing:**
    - Click **"Set pricing"**
    - Select **United States**
-   - Enter price: **$1.99**
+   - Enter price: **$9.99**
    - Click **"Apply"**
 
 3. Fill in **Subscription benefits** (optional but recommended):
    - Add benefits like "Daily devotionals", "AI therapy", etc.
-
-4. Fill in **Billing period:**
-   - Select **"Every 1 month"**
-
-5. Fill in **Free trial:**
-   - Check **"Offer free trial"**
-   - Select **"7 days"**
-
-6. Click **"Save"** and then **"Activate"**
-
-### Step 4: Create Annual Subscription
-
-1. Click **"Create subscription"** again
-2. Fill in the details:
-
-**Product details:**
-- **Product ID:** `yearly_365` ⚠️ **MUST match exactly!**
-- **Name:** `Annual Premium`
-- **Description:** `Access all premium features with annual billing. Best value - save 58%! Cancel anytime.`
-
-3. Fill in **Pricing:**
-   - Click **"Set pricing"**
-   - Select **United States**
-   - Enter price: **$9.99**
-   - Click **"Apply"**
 
 4. Fill in **Billing period:**
    - Select **"Every 1 year"**
@@ -173,7 +116,7 @@ For now, products are in "Missing Metadata" or "Ready to Submit" status. That's 
 
 ---
 
-## Part 3: Configure Products in RevenueCat Dashboard
+## Part 3: Configure Product in RevenueCat Dashboard
 
 Now that products exist in App Store Connect and Google Play Console, let's link them in RevenueCat.
 
@@ -188,51 +131,29 @@ Now that products exist in App Store Connect and Google Play Console, let's link
 1. In the left sidebar, click **"Products"**
 2. Click **"+ New"** (top right)
 
-**Add Monthly Product:**
+**Add Premium Product (iOS):**
 3. Fill in the form:
-   - **Identifier:** `monthly_30` ⚠️ **MUST match exactly!**
+   - **Identifier:** `cdb_premium` ⚠️ **MUST match exactly!**
    - **Store:** Select **"App Store"**
    - **Type:** Select **"Subscription"**
-   - **Product ID (App Store):** `monthly_30`
-   - **Display Name:** `Monthly Premium` (optional)
-   - **Description:** `Monthly subscription - $1.99/month` (optional)
+   - **Product ID (App Store):** `cdb_premium`
+   - **Display Name:** `Premium` (optional)
+   - **Description:** `Yearly Premium - $9.99/year` (optional)
 
 4. Click **"Create"** or **"Save"**
-
-**Add Annual Product:**
-5. Click **"+ New"** again
-6. Fill in the form:
-   - **Identifier:** `yearly_365` ⚠️ **MUST match exactly!**
-   - **Store:** Select **"App Store"**
-   - **Type:** Select **"Subscription"**
-   - **Product ID (App Store):** `yearly_365`
-   - **Display Name:** `Annual Premium` (optional)
-   - **Description:** `Annual subscription - $9.99/year` (optional)
-
-7. Click **"Create"** or **"Save"**
 
 ### Step 3: Add Android Products
 
 1. Still in **"Products"**, click **"+ New"** again
 
-**Add Monthly Product (Android):**
+**Add Premium Product (Android):**
 2. Fill in the form:
-   - **Identifier:** `monthly_30` (same as iOS!)
+   - **Identifier:** `cdb_premium` (same as iOS!)
    - **Store:** Select **"Google Play"**
    - **Type:** Select **"Subscription"**
-   - **Product ID (Google Play):** `monthly_30`
+   - **Product ID (Google Play):** `cdb_premium`
 
 3. Click **"Create"** or **"Save"**
-
-**Add Annual Product (Android):**
-4. Click **"+ New"** again
-5. Fill in the form:
-   - **Identifier:** `yearly_365` (same as iOS!)
-   - **Store:** Select **"Google Play"**
-   - **Type:** Select **"Subscription"**
-   - **Product ID (Google Play):** `yearly_365`
-
-6. Click **"Create"** or **"Save"**
 
 ### Step 4: Create Entitlement
 
@@ -253,9 +174,8 @@ Now link your subscription products to the `pro` entitlement.
 
 1. Click on the **"pro"** entitlement you just created
 2. In the **"Products"** section, click **"Attach"** or **"Add Products"**
-3. Select both products:
-   - ✅ `monthly_30` (both iOS and Android versions)
-   - ✅ `yearly_365` (both iOS and Android versions)
+3. Select your Premium product(s):
+   - ✅ `cdb_premium` (App Store and/or Google Play)
 
 4. Click **"Save"** or **"Attach"**
 
@@ -273,23 +193,15 @@ Offerings control what products users see in your paywall.
 
 5. In the offering page, click **"Add Package"**
 
-**Add Annual Package:**
+**Add Premium Package:**
 6. Fill in:
-   - **Identifier:** `annual`
-   - **Product:** Select `yearly_365`
+   - **Identifier:** `premium` (recommended)
+   - **Product:** Select `cdb_premium`
    - Make this the **default package** (toggle or checkbox)
 
 7. Click **"Add"** or **"Save"**
 
-**Add Monthly Package:**
-8. Click **"Add Package"** again
-9. Fill in:
-   - **Identifier:** `monthly`
-   - **Product:** Select `monthly_30`
-
-10. Click **"Add"** or **"Save"**
-
-11. Set this offering as **"Current"** (there should be a toggle or button)
+8. Set this offering as **"Current"** (there should be a toggle or button)
 
 ---
 
@@ -299,25 +211,21 @@ After completing all steps above, verify:
 
 ### App Store Connect:
 - [ ] Subscription group created
-- [ ] `monthly_30` product exists with $1.99 price
-- [ ] `yearly_365` product exists with $9.99 price
-- [ ] Both products have 7-day free trial
-- [ ] Both products have at least one localization
+- [ ] `cdb_premium` product exists with $9.99 price
+- [ ] Product has 7-day free trial
+- [ ] Product has at least one localization
 
 ### Google Play Console:
-- [ ] `monthly_30` subscription exists with $1.99 price
-- [ ] `yearly_365` subscription exists with $9.99 price
-- [ ] Both subscriptions are **Active**
+- [ ] `cdb_premium` subscription exists with $9.99 price
+- [ ] Subscription is **Active**
 
 ### RevenueCat Dashboard:
-- [ ] 4 products total:
-  - [ ] `monthly_30` (App Store)
-  - [ ] `monthly_30` (Google Play)
-  - [ ] `yearly_365` (App Store)
-  - [ ] `yearly_365` (Google Play)
+- [ ] Products:
+  - [ ] `cdb_premium` (App Store)
+  - [ ] `cdb_premium` (Google Play) (if supporting Android)
 - [ ] Entitlement `pro` exists
-- [ ] Both products attached to `pro` entitlement
-- [ ] Offering `default` exists with both packages
+- [ ] Premium product attached to `pro` entitlement
+- [ ] Offering `default` exists with Premium package
 - [ ] Offering is set as "Current"
 
 ---
@@ -339,8 +247,7 @@ You should see:
 ```
 Offerings: { current: { ... } }
 Packages: [
-  { identifier: 'annual', product: { identifier: 'yearly_365', ... } },
-  { identifier: 'monthly', product: { identifier: 'monthly_30', ... } }
+  { identifier: 'premium', product: { identifier: 'cdb_premium', ... } }
 ]
 ```
 
@@ -350,7 +257,7 @@ Packages: [
 
 ### "Product not found" error
 **Cause:** Product IDs don't match between App Store Connect and RevenueCat  
-**Fix:** Double-check all IDs are exactly `monthly_30` and `yearly_365`
+**Fix:** Double-check the ID is exactly `cdb_premium`
 
 ### "No offerings found"
 **Cause:** Offering not set as "Current" or products not attached to offering  
@@ -362,7 +269,7 @@ Packages: [
 
 ### Products show in iOS but not Android
 **Cause:** Forgot to add Google Play products separately  
-**Fix:** Add both `monthly_30` and `yearly_365` with Store: "Google Play"
+**Fix:** Add `cdb_premium` with Store: "Google Play"
 
 ---
 
@@ -370,29 +277,24 @@ Packages: [
 
 ### RevenueCat Products Page:
 ```
-Products (4)
-├── monthly_30 [App Store] → Subscription
-├── monthly_30 [Google Play] → Subscription
-├── yearly_365 [App Store] → Subscription
-└── yearly_365 [Google Play] → Subscription
+Products (2)
+├── cdb_premium [App Store] → Subscription
+└── cdb_premium [Google Play] → Subscription
 ```
 
 ### RevenueCat Entitlements Page:
 ```
 Entitlements (1)
 └── pro
-    ├── monthly_30 [App Store]
-    ├── monthly_30 [Google Play]
-    ├── yearly_365 [App Store]
-    └── yearly_365 [Google Play]
+    ├── cdb_premium [App Store]
+    └── cdb_premium [Google Play]
 ```
 
 ### RevenueCat Offerings Page:
 ```
 Offerings (1)
 └── default [CURRENT]
-    ├── annual → yearly_365 [DEFAULT PACKAGE]
-    └── monthly → monthly_30
+    └── premium → cdb_premium [DEFAULT PACKAGE]
 ```
 
 ---
