@@ -387,6 +387,58 @@ export function getAlbumArtForDevotion(devotionTitle: string): any | null {
       case 'the-ministry-of-encouragement':
         return require('@/assets/audio/the-ministry-of-encouragement.jpg');
       
+      // Day 105: Guarding Your Eyes
+      case 'guarding-your-eyes':
+        return require('@/assets/audio/guarding-your-eyes.jpg');
+      
+      // Day 106: Supernatural Peace
+      case 'supernatural-peace':
+        return require('@/assets/audio/supernatural-peace.jpg');
+      
+      // Day 107: Honoring Authority
+      case 'honoring-authority':
+        return require('@/assets/audio/honoring-authority.jpg');
+      
+      // Day 108: Redefining Success
+      case 'redefining-success':
+        return require('@/assets/audio/redefining-success.jpg');
+      
+      // Day 109: Loving the Unlovable
+      case 'loving-the-unlovable':
+        return require('@/assets/audio/loving-the-unlovable.jpg');
+      
+      // Day 110: The Practice of Solitude
+      case 'the-practice-of-solitude':
+        return require('@/assets/audio/the-practice-of-solitude.jpg');
+      
+      // Day 111: Stewarding Your Influence
+      case 'stewarding-your-influence':
+        return require('@/assets/audio/stewarding-your-influence.jpg');
+      
+      // Day 112: The Cost of Compromise
+      case 'the-cost-of-compromise':
+        return require('@/assets/audio/the-cost-of-compromise.jpg');
+      
+      // Day 115: The Discipline of Celebration
+      case 'the-discipline-of-celebration':
+        return require('@/assets/audio/the-discipline-of-celebration.jpg');
+      
+      // Day 116: Sowing and Reaping
+      case 'sowing-and-reaping':
+        return require('@/assets/audio/sowing-and-reaping.jpg');
+      
+      // Day 118: Spiritual Warfare Reality
+      case 'spiritual-warfare-reality':
+        return require('@/assets/audio/spiritual-warfare-reality.jpg');
+      
+      // Day 119: The Fruit of the Spirit
+      case 'the-fruit-of-the-spirit':
+        return require('@/assets/audio/the-fruit-of-the-spirit.jpg');
+      
+      // Day 121: Surrendering Control
+      case 'surrendering-control':
+        return require('@/assets/audio/surrendering-control.jpg');
+      
       // Day 125: The Gift of Today
       case 'the-gift-of-today':
         return require('@/assets/audio/the-gift-of-today.jpg');

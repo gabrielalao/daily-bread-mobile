@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions, ActivityIndicator, Alert } from 'react-native';
 import { Audio } from 'expo-av';
 import { Play, Pause, SkipBack, SkipForward, Repeat1 } from 'lucide-react-native';
-import { documentDirectory, makeDirectoryAsync, getInfoAsync, downloadAsync } from "expo-file-system";
+import { documentDirectory, makeDirectoryAsync, getInfoAsync, downloadAsync } from "expo-file-system/legacy";
 import { getAudioFileForDevotion } from "@/utils/audioHelper";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useContent } from "@/contexts/ContentContext";
@@ -403,6 +403,10 @@ export function DevotionalMusicPlayer({
   const timeFontSize = isTablet ? 14 : isSmallPhone ? 10 : 12;
   const skipTextSize = isTablet ? 14 : isSmallPhone ? 10 : 12;
 
+  if (!resolvedAudioSource) {
+    return null;
+  }
+
   if (isPremiumLocked) {
     return (
       <View style={styles.premiumLockCard}>
@@ -422,10 +426,6 @@ export function DevotionalMusicPlayer({
         </TouchableOpacity>
       </View>
     );
-  }
-
-  if (!resolvedAudioSource) {
-    return null;
   }
 
   return (
