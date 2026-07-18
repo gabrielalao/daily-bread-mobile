@@ -94,14 +94,6 @@ type FormattedVerse = {
 
 export default function BibleStudyScreen() {
   const { isPremiumLocked } = usePremiumAccess();
-  if (isPremiumLocked) {
-    return (
-      <PremiumLockedScreen
-        title="Study Plans are Premium"
-        body="Your free trial has ended. Subscribe to continue accessing Study Plans and daily study insights."
-      />
-    );
-  }
 
   const { contentHistory, userPreferences, markStudyViewed, addStudyCategory, isLoaded, getStudyPlanCycle, getStudyPlanCompletedDays, markStudyDayCompleted, advanceStudyPlanCycle, setCurrentDayStudy } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
@@ -946,6 +938,15 @@ export default function BibleStudyScreen() {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
     }, [])
   );
+
+  if (isPremiumLocked) {
+    return (
+      <PremiumLockedScreen
+        title="Study Plans are Premium"
+        body="Your free trial has ended. Subscribe to continue accessing Study Plans and daily study insights."
+      />
+    );
+  }
 
   if (!isLoaded) {
     return (

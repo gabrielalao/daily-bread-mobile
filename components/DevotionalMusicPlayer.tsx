@@ -35,27 +35,6 @@ export function DevotionalMusicPlayer({
   const { isOnline, isOffline } = useNetworkStatus();
   const { userPreferences, setOfflineModeEnabled } = useContent();
 
-  if (isPremiumLocked) {
-    return (
-      <View style={styles.premiumLockCard}>
-        <View style={styles.premiumLockHeader}>
-          <Text style={styles.premiumLockTitle}>Worship Music</Text>
-          <Text style={styles.premiumLockBadge}>Premium</Text>
-        </View>
-        <Text style={styles.premiumLockBody}>
-          Your free trial has ended. Subscribe to keep listening to daily worship music.
-        </Text>
-        <TouchableOpacity
-          style={styles.premiumLockCta}
-          onPress={() => router.push("/paywall")}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.premiumLockCtaText}>Subscribe to Premium</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
@@ -125,7 +104,7 @@ export function DevotionalMusicPlayer({
   // Auto-play effect
   useEffect(() => {
     const run = async () => {
-      if (!shouldAutoPlay || !resolvedAudioSource || sound || isLoading || hasError) return;
+      if (isPremiumLocked || !shouldAutoPlay || !resolvedAudioSource || sound || isLoading || hasError) return;
 
       // Avoid popping alerts for auto-play. Only auto-play if it can play now.
       if (isRemoteHttpAudio()) {
@@ -142,6 +121,7 @@ export function DevotionalMusicPlayer({
 
     void run();
   }, [
+    isPremiumLocked,
     shouldAutoPlay,
     resolvedAudioSource,
     sound,
@@ -422,6 +402,27 @@ export function DevotionalMusicPlayer({
   const artistFontSize = isTablet ? 16 : isSmallPhone ? 12 : 14;
   const timeFontSize = isTablet ? 14 : isSmallPhone ? 10 : 12;
   const skipTextSize = isTablet ? 14 : isSmallPhone ? 10 : 12;
+
+  if (isPremiumLocked) {
+    return (
+      <View style={styles.premiumLockCard}>
+        <View style={styles.premiumLockHeader}>
+          <Text style={styles.premiumLockTitle}>Worship Music</Text>
+          <Text style={styles.premiumLockBadge}>Premium</Text>
+        </View>
+        <Text style={styles.premiumLockBody}>
+          Your free trial has ended. Subscribe to keep listening to daily worship music.
+        </Text>
+        <TouchableOpacity
+          style={styles.premiumLockCta}
+          onPress={() => router.push("/paywall")}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.premiumLockCtaText}>Subscribe to Premium</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   if (!resolvedAudioSource) {
     return null;

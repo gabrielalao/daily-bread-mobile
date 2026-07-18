@@ -65,14 +65,6 @@ const MOODS = [
 
 export default function TherapyScreen() {
   const { isPremiumLocked } = usePremiumAccess();
-  if (isPremiumLocked) {
-    return (
-      <PremiumLockedScreen
-        title="AI Therapy is Premium"
-        body="Your free trial has ended. Subscribe to continue with AI Therapy sessions and supportive conversations."
-      />
-    );
-  }
 
   const { contentHistory, userPreferences, markTherapyViewed, isLoaded, setCurrentDayTherapy } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
@@ -1130,6 +1122,15 @@ You'll receive a notification to remind you.`,
       }
     }
   }, [messages, voiceModeEnabled, isSpeaking, speakText]);
+
+  if (isPremiumLocked) {
+    return (
+      <PremiumLockedScreen
+        title="AI Therapy is Premium"
+        body="Your free trial has ended. Subscribe to continue with AI Therapy sessions and supportive conversations."
+      />
+    );
+  }
 
   if (!isLoaded || !therapy) {
     return (
