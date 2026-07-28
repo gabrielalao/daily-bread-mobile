@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.rork.daily-bread-app-mp9wlbr",
-      "buildNumber": "7",
+      "buildNumber": "71",
       "config": {
         "usesNonExemptEncryption": false
       },
