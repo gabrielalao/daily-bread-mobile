@@ -1,6 +1,6 @@
-# Landing page design system (Daily Bread)
+# Landing page design system (CDB Therapy)
 
-Use this as a copy/paste reference for building a **Next.js marketing site** that matches the **Daily Bread mobile app UI** (Expo/React Native).
+Use this as a copy/paste reference for building a **Next.js marketing site** that matches the **CDB Therapy mobile app UI** (Expo/React Native).
 
 ---
 

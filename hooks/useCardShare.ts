@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Alert, Platform, Share } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
+import { APP_DISPLAY_NAME } from '@/constants/appName';
 
 const APP_DOWNLOAD_URL = 'https://daily-bread.app/';
 
@@ -12,7 +13,7 @@ const addWatermark = async (canvas: HTMLCanvasElement): Promise<HTMLCanvasElemen
   if (!ctx) return canvas;
 
   // Very small watermark text at the bottom center
-  const text = 'Christian Daily Bread';
+  const text = APP_DISPLAY_NAME;
   const fontSize = 11;
   const padding = 8;
   
@@ -65,7 +66,7 @@ export const useCardShare = () => {
 
     try {
       let uri: string;
-      const baseMessage = (customMessage ?? 'Shared from Christian Daily Bread').trim();
+      const baseMessage = (customMessage ?? `Shared from ${APP_DISPLAY_NAME}`).trim();
       const message = `${baseMessage}\n\nDownload the app: ${APP_DOWNLOAD_URL}`;
 
       if (Platform.OS === 'web') {
@@ -101,7 +102,7 @@ export const useCardShare = () => {
         
         Alert.alert(
           'Card Saved! 📸',
-          `Your card has been saved with © Christian Daily Bread branding.\n\nShare the app: ${APP_DOWNLOAD_URL}`,
+          `Your card has been saved with © ${APP_DISPLAY_NAME} branding.\n\nShare the app: ${APP_DOWNLOAD_URL}`,
           [{ text: 'Great!' }]
         );
       } else {
@@ -121,7 +122,7 @@ export const useCardShare = () => {
 
         // Share image + text (download link) together
         await Share.share({
-          title: 'Christian Daily Bread',
+          title: APP_DISPLAY_NAME,
           message,
           url: uri,
         });

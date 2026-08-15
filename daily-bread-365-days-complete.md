@@ -1,4 +1,4 @@
-# 365 Days of Daily Bread
+# 365 Days of CDB Therapy
 
 Complete daily devotional content including devotions, prayers, and Bible studies for an entire year.
 

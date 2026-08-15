@@ -1,5 +1,5 @@
 # iOS Mobile & Android Subscription Implementation Guide
-**Complete guide for implementing subscriptions in Daily Bread mobile app**
+**Complete guide for implementing subscriptions in CDB Therapy mobile app**
 
 Based on the successful macOS implementation with StoreKit 2.
 
@@ -166,7 +166,7 @@ eas build:run --profile development --platform ios
 
 1. Go to [RevenueCat](https://www.revenuecat.com)
 2. Sign up for free account
-3. Create new project: "Daily Bread"
+3. Create new project: "CDB Therapy"
 4. Get API keys:
    - **iOS API Key:** `appl_xxxxxxxxxxxxxx`
    - **Android API Key:** `goog_xxxxxxxxxxxxxx`

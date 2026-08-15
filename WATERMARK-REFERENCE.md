@@ -21,7 +21,7 @@ When you take a screenshot, check for these elements in the **bottom-right corne
 - [ ] **Location**: Bottom-right corner
 - [ ] **Background**: White (not colored)
 - [ ] **Logo**: App icon visible (24x24px)
-- [ ] **Text**: "dailybread.app" (not "Daily Bread")
+- [ ] **Text**: "dailybread.app" (not "CDB Therapy")
 - [ ] **Text Color**: Indigo/purple (#6366f1)
 - [ ] **Shape**: Rounded rectangle
 - [ ] **Shadow**: Subtle shadow visible
@@ -35,7 +35,7 @@ When you take a screenshot, check for these elements in the **bottom-right corne
 - ✅ Good: Watermark in empty space, content fully readable
 
 **Issue 2: Wrong branding**
-- ❌ Bad: Shows "📖 Daily Bread" (old version)
+- ❌ Bad: Shows "📖 CDB Therapy" (old version)
 - ✅ Good: Shows "[Logo] dailybread.app" (new version)
 
 **Issue 3: Logo not visible**
@@ -229,7 +229,7 @@ Run through these steps quickly to verify everything works:
 
 ```
 ✓ Home Tab Screenshot
-  - Open Daily Bread
+  - Open CDB Therapy
   - Go to Home
   - Tap share button
   - Check watermark
@@ -276,7 +276,7 @@ Run through these steps quickly to verify everything works:
 3. Restart Expo dev server
 4. Check browser console for errors
 
-### Problem: Wrong branding (old "📖 Daily Bread")
+### Problem: Wrong branding (old "📖 CDB Therapy")
 
 **Solution:**
 1. Check you're on latest code
@@ -364,7 +364,7 @@ Screenshot watermark is working correctly if:
 ### BEFORE (Old Watermark)
 ```
 Background: Blue/Purple (colored)
-Text: "📖 Daily Bread"
+Text: "📖 CDB Therapy"
 Style: White text on colored bg
 ```
 

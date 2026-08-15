@@ -12,23 +12,22 @@
  */
 
 import { getRemoteAudioUrl } from "./audioRemote";
+import {
+  getAudioFileForDevotion,
+  hasAudioForDevotion,
+} from "./audioAvailability";
 
-export function getAudioFileForDevotion(devotionTitle: string): string {
-  const fileName = devotionTitle
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .trim();
-
-  return fileName;
-}
+export { getAudioFileForDevotion, hasAudioForDevotion } from "./audioAvailability";
 
 /**
  * Returns a streaming source (uri) for Android. The player component can choose
  * to download/cache the file before playing.
  */
 export function getDynamicAudioSource(devotionTitle: string): any | null {
+  if (!hasAudioForDevotion(devotionTitle)) {
+    return null;
+  }
+
   const fileName = getAudioFileForDevotion(devotionTitle);
   const url = getRemoteAudioUrl(fileName);
   return url ? { uri: url } : null;
@@ -43,4 +42,3 @@ export function getAudioSourceByDayOfYear(dayOfYear: number): any | null {
   if (!devotion) return null;
   return getDynamicAudioSource(devotion.title);
 }
-

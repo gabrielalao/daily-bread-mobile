@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Daily Bread app now includes a **Screenshot & Share** feature that allows users to capture and share any page from the app to social media, WhatsApp, messaging apps, email, or any sharing platform available on their device.
+The CDB Therapy app now includes a **Screenshot & Share** feature that allows users to capture and share any page from the app to social media, WhatsApp, messaging apps, email, or any sharing platform available on their device.
 
 ## Features
 
@@ -224,7 +224,7 @@ Set isCapturing = false (hide loading)
 ```typescript
 <TouchableOpacity
   style={styles.shareButton}
-  onPress={() => captureAndShare("Share from Daily Bread")}
+  onPress={() => captureAndShare("Share from CDB Therapy")}
   disabled={isCapturing}
   activeOpacity={0.8}
 >
@@ -403,7 +403,7 @@ Action: User can retry
 - User controls what content to share
 
 **No Server Upload:**
-- Screenshots never uploaded to Daily Bread servers
+- Screenshots never uploaded to CDB Therapy servers
 - Sharing happens entirely on-device
 - Uses native OS sharing mechanisms
 
@@ -464,7 +464,7 @@ Action: User can retry
 Potential improvements for future versions:
 
 1. **Custom Watermark:**
-   - Add "Daily Bread" logo to screenshots
+   - Add "CDB Therapy" logo to screenshots
    - Customizable watermark position
    - Optional branded footer
 

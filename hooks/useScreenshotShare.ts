@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Alert, Platform, Share } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
+import { APP_DISPLAY_NAME } from '@/constants/appName';
 
 const APP_DOWNLOAD_URL = 'https://daily-bread.app/';
 
@@ -125,7 +126,7 @@ export const useScreenshotShare = () => {
 
     try {
       let uri: string;
-      const baseMessage = (customMessage ?? 'Shared from Christian Daily Bread').trim();
+      const baseMessage = (customMessage ?? `Shared from ${APP_DISPLAY_NAME}`).trim();
       const message = `${baseMessage}\n\nDownload the app: ${APP_DOWNLOAD_URL}`;
 
       if (Platform.OS === 'web') {
@@ -176,7 +177,7 @@ export const useScreenshotShare = () => {
         console.log('Screenshot captured:', uri);
 
         await Share.share({
-          title: 'Christian Daily Bread',
+          title: APP_DISPLAY_NAME,
           message,
           url: uri,
         });

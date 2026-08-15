@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { Animated, Pressable, StyleSheet, View, ActivityIndicator, TouchableOpacity } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { A11yText as Text } from "@/components/A11yText";
+import { APP_DISPLAY_NAME } from "@/constants/appName";
 
 const HAS_SEEN_LANDING_KEY = '@daily_bread_has_seen_landing';
 
@@ -125,7 +126,7 @@ export default function LandingPage() {
               </View>
             </View>
             
-            <Text style={styles.appName}>Christian Daily Bread</Text>
+            <Text style={styles.appName}>{APP_DISPLAY_NAME}</Text>
             <Text style={styles.tagline}>
               Nourishing Your Soul, One Day at a Time
             </Text>

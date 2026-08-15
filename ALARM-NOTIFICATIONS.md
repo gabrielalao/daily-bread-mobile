@@ -101,7 +101,7 @@ await Notifications.setNotificationChannelAsync('therapy-sessions', {
 
 **iOS:**
 - Notifications appear on lock screen by default
-- User can control in iOS Settings → Notifications → Daily Bread
+- User can control in iOS Settings → Notifications → CDB Therapy
 
 **Android:**
 - Set to `AndroidNotificationVisibility.PUBLIC`
@@ -132,7 +132,7 @@ For Android devices with notification LEDs:
 Users have full control over notification behavior through their device settings:
 
 ### iOS Settings
-1. Go to **Settings** → **Notifications** → **Daily Bread**
+1. Go to **Settings** → **Notifications** → **CDB Therapy**
 2. Customize:
    - Allow Notifications
    - Sounds
@@ -141,7 +141,7 @@ Users have full control over notification behavior through their device settings
    - Banner style
 
 ### Android Settings
-1. Go to **Settings** → **Apps** → **Daily Bread** → **Notifications**
+1. Go to **Settings** → **Apps** → **CDB Therapy** → **Notifications**
 2. Select **"Therapy Session Reminders"** channel
 3. Customize:
    - Importance level
@@ -372,8 +372,8 @@ await scheduleSession(
 5. Silent mode is OFF (iOS)
 
 **Fix:**
-- iOS: Settings → Notifications → Daily Bread → Sounds → Enabled
-- Android: Settings → Apps → Daily Bread → Notifications → Therapy Session Reminders → Sound → Select sound
+- iOS: Settings → Notifications → CDB Therapy → Sounds → Enabled
+- Android: Settings → Apps → CDB Therapy → Notifications → Therapy Session Reminders → Sound → Select sound
 
 ### No Vibration
 
@@ -396,7 +396,7 @@ await scheduleSession(
 **Fix:**
 1. Grant notification permission when prompted
 2. Android: Check notification channel settings
-3. Disable battery optimization for Daily Bread
+3. Disable battery optimization for CDB Therapy
 
 ### Silent Notification
 

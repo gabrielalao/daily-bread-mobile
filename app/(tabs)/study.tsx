@@ -139,9 +139,9 @@ export default function BibleStudyScreen() {
     setShowShareMenu(false);
     setTimeout(() => {
       if (activeCardType === 'study') {
-        studyCard.shareCard("Share today's study from Christian Daily Bread");
+        studyCard.shareCard("Share today's study from CDB Therapy");
       } else if (activeCardType === 'reflection') {
-        reflectionCard.shareCard("Share today's reflection from Christian Daily Bread");
+        reflectionCard.shareCard("Share today's reflection from CDB Therapy");
       }
     }, 300);
   };
@@ -838,7 +838,7 @@ export default function BibleStudyScreen() {
         });
 
         await Share.share({
-          title: 'Christian Daily Bread',
+          title: 'CDB Therapy',
           message: 'Download the app: https://daily-bread.app/',
           url: uri,
         });

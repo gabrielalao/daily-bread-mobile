@@ -1,6 +1,6 @@
 # Bible Versions Feature
 
-Daily Bread now supports multiple Bible translations, allowing users to choose their preferred version.
+CDB Therapy now supports multiple Bible translations, allowing users to choose their preferred version.
 
 ## ✨ Features
 

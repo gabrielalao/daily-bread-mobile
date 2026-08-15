@@ -35,7 +35,7 @@
 - ✅ **In-App Visibility:** NO watermark visible in the app (as requested)
 - ✅ **Web Sharing:** Watermark added programmatically to canvas after capture
 - ✅ **Mobile Sharing:** Infrastructure ready (limited by React Native capabilities)
-- ✅ **Watermark Text:** "Christian Daily Bread" (small, semi-transparent)
+- ✅ **Watermark Text:** "CDB Therapy" (small, semi-transparent)
 - ✅ **No Orphaned Components:** All `ShareWatermark`/`CardWatermark` references removed
 
 ---

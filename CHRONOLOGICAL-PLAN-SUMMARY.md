@@ -119,7 +119,7 @@ The plan automatically works with existing features:
 
 **Monday (Day 1)**
 ```
-Open Daily Bread app
+Open CDB Therapy app
   ↓
 Tap "Study" tab
   ↓

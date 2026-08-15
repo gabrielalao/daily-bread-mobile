@@ -10,12 +10,14 @@ import { translateTextCached } from "@/utils/translate";
 import { NetworkStatusDot } from "@/components/NetworkStatusDot";
 import { A11yText as Text } from "@/components/A11yText";
 import { DevotionalMusicPlayer } from "@/components/DevotionalMusicPlayer";
-import { getDynamicAudioSource } from "@/utils/audioHelper";
+import { DevotionalJournal } from "@/components/DevotionalJournal";
+import { getDynamicAudioSource, hasAudioForDevotion } from "@/utils/audioHelper";
+import { getJournalDateKeys, parseDateKey, toDateKey } from "@/utils/journalStorage";
 import { getAlbumArtForDevotion } from "@/utils/albumArtHelper";
 import { BookOpen, Calendar, Clock, X, Upload } from "lucide-react-native";
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Animated, ScrollView, StyleSheet, View, TouchableOpacity, Dimensions, Modal } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar as RNCalendar } from 'react-native-calendars';
 
@@ -24,6 +26,7 @@ const isTablet = screenWidth >= 768;
 const isSmallScreen = screenWidth < 375;
 
 export default function HomeScreen() {
+  const { journalDate } = useLocalSearchParams<{ journalDate?: string }>();
   const { contentHistory, userPreferences, markDevotionalViewed, isLoaded, setCurrentDayDevotional } = useContent();
   const { analyzeContentInteraction } = usePersonalization();
   
@@ -47,6 +50,7 @@ export default function HomeScreen() {
   const hasSetInitialDevotional = useRef(false);
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
   const lastDayChecked = useRef<number | null>(null);
+  const [journalDateKeys, setJournalDateKeys] = useState<Record<string, { marked: boolean; dotColor: string }>>({});
   
   const handleCardPress = (cardType: 'verse' | 'reflection' | 'prayer') => {
     setActiveCardType(cardType);
@@ -57,11 +61,11 @@ export default function HomeScreen() {
     setShowShareMenu(false);
     setTimeout(() => {
       if (activeCardType === 'verse') {
-        verseCard.shareCard("Share today's verse from Christian Daily Bread");
+        verseCard.shareCard("Share today's verse from CDB Therapy");
       } else if (activeCardType === 'reflection') {
-        reflectionCard.shareCard("Share today's reflection from Christian Daily Bread");
+        reflectionCard.shareCard("Share today's reflection from CDB Therapy");
       } else if (activeCardType === 'prayer') {
-        prayerCard.shareCard("Share today's prayer prompt from Christian Daily Bread");
+        prayerCard.shareCard("Share today's prayer prompt from CDB Therapy");
       }
     }, 300);
   };
@@ -86,6 +90,48 @@ export default function HomeScreen() {
   const bibleVersion = getVersionById(userPreferences.bibleVersion);
   const lang = userPreferences.appLanguage;
   const locale = getAppLanguageById(lang)?.locale ?? "en-US";
+
+  const journalActiveDate = useMemo(() => {
+    if (selectedDate && viewingPastContent) {
+      return selectedDate;
+    }
+    const todayDate = new Date();
+    todayDate.setHours(12, 0, 0, 0);
+    return todayDate;
+  }, [selectedDate, viewingPastContent]);
+
+  const refreshJournalMarks = useCallback(async () => {
+    const keys = await getJournalDateKeys();
+    const marks: Record<string, { marked: boolean; dotColor: string }> = {};
+    for (const key of keys) {
+      marks[key] = { marked: true, dotColor: "#6A4C93" };
+    }
+    setJournalDateKeys(marks);
+  }, []);
+
+  const calendarMarkedDates = useMemo(() => {
+    const todayKey = toDateKey(new Date());
+    const marks: Record<string, { marked?: boolean; dotColor?: string; selected?: boolean; selectedColor?: string }> = {
+      ...journalDateKeys,
+    };
+
+    marks[todayKey] = {
+      ...(marks[todayKey] ?? {}),
+      marked: true,
+      dotColor: marks[todayKey] ? "#6A4C93" : colors.light.primary,
+    };
+
+    if (selectedDate && viewingPastContent) {
+      const selectedKey = toDateKey(selectedDate);
+      marks[selectedKey] = {
+        ...(marks[selectedKey] ?? {}),
+        selected: true,
+        selectedColor: colors.light.primary,
+      };
+    }
+
+    return marks;
+  }, [journalDateKeys, selectedDate, viewingPastContent]);
 
   React.useEffect(() => {
     if (isLoaded) {
@@ -123,11 +169,31 @@ export default function HomeScreen() {
     setCurrentDayDevotional,
   ]);
 
+  useEffect(() => {
+    if (!journalDate || typeof journalDate !== "string") return;
+
+    const date = parseDateKey(journalDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selected = new Date(date);
+    selected.setHours(0, 0, 0, 0);
+
+    setSelectedDate(date);
+    setViewingPastContent(selected.getTime() !== today.getTime());
+  }, [journalDate]);
+
   useFocusEffect(
     React.useCallback(() => {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
-    }, [])
+      void refreshJournalMarks();
+    }, [refreshJournalMarks])
   );
+
+  useEffect(() => {
+    if (showCalendar) {
+      void refreshJournalMarks();
+    }
+  }, [showCalendar, refreshJournalMarks]);
 
   useEffect(() => {
     const checkForNewDay = () => {
@@ -314,20 +380,39 @@ export default function HomeScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Music Player - only shows if audio is available for this devotion */}
-          <DevotionalMusicPlayer
-            title={devotional.title}
-            audioSource={getDynamicAudioSource(devotional.title)}
-            albumArt={getAlbumArtForDevotion(devotional.title)}
-            devotionId={devotional.id}
-            shouldAutoPlay={shouldAutoPlay}
-            onPlayStateChange={(playing) => {
-              // Reset auto-play flag after first play
-              if (playing && shouldAutoPlay) {
-                setShouldAutoPlay(false);
-              }
+          <DevotionalJournal
+            date={journalActiveDate}
+            locale={locale}
+            lang={lang}
+            onSaved={(dateKey, hasContent) => {
+              setJournalDateKeys((prev) => {
+                const next = { ...prev };
+                if (hasContent) {
+                  next[dateKey] = { marked: true, dotColor: "#6A4C93" };
+                } else {
+                  delete next[dateKey];
+                }
+                return next;
+              });
             }}
           />
+
+          {/* Music Player - only shows if audio is available for this devotion */}
+          {hasAudioForDevotion(devotional.title) && (
+            <DevotionalMusicPlayer
+              title={devotional.title}
+              audioSource={getDynamicAudioSource(devotional.title)}
+              albumArt={getAlbumArtForDevotion(devotional.title)}
+              devotionId={devotional.id}
+              shouldAutoPlay={shouldAutoPlay}
+              onPlayStateChange={(playing) => {
+                // Reset auto-play flag after first play
+                if (playing && shouldAutoPlay) {
+                  setShouldAutoPlay(false);
+                }
+              }}
+            />
+          )}
         </Animated.View>
       </ScrollView>
 
@@ -391,20 +476,7 @@ export default function HomeScreen() {
                 textMonthFontSize: 18,
                 textDayHeaderFontSize: 14,
               }}
-              markedDates={{
-                [new Date().toISOString().split('T')[0]]: {
-                  marked: true,
-                  dotColor: colors.light.primary,
-                },
-                ...(selectedDate && viewingPastContent
-                  ? {
-                      [selectedDate.toISOString().split('T')[0]]: {
-                        selected: true,
-                        selectedColor: colors.light.primary,
-                      },
-                    }
-                  : {}),
-              }}
+              markedDates={calendarMarkedDates}
             />
 
             <TouchableOpacity

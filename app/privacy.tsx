@@ -17,17 +17,17 @@ export default function PrivacyPolicyScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Daily Bread Privacy Policy</Text>
+        <Text style={styles.title}>CDB Therapy Privacy Policy</Text>
         <Text style={styles.subtitle}>Protecting Your Data</Text>
         <Text style={styles.lastModified}>Last modified on December 14, 2025</Text>
 
         <Text style={styles.paragraph}>
-          At Daily Bread, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data.
+          At CDB Therapy, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data.
         </Text>
 
         <Text style={styles.sectionTitle}>Data Collection</Text>
         <Text style={styles.paragraph}>
-          We collect minimal data to improve our services. No personal data is required to use Daily Bread.
+          We collect minimal data to improve our services. No personal data is required to use CDB Therapy.
         </Text>
 
         <Text style={styles.sectionTitle}>Data Use</Text>
@@ -43,7 +43,7 @@ export default function PrivacyPolicyScreen() {
         <View style={styles.infoBox}>
           <Text style={styles.infoTitle}>Important Information</Text>
           <Text style={styles.infoText}>
-            Daily Bread&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
+            CDB Therapy&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
           </Text>
           <Text style={styles.infoText}>
             If you are experiencing a mental health crisis, thoughts of self-harm, or severe distress, please contact a licensed mental health professional, your healthcare provider, or a crisis hotline immediately.
@@ -58,8 +58,8 @@ export default function PrivacyPolicyScreen() {
         <Text style={styles.sectionTitle}>FAQ</Text>
 
         <View style={styles.faqItem}>
-          <Text style={styles.faqQuestion}>Q: Is Daily Bread free to download and use?</Text>
-          <Text style={styles.faqAnswer}>A: Yes, Daily Bread is free to download. Basic features are available for free. Premium subscriptions are available for users in the US, Canada, and Europe with a 7-day free trial. Users in other regions get all premium features free.</Text>
+          <Text style={styles.faqQuestion}>Q: Is CDB Therapy free to download and use?</Text>
+          <Text style={styles.faqAnswer}>A: Yes, CDB Therapy is free to download. Basic features are available for free. Premium subscriptions are available for users in the US, Canada, and Europe with a 7-day free trial. Users in other regions get all premium features free.</Text>
         </View>
 
         <View style={styles.faqItem}>
@@ -68,8 +68,8 @@ export default function PrivacyPolicyScreen() {
         </View>
 
         <View style={styles.faqItem}>
-          <Text style={styles.faqQuestion}>Q: Do I need to create an account to use Daily Bread?</Text>
-          <Text style={styles.faqAnswer}>A: No, you don&apos;t need to sign up or log in to use Daily Bread. Just download and start exploring!</Text>
+          <Text style={styles.faqQuestion}>Q: Do I need to create an account to use CDB Therapy?</Text>
+          <Text style={styles.faqAnswer}>A: No, you don&apos;t need to sign up or log in to use CDB Therapy. Just download and start exploring!</Text>
         </View>
 
         <View style={styles.faqItem}>
@@ -79,12 +79,12 @@ export default function PrivacyPolicyScreen() {
 
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>Q: What kind of therapy resources are available?</Text>
-          <Text style={styles.faqAnswer}>A: Daily Bread offers Christ-centered therapy resources, including devotions, scriptural reflections, and spiritual guidance for mental and emotional well-being.</Text>
+          <Text style={styles.faqAnswer}>A: CDB Therapy offers Christ-centered therapy resources, including devotions, scriptural reflections, and spiritual guidance for mental and emotional well-being.</Text>
         </View>
 
         <View style={styles.faqItem}>
-          <Text style={styles.faqQuestion}>Q: Is Daily Bread available on multiple devices?</Text>
-          <Text style={styles.faqAnswer}>A: Yes, Daily Bread is available on iOS and Android devices.</Text>
+          <Text style={styles.faqQuestion}>Q: Is CDB Therapy available on multiple devices?</Text>
+          <Text style={styles.faqAnswer}>A: Yes, CDB Therapy is available on iOS and Android devices.</Text>
         </View>
 
         <Text style={styles.sectionTitle}>Get in Touch</Text>
@@ -98,7 +98,7 @@ export default function PrivacyPolicyScreen() {
           <Text style={styles.contactValue}>support@dailybread.app</Text>
         </TouchableOpacity>
 
-        <Text style={styles.footer}>© {new Date().getFullYear()} Christian Daily Bread. All rights reserved.</Text>
+        <Text style={styles.footer}>© {new Date().getFullYear()} CDB Therapy. All rights reserved.</Text>
       </ScrollView>
     </SafeAreaView>
   );

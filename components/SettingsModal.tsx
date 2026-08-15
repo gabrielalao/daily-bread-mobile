@@ -181,11 +181,11 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
 
   const handleShareApp = async () => {
     try {
-      const message = `Check out Christian Daily Bread - Christian Therapy! 🙏\n\nGet daily spiritual guidance, Bible studies, prayers, and AI-powered Christian therapy sessions.\n\nDownload the app: https://daily-bread.app/\n\n📱 Download Links:\n\n🍎 App Store:\nhttps://apps.apple.com/us/app/daily-bread-christian-therapy/id6755737219\n\n🤖 Google Play:\nhttps://play.google.com/store/apps/details?id=app.rork.daily_bread_app_mp9wlbr\n\nAvailable on both iOS and Android!`;
+      const message = `Check out CDB Therapy! 🙏\n\nGet daily spiritual guidance, Bible studies, prayers, and AI-powered Christian therapy sessions.\n\nDownload the app: https://daily-bread.app/\n\n📱 Download Links:\n\n🍎 App Store:\nhttps://apps.apple.com/us/app/daily-bread-christian-therapy/id6755737219\n\n🤖 Google Play:\nhttps://play.google.com/store/apps/details?id=app.rork.daily_bread_app_mp9wlbr\n\nAvailable on both iOS and Android!`;
 
       const result = await Share.share({
         message,
-        title: 'Christian Daily Bread - Christian Therapy',
+        title: 'CDB Therapy',
       });
 
       if (result.action === Share.sharedAction) {
@@ -831,7 +831,7 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
           </View>
 
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionHeaderText}>Share Christian Daily Bread</Text>
+            <Text style={styles.sectionHeaderText}>Share CDB Therapy</Text>
           </View>
 
           <View style={styles.card}>
@@ -847,7 +847,7 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
                 <View style={styles.shareTextContainer}>
                   <Text style={styles.shareTitle}>Share with Friends</Text>
                   <Text style={styles.shareDescription}>
-                    Help others discover Christian Daily Bread and grow in their faith journey
+                    Help others discover CDB Therapy and grow in their faith journey
                   </Text>
                 </View>
               </View>

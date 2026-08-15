@@ -13,9 +13,10 @@ import { BibleVersionPickerModal } from "@/components/BibleVersionPickerModal";
 import { getEffectiveBibleVersionId } from "@/utils/bibleVersionPolicy";
 import { A11yText as Text } from "@/components/A11yText";
 import { TrialBanner } from "@/components/TrialBanner";
+import { JournalListModal } from "@/components/JournalListModal";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import Constants from "expo-constants";
-import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Share2, Edit3, Trash2, Plus, Play, CreditCard, RefreshCw, ArrowRightLeft } from "lucide-react-native";
+import { Bell, BellOff, Clock, FileText, Shield, HelpCircle, ChevronRight, BookOpen, Check, Calendar as CalendarIcon, Share2, Edit3, Trash2, Plus, Play, CreditCard, RefreshCw, ArrowRightLeft, Youtube } from "lucide-react-native";
 import React, { useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
@@ -33,6 +34,8 @@ import {
   Linking,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { getYouTubeChannelUrl } from "@/constants/socialLinks";
+import { getJournalDateKeys } from "@/utils/journalStorage";
 
 const { width: screenWidth } = Dimensions.get('window');
 const isTablet = screenWidth >= 768;
@@ -66,6 +69,8 @@ export default function SettingsScreen() {
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [showOfflineOnlineFaqModal, setShowOfflineOnlineFaqModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showJournalListModal, setShowJournalListModal] = useState(false);
+  const [journalEntryCount, setJournalEntryCount] = useState(0);
   const [editingSession, setEditingSession] = useState<ScheduledSession | null>(null);
   const scrollRef = React.useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
@@ -99,6 +104,23 @@ export default function SettingsScreen() {
   const openChangePlan = () => {
     router.push("/paywall");
   };
+
+  const openYouTubeChannel = async () => {
+    const url = getYouTubeChannelUrl();
+    if (!url) {
+      Alert.alert("Not Available", "YouTube channel link is not configured yet.");
+      return;
+    }
+
+    const canOpen = await Linking.canOpenURL(url);
+    if (!canOpen) {
+      Alert.alert("Unable to open", "Could not open YouTube on this device.");
+      return;
+    }
+    await Linking.openURL(url);
+  };
+
+  const youtubeChannelUrl = getYouTubeChannelUrl();
 
   const handleRestore = async () => {
     try {
@@ -306,11 +328,25 @@ export default function SettingsScreen() {
   const currentVersion = getVersionById(userPreferences.bibleVersion);
   const currentLanguage = getAppLanguageById(userPreferences.appLanguage);
 
+  const refreshJournalCount = React.useCallback(async () => {
+    const keys = await getJournalDateKeys();
+    setJournalEntryCount(keys.length);
+  }, []);
+
   useFocusEffect(
     React.useCallback(() => {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
-    }, [])
+      void refreshJournalCount();
+    }, [refreshJournalCount])
   );
+
+  const openJournalOnHome = (dateKey: string) => {
+    setShowJournalListModal(false);
+    router.push({
+      pathname: "/(tabs)/home",
+      params: { journalDate: dateKey },
+    });
+  };
 
   const effectiveVersionId = getEffectiveBibleVersionId({
     preferredVersionId: userPreferences.bibleVersion,
@@ -723,6 +759,34 @@ export default function SettingsScreen() {
             )}
           </View>
 
+          {/* My Journals Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t(tLang, "settings.myJournals")}</Text>
+            <View style={styles.settingCard}>
+              <TouchableOpacity
+                style={styles.settingRow}
+                onPress={() => setShowJournalListModal(true)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.iconContainer}>
+                  <BookOpen size={22} color="#6A4C93" />
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingLabel}>{t(tLang, "settings.myJournals")}</Text>
+                  <Text style={styles.settingDescription}>
+                    {t(tLang, "settings.myJournalsDescription")}
+                  </Text>
+                </View>
+                {journalEntryCount > 0 ? (
+                  <View style={styles.journalCountBadge}>
+                    <Text style={styles.journalCountText}>{journalEntryCount}</Text>
+                  </View>
+                ) : null}
+                <ChevronRight size={20} color={colors.light.textSecondary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
           {/* Legal & Support Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t(tLang, "settings.legalSupport")}</Text>
@@ -767,6 +831,24 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             </View>
           </View>
+
+          {youtubeChannelUrl ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{t(tLang, "settings.youtubeChannel")}</Text>
+              <TouchableOpacity style={styles.shareCard} onPress={openYouTubeChannel} activeOpacity={0.85}>
+                <View style={styles.shareIconContainer}>
+                  <Youtube size={24} color="#FFFFFF" />
+                </View>
+                <View style={styles.shareContent}>
+                  <Text style={styles.shareTitle}>CDB Therapy</Text>
+                  <Text style={styles.shareDescription}>
+                    {t(tLang, "settings.youtubeChannelDescription")}
+                  </Text>
+                </View>
+                <ChevronRight size={20} color={colors.light.textSecondary} />
+              </TouchableOpacity>
+            </View>
+          ) : null}
 
           {/* Share App Section */}
           <View style={styles.section}>
@@ -914,6 +996,17 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
+      {/* Journal List Modal */}
+      <JournalListModal
+        visible={showJournalListModal}
+        lang={tLang}
+        onClose={() => {
+          setShowJournalListModal(false);
+          void refreshJournalCount();
+        }}
+        onViewDevotion={openJournalOnHome}
+      />
+
       {/* Terms of Service Modal */}
       <Modal
         visible={showTermsModal}
@@ -941,28 +1034,28 @@ export default function SettingsScreen() {
               <Text style={styles.legalDate}>Last modified on December 14, 2025</Text>
 
               <Text style={styles.legalParagraph}>
-                Welcome to Christian Daily Bread! These Terms of Service (&quot;Terms&quot;) govern your use of our mobile application, website, and services. By using Christian Daily Bread, you agree to be bound by these Terms. Please read them carefully.
+                Welcome to CDB Therapy! These Terms of Service (&quot;Terms&quot;) govern your use of our mobile application, website, and services. By using CDB Therapy, you agree to be bound by these Terms. Please read them carefully.
               </Text>
 
               <Text style={styles.legalSectionTitle}>Use of Service</Text>
               <Text style={styles.legalParagraph}>
-                Daily Bread is available for personal, non-commercial use. You are responsible for complying with these Terms.
+                CDB Therapy is available for personal, non-commercial use. You are responsible for complying with these Terms.
               </Text>
 
               <Text style={styles.legalSubsectionTitle}>Intellectual Property</Text>
               <Text style={styles.legalParagraph}>
-                All content on Christian Daily Bread is protected by intellectual property laws and cannot be copied, reproduced, or distributed without prior written consent.
+                All content on CDB Therapy is protected by intellectual property laws and cannot be copied, reproduced, or distributed without prior written consent.
               </Text>
 
               <Text style={styles.legalSectionTitle}>Disclaimer of Warranties</Text>
               <Text style={styles.legalParagraph}>
-                Christian Daily Bread is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis. We disclaim all warranties, express or implied.
+                CDB Therapy is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis. We disclaim all warranties, express or implied.
               </Text>
 
               <View style={styles.legalInfoBox}>
                 <Text style={styles.legalInfoTitle}>Important Information</Text>
                 <Text style={styles.legalInfoText}>
-                  Christian Daily Bread&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
+                  CDB Therapy&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
                 </Text>
                 <Text style={styles.legalInfoText}>
                   If you are experiencing a mental health crisis, thoughts of self-harm, or severe distress, please contact a licensed mental health professional, your healthcare provider, or a crisis hotline immediately.
@@ -971,28 +1064,28 @@ export default function SettingsScreen() {
 
               <Text style={styles.legalSectionTitle}>FAQ</Text>
 
-              <Text style={styles.legalQuestion}>Q: Is Christian Daily Bread free to download and use?</Text>
-              <Text style={styles.legalAnswer}>A: Yes, Christian Daily Bread is free to download. Basic features are available for free. Premium subscriptions with enhanced features are available for users in the US, Canada, and Europe, with a 7-day free trial. Users in other regions get all premium features free.</Text>
+              <Text style={styles.legalQuestion}>Q: Is CDB Therapy free to download and use?</Text>
+              <Text style={styles.legalAnswer}>A: Yes, CDB Therapy is free to download. Basic features are available for free. Premium subscriptions with enhanced features are available for users in the US, Canada, and Europe, with a 7-day free trial. Users in other regions get all premium features free.</Text>
 
               <Text style={styles.legalQuestion}>Q: What are the subscription options?</Text>
               <Text style={styles.legalAnswer}>A: We offer a Premium subscription for users in supported paid regions. It includes a 7-day free trial and renews yearly. Prices are shown in the app. Users in other regions get premium features free.</Text>
 
               <Text style={styles.legalQuestion}>Q: How do I cancel my subscription?</Text>
-              <Text style={styles.legalAnswer}>A: For iOS: Go to Settings → [Your Name] → Subscriptions. Select Christian Daily Bread and tap &quot;Cancel Subscription&quot;. For Android: Open Play Store → Menu → Subscriptions. Select Christian Daily Bread and tap &quot;Cancel Subscription&quot;. Cancellation takes effect at the end of your current billing period.</Text>
+              <Text style={styles.legalAnswer}>A: For iOS: Go to Settings → [Your Name] → Subscriptions. Select CDB Therapy and tap &quot;Cancel Subscription&quot;. For Android: Open Play Store → Menu → Subscriptions. Select CDB Therapy and tap &quot;Cancel Subscription&quot;. Cancellation takes effect at the end of your current billing period.</Text>
 
-              <Text style={styles.legalQuestion}>Q: Do I need to create an account to use Christian Daily Bread?</Text>
-              <Text style={styles.legalAnswer}>A: No, you don&apos;t need to sign up or log in to use Christian Daily Bread. Just download and start exploring!</Text>
+              <Text style={styles.legalQuestion}>Q: Do I need to create an account to use CDB Therapy?</Text>
+              <Text style={styles.legalAnswer}>A: No, you don&apos;t need to sign up or log in to use CDB Therapy. Just download and start exploring!</Text>
 
               <Text style={styles.legalQuestion}>Q: How often is new content added?</Text>
               <Text style={styles.legalAnswer}>A: We refresh our therapy resources and devotions daily to support your ongoing journey.</Text>
 
               <Text style={styles.legalQuestion}>Q: What kind of therapy resources are available?</Text>
-              <Text style={styles.legalAnswer}>A: Christian Daily Bread offers Christ-centered therapy resources, including devotions, scriptural reflections, and spiritual guidance for mental and emotional well-being.</Text>
+              <Text style={styles.legalAnswer}>A: CDB Therapy offers Christ-centered therapy resources, including devotions, scriptural reflections, and spiritual guidance for mental and emotional well-being.</Text>
 
-              <Text style={styles.legalQuestion}>Q: Is Christian Daily Bread available on multiple devices?</Text>
-              <Text style={styles.legalAnswer}>A: Yes, Christian Daily Bread is available on iOS and Android devices.</Text>
+              <Text style={styles.legalQuestion}>Q: Is CDB Therapy available on multiple devices?</Text>
+              <Text style={styles.legalAnswer}>A: Yes, CDB Therapy is available on iOS and Android devices.</Text>
 
-              <Text style={styles.legalFooter}>© {new Date().getFullYear()} Christian Daily Bread. All rights reserved.</Text>
+              <Text style={styles.legalFooter}>© {new Date().getFullYear()} CDB Therapy. All rights reserved.</Text>
             </ScrollView>
           </View>
         </View>
@@ -1025,12 +1118,12 @@ export default function SettingsScreen() {
               <Text style={styles.legalDate}>Last modified on December 14, 2025</Text>
 
               <Text style={styles.legalParagraph}>
-                At Christian Daily Bread, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data.
+                At CDB Therapy, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your data.
               </Text>
 
               <Text style={styles.legalSectionTitle}>Data Collection</Text>
               <Text style={styles.legalParagraph}>
-                We collect minimal data to improve our services. No personal data is required to use Christian Daily Bread.
+                We collect minimal data to improve our services. No personal data is required to use CDB Therapy.
               </Text>
 
               <Text style={styles.legalSectionTitle}>Data Use</Text>
@@ -1046,7 +1139,7 @@ export default function SettingsScreen() {
               <View style={styles.legalInfoBox}>
                 <Text style={styles.legalInfoTitle}>Important Information</Text>
                 <Text style={styles.legalInfoText}>
-                  Christian Daily Bread&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
+                  CDB Therapy&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
                 </Text>
                 <Text style={styles.legalInfoText}>
                   If you are experiencing a mental health crisis, thoughts of self-harm, or severe distress, please contact a licensed mental health professional, your healthcare provider, or a crisis hotline immediately.
@@ -1055,25 +1148,25 @@ export default function SettingsScreen() {
 
               <Text style={styles.legalSectionTitle}>FAQ</Text>
 
-              <Text style={styles.legalQuestion}>Q: Is Christian Daily Bread free to download and use?</Text>
-              <Text style={styles.legalAnswer}>A: Yes, Christian Daily Bread is free to download. Basic features are available for free. Premium subscriptions are available for users in the US, Canada, and Europe, with a 7-day free trial. Users in other regions get all premium features free.</Text>
+              <Text style={styles.legalQuestion}>Q: Is CDB Therapy free to download and use?</Text>
+              <Text style={styles.legalAnswer}>A: Yes, CDB Therapy is free to download. Basic features are available for free. Premium subscriptions are available for users in the US, Canada, and Europe, with a 7-day free trial. Users in other regions get all premium features free.</Text>
 
               <Text style={styles.legalQuestion}>Q: What subscription data do you collect?</Text>
               <Text style={styles.legalAnswer}>A: We only receive basic subscription status from Apple/Google (active/expired, start date, renewal date). We never have access to your payment information or credit card details. All payments are processed securely by Apple/Google.</Text>
 
-              <Text style={styles.legalQuestion}>Q: Do I need to create an account to use Christian Daily Bread?</Text>
-              <Text style={styles.legalAnswer}>A: No, you don&apos;t need to sign up or log in to use Christian Daily Bread. Just download and start exploring!</Text>
+              <Text style={styles.legalQuestion}>Q: Do I need to create an account to use CDB Therapy?</Text>
+              <Text style={styles.legalAnswer}>A: No, you don&apos;t need to sign up or log in to use CDB Therapy. Just download and start exploring!</Text>
 
               <Text style={styles.legalQuestion}>Q: How often is new content added?</Text>
               <Text style={styles.legalAnswer}>A: We refresh our therapy resources and devotions daily to support your ongoing journey.</Text>
 
               <Text style={styles.legalQuestion}>Q: What kind of therapy resources are available?</Text>
-              <Text style={styles.legalAnswer}>A: Christian Daily Bread offers Christ-centered therapy resources, including devotions, scriptural reflections, and spiritual guidance for mental and emotional well-being.</Text>
+              <Text style={styles.legalAnswer}>A: CDB Therapy offers Christ-centered therapy resources, including devotions, scriptural reflections, and spiritual guidance for mental and emotional well-being.</Text>
 
-              <Text style={styles.legalQuestion}>Q: Is Christian Daily Bread available on multiple devices?</Text>
-              <Text style={styles.legalAnswer}>A: Yes, Christian Daily Bread is available on iOS and Android devices.</Text>
+              <Text style={styles.legalQuestion}>Q: Is CDB Therapy available on multiple devices?</Text>
+              <Text style={styles.legalAnswer}>A: Yes, CDB Therapy is available on iOS and Android devices.</Text>
 
-              <Text style={styles.legalFooter}>© {new Date().getFullYear()} Christian Daily Bread. All rights reserved.</Text>
+              <Text style={styles.legalFooter}>© {new Date().getFullYear()} CDB Therapy. All rights reserved.</Text>
             </ScrollView>
           </View>
         </View>
@@ -1112,7 +1205,7 @@ export default function SettingsScreen() {
                 style={styles.supportContactCard}
                 onPress={() => {
                   const email = 'support@dailybread.app';
-                  const subject = 'Christian Daily Bread - Support Request';
+                  const subject = 'CDB Therapy - Support Request';
                   const body = 'Hello, I need help with...';
                   Linking.openURL(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
                 }}
@@ -1130,7 +1223,7 @@ export default function SettingsScreen() {
               <View style={styles.legalInfoBox}>
                 <Text style={styles.legalInfoTitle}>Free Christian Therapy Services</Text>
                 <Text style={styles.legalInfoText}>
-                  Christian Daily Bread is committed to providing free therapy services to those who cannot afford it. If you need support, please contact us. We&apos;ll do our best to connect you with a licensed therapist.
+                  CDB Therapy is committed to providing free therapy services to those who cannot afford it. If you need support, please contact us. We&apos;ll do our best to connect you with a licensed therapist.
                 </Text>
               </View>
 
@@ -1146,15 +1239,15 @@ export default function SettingsScreen() {
 
               <Text style={styles.legalSectionTitle}>Partnerships</Text>
               <Text style={styles.legalParagraph}>
-                Christian Daily Bread is seeking partnerships with churches, Christian faith organizations, and individuals to support our mission. Your support will help us provide free therapy services and resources to those in need.
+                CDB Therapy is seeking partnerships with churches, Christian faith organizations, and individuals to support our mission. Your support will help us provide free therapy services and resources to those in need.
               </Text>
 
               <Text style={styles.legalSectionTitle}>Support Our Mission</Text>
               <Text style={styles.legalParagraph}>
-                Your donation will help us continue to provide free Christian therapy resources and services to those who need them. Please contact us to learn more about supporting Daily Bread.
+                Your donation will help us continue to provide free Christian therapy resources and services to those who need them. Please contact us to learn more about supporting CDB Therapy.
               </Text>
 
-              <Text style={styles.legalFooter}>© {new Date().getFullYear()} Christian Daily Bread. All rights reserved.</Text>
+              <Text style={styles.legalFooter}>© {new Date().getFullYear()} CDB Therapy. All rights reserved.</Text>
             </ScrollView>
           </View>
         </View>
@@ -1431,6 +1524,21 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     fontSize: 14,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+  },
+  journalCountBadge: {
+    minWidth: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#6A4C93',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    marginRight: 4,
+  },
+  journalCountText: {
+    fontSize: 13,
     fontWeight: '700' as const,
     color: '#FFFFFF',
   },

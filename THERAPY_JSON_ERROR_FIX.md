@@ -228,5 +228,5 @@ While primarily observed with "Anxiety & Worry", this fix improves reliability f
 ---
 
 **Fixed**: 2026-01-18  
-**Daily Bread App Version**: v2.0.0  
+**CDB Therapy App Version**: v2.0.0  
 **Priority**: HIGH (Mental health feature - critical user flow)

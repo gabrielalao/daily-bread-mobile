@@ -116,13 +116,13 @@ Added new translation keys for 5 languages:
 #### Enhanced Notification Message
 **Before:**
 ```
-Title: "Daily Bread 📖"
+Title: "CDB Therapy 📖"
 Body: "Your daily devotional is ready. Take a moment with God today."
 ```
 
 **After:**
 ```
-Title: "Daily Bread 📖🙏"
+Title: "CDB Therapy 📖🙏"
 Body: "Your daily devotional and prayer are ready. Take a moment with God today."
 ```
 

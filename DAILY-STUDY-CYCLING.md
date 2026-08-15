@@ -120,13 +120,13 @@ Added new translation keys for 5 languages:
 #### Updated Notification Message
 **Before:**
 ```
-Title: "Daily Bread 📖🙏"
+Title: "CDB Therapy 📖🙏"
 Body: "Your daily devotional and prayer are ready. Take a moment with God today."
 ```
 
 **After:**
 ```
-Title: "Daily Bread 📖🙏📚"
+Title: "CDB Therapy 📖🙏📚"
 Body: "Your daily devotional, prayer, and Bible study are ready. Spend time with God today."
 ```
 

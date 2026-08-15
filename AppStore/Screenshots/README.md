@@ -110,7 +110,7 @@ done
 ## Upload to App Store Connect
 
 1. Go to [App Store Connect](https://appstoreconnect.apple.com)
-2. Select your app: **Christian Daily Bread**
+2. Select your app: **CDB Therapy**
 3. Go to: **App Store → [Version] → iOS Screenshots**
 4. Upload screenshots from `AppStore/Screenshots/resized/`
 5. Add captions (optional but recommended)

@@ -1,6 +1,6 @@
-# Daily Bread — App Features
+# CDB Therapy — App Features
 
-This document lists the user-facing features implemented in the Daily Bread app (iOS/Android, with partial web support).
+This document lists the user-facing features implemented in the CDB Therapy app (iOS/Android, with partial web support).
 
 ---
 

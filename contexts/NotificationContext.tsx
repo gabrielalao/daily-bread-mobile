@@ -3,6 +3,7 @@ import createContextHook from '@nkzw/create-context-hook';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import { APP_DISPLAY_NAME } from '@/constants/appName';
 
 // Check if we're in Expo Go BEFORE importing
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -137,7 +138,7 @@ export const [NotificationProvider, useNotifications] = createContextHook(() => 
 
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: 'Christian Daily Bread 📖🙏📚',
+          title: `${APP_DISPLAY_NAME} 📖🙏📚`,
           body: 'Your daily devotional, prayer, and Bible study are ready. Spend time with God today.',
           sound: true,
           priority: Notifications.AndroidNotificationPriority.HIGH,

@@ -87,7 +87,7 @@ EAS will:
 ### Step 4: Add to TestFlight
 
 1. Go to App Store Connect: https://appstoreconnect.apple.com
-2. Select **Christian Daily Bread**
+2. Select **CDB Therapy**
 3. Go to **TestFlight** tab
 4. Wait for build to process (5-10 minutes)
 5. Add **"What to Test"** notes:

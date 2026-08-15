@@ -1,5 +1,5 @@
 # Subscription Implementation Plan
-**Daily Bread Mobile - iOS & Android**
+**CDB Therapy Mobile - iOS & Android**
 
 **Created:** January 30, 2026  
 **Estimated Duration:** 2-3 weeks  
@@ -64,7 +64,7 @@
 
 #### 4. RevenueCat Account
 - [ ] Sign up at [revenuecat.com](https://www.revenuecat.com)
-- [ ] Create project: "Daily Bread"
+- [ ] Create project: "CDB Therapy"
 - [ ] Free tier is sufficient to start
 - [ ] Get iOS API key
 - [ ] Get Android API key
@@ -149,9 +149,9 @@ eas build:configure
 
 **Task 1.3: RevenueCat Setup**
 - [ ] Sign up at [revenuecat.com](https://www.revenuecat.com)
-- [ ] Create new project: "Daily Bread"
+- [ ] Create new project: "CDB Therapy"
 - [ ] In RevenueCat Dashboard:
-  - [ ] Navigate to Projects → Daily Bread
+  - [ ] Navigate to Projects → CDB Therapy
   - [ ] Click "iOS" → Get API key → Copy `appl_xxxxx`
   - [ ] Click "Android" → Get API key → Copy `goog_xxxxx`
   - [ ] Save these keys (we'll use them tomorrow)
@@ -951,7 +951,7 @@ Still on version page:
 
 On iPhone:
 1. Settings → Apple ID → Sign Out (completely)
-2. Delete Daily Bread app
+2. Delete CDB Therapy app
 3. Open TestFlight
 4. Install latest build
 5. Open app
@@ -987,7 +987,7 @@ Test Results:
 Now that App Store Connect products exist, configure RevenueCat:
 
 1. Log into [RevenueCat Dashboard](https://app.revenuecat.com)
-2. Go to: Projects → Daily Bread
+2. Go to: Projects → CDB Therapy
 3. Click: **Products** (left sidebar)
 4. Click: **"+ New"**
 
@@ -1014,7 +1014,7 @@ Now that App Store Connect products exist, configure RevenueCat:
 Now we configure Android subscriptions:
 
 1. Log into [Google Play Console](https://play.google.com/console)
-2. Select: Daily Bread app
+2. Select: CDB Therapy app
 3. Navigate to: **Monetize → Subscriptions**
 4. Click: **"Create subscription"**
 
@@ -1103,7 +1103,7 @@ Back in RevenueCat Dashboard:
 
 - [ ] Internal testing → Testers tab
 - [ ] Click "Create email list"
-- [ ] Name: `Daily Bread Testers`
+- [ ] Name: `CDB Therapy Testers`
 - [ ] Add email addresses (must be Gmail)
 - [ ] Save
 
@@ -1486,14 +1486,14 @@ Thank you,
 **Task 21.1: Verify Apps are Live**
 
 iOS:
-- [ ] Search "Daily Bread" in App Store
+- [ ] Search "CDB Therapy" in App Store
 - [ ] Verify version 6.0.2 is live
 - [ ] Download on clean device
 - [ ] Verify trial starts
 - [ ] Verify subscriptions work (real purchase - will charge!)
 
 Android:
-- [ ] Search "Daily Bread" in Play Store
+- [ ] Search "CDB Therapy" in Play Store
 - [ ] Verify version 6.0.2 is live
 - [ ] Download on clean device
 - [ ] Verify trial starts
@@ -1612,7 +1612,7 @@ Week 1 Metrics to Track:
 
 ## 🎉 Conclusion
 
-This plan gives you a clear roadmap to implement subscriptions in your Daily Bread mobile app. 
+This plan gives you a clear roadmap to implement subscriptions in your CDB Therapy mobile app. 
 
 **Key Takeaways:**
 1. Start with Paid Apps Agreement immediately (48hr wait)

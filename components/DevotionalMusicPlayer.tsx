@@ -9,6 +9,7 @@ import { useContent } from "@/contexts/ContentContext";
 import { requireOnlineOrPrompt } from "@/utils/networkPolicy";
 import { usePremiumAccess } from "@/hooks/usePremiumAccess";
 import { useRouter } from "expo-router";
+import { APP_DISPLAY_NAME } from "@/constants/appName";
 
 interface DevotionalMusicPlayerProps {
   title: string;
@@ -19,7 +20,15 @@ interface DevotionalMusicPlayerProps {
   onPlayStateChange?: (isPlaying: boolean) => void;
 }
 
-export function DevotionalMusicPlayer({ 
+export function DevotionalMusicPlayer(props: DevotionalMusicPlayerProps) {
+  if (!props.audioSource) {
+    return null;
+  }
+
+  return <DevotionalMusicPlayerInner {...props} />;
+}
+
+function DevotionalMusicPlayerInner({ 
   title, 
   audioSource, 
   devotionId, 
@@ -47,6 +56,22 @@ export function DevotionalMusicPlayer({
   const [offlineAudioBlocked, setOfflineAudioBlocked] = useState(false);
   const soundRef = useRef<Audio.Sound | null>(null);
   const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    setResolvedAudioSource(audioSource);
+    setResolvedAlbumArt(albumArt ?? null);
+    setSound(null);
+    setIsPlaying(false);
+    setHasError(false);
+    setIsLoading(false);
+    setOfflineAudioBlocked(false);
+    setPosition(0);
+    setDuration(0);
+    if (soundRef.current) {
+      soundRef.current.unloadAsync().catch(() => {});
+      soundRef.current = null;
+    }
+  }, [audioSource, albumArt, devotionId]);
 
   const getCachePaths = useCallback(() => {
     const fileName = getAudioFileForDevotion(title);
@@ -403,10 +428,6 @@ export function DevotionalMusicPlayer({
   const timeFontSize = isTablet ? 14 : isSmallPhone ? 10 : 12;
   const skipTextSize = isTablet ? 14 : isSmallPhone ? 10 : 12;
 
-  if (!resolvedAudioSource) {
-    return null;
-  }
-
   if (isPremiumLocked) {
     return (
       <View style={styles.premiumLockCard}>
@@ -470,7 +491,7 @@ export function DevotionalMusicPlayer({
               {title}
             </Text>
             <Text style={[styles.artistName, { fontSize: artistFontSize }]} numberOfLines={1}>
-              Christian Daily Bread
+              {APP_DISPLAY_NAME}
             </Text>
           </View>
 

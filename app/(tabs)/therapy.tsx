@@ -151,11 +151,11 @@ export default function TherapyScreen() {
     setShowShareMenu(false);
     setTimeout(() => {
       if (activeCardType === 'scripture') {
-        scriptureCard.shareCard("Share today's scripture from Christian Daily Bread");
+        scriptureCard.shareCard("Share today's scripture from CDB Therapy");
       } else if (activeCardType === 'reflection') {
-        reflectionCard.shareCard("Share today's reflection from Christian Daily Bread");
+        reflectionCard.shareCard("Share today's reflection from CDB Therapy");
       } else if (activeCardType === 'prayer') {
-        prayerCard.shareCard("Share today's prayer from Christian Daily Bread");
+        prayerCard.shareCard("Share today's prayer from CDB Therapy");
       }
     }, 300);
   };
@@ -242,7 +242,7 @@ export default function TherapyScreen() {
         "I need prayer guidance",
         "Dealing with relationships",
         "Hello, this is a test of the selected voice settings.",
-        "Share this therapy session from Christian Daily Bread",
+        "Share this therapy session from CDB Therapy",
         "Note: This content is designed to support your spiritual and emotional well-being. If you're experiencing severe mental health concerns, please seek professional help from a licensed counselor or therapist.",
         "Recording Error",
         "Failed to start recording. Please try again.",

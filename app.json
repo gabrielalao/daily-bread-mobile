@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Christian Daily Bread",
+    "name": "CDB Therapy",
     "slug": "daily-bread-app-mp9wlbr",
     "version": "6.0.2",
     "orientation": "default",
@@ -16,12 +16,13 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.rork.daily-bread-app-mp9wlbr",
-      "buildNumber": "71",
+      "buildNumber": "72",
       "config": {
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Allow Christian Daily Bread to access your microphone to record audio for therapy sessions and provide personalized feedback. Your audio data will not be stored and used only for the purpose of improving your mental health and wellness.",
+        "CFBundleDisplayName": "CDB Therapy",
+        "NSMicrophoneUsageDescription": "Allow CDB Therapy to access your microphone to record audio for therapy sessions and provide personalized feedback. Your audio data will not be stored and used only for the purpose of improving your mental health and wellness.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
           "NSExceptionDomains": {
@@ -44,6 +45,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "label": "CDB Therapy",
       "package": "app.rork.daily_bread_app_mp9wlbr",
       "versionCode": 8,
       "permissions": [
@@ -82,7 +84,7 @@
       [
         "expo-av",
         {
-          "microphonePermission": "Allow Christian Daily Bread to access your microphone to record audio for therapy sessions and provide personalized feedback. Your audio data will not be stored and used only for the purpose of improving your mental health and wellness."
+          "microphonePermission": "Allow CDB Therapy to access your microphone to record audio for therapy sessions and provide personalized feedback. Your audio data will not be stored and used only for the purpose of improving your mental health and wellness."
         }
       ]
     ],
@@ -91,6 +93,7 @@
     },
     "extra": {
       "EXPO_PUBLIC_TOOLKIT_URL": "https://toolkit.rork.com",
+      "EXPO_PUBLIC_YOUTUBE_CHANNEL_URL": "https://www.youtube.com/@cdbtherapy",
       "router": {
         "origin": "https://rork.com/"
       },

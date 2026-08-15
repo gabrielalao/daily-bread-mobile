@@ -25,7 +25,7 @@ Before starting, make sure you have:
 1. Visit: https://appstoreconnect.apple.com
 2. Sign in with your Apple Developer account
 3. Click on **"My Apps"**
-4. Select your app: **"Christian Daily Bread"**
+4. Select your app: **"CDB Therapy"**
 
 ### Step 2: Set Up Subscriptions
 
@@ -80,7 +80,7 @@ For now, products are in "Missing Metadata" or "Ready to Submit" status. That's 
 
 1. Visit: https://play.google.com/console
 2. Sign in with your Google account
-3. Select your app: **"Christian Daily Bread"**
+3. Select your app: **"CDB Therapy"**
 
 ### Step 2: Set Up Subscriptions
 

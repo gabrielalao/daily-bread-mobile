@@ -2,7 +2,7 @@
 
 ## Overview
 
-All screenshots captured and shared from the Daily Bread app now include a **professional watermark** with the app logo and website URL. This serves multiple purposes:
+All screenshots captured and shared from the CDB Therapy app now include a **professional watermark** with the app logo and website URL. This serves multiple purposes:
 - 📋 **Copyright Protection** - Identifies content source
 - 📢 **Brand Awareness** - Spreads word about the app
 - 🌐 **Direct Downloads** - Users can visit **dailybread.app** directly
@@ -263,7 +263,7 @@ Direct conversions! 🌱
 ```
 Old way:
 Friend: "What app is this?"
-User: "Daily Bread... I think? Let me check"
+User: "CDB Therapy... I think? Let me check"
 Friend: *searches, finds wrong app*
 ❌ Lost opportunity
 
@@ -298,9 +298,9 @@ The watermark system is designed to be flexible for future enhancements:
    - Subtle (more transparent)
 
 4. **Custom Text**
-   - "Daily Bread App"
-   - "Get Daily Bread"
-   - "Daily Bread - Faith App"
+   - "CDB Therapy App"
+   - "Get CDB Therapy"
+   - "CDB Therapy - Faith App"
    - Include user's name (optional)
 
 5. **Watermark Color**

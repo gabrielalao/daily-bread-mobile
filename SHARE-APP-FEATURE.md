@@ -1,7 +1,7 @@
 # Share App Feature
 
 ## Overview
-Added a "Share App" section to the Settings page that allows users to easily share Daily Bread with friends and family, helping drive app downloads and grow the user base.
+Added a "Share App" section to the Settings page that allows users to easily share CDB Therapy with friends and family, helping drive app downloads and grow the user base.
 
 ## Implementation Details
 
@@ -25,7 +25,7 @@ The share message includes:
 
 **Example Share Message:**
 ```
-Check out Daily Bread - Christian Therapy! 🙏
+Check out CDB Therapy - Christian Therapy! 🙏
 
 Get daily spiritual guidance, Bible studies, prayers, and AI-powered Christian therapy sessions.
 
@@ -53,11 +53,11 @@ import { Share2 } from "lucide-react-native";
 ```typescript
 const handleShareApp = async () => {
   try {
-    const message = `Check out Daily Bread - Christian Therapy! 🙏\n\n...`;
+    const message = `Check out CDB Therapy - Christian Therapy! 🙏\n\n...`;
     
     const result = await Share.share({
       message,
-      title: 'Daily Bread - Christian Therapy',
+      title: 'CDB Therapy - Christian Therapy',
       url: Platform.OS === 'ios' 
         ? 'https://apps.apple.com/us/app/daily-bread-christian-therapy/id6755737219'
         : 'https://play.google.com/store/apps/details?id=app.rork.daily_bread_app_mp9wlbr',
@@ -75,12 +75,12 @@ const handleShareApp = async () => {
 ### UI Components
 
 #### Share Section
-- **Section Header**: "Share Daily Bread"
+- **Section Header**: "Share CDB Therapy"
 - **Large Share Button**:
   - 64x64 circular icon with Share2 icon
   - Primary color background with shadow
   - Title: "Share with Friends"
-  - Description: "Help others discover Daily Bread and grow in their faith journey"
+  - Description: "Help others discover CDB Therapy and grow in their faith journey"
 - **Download Links Info Box**:
   - Light background with border
   - Lists both App Store and Google Play links

@@ -147,11 +147,11 @@ export default function PrayerScreen() {
     setShowShareMenu(false);
     setTimeout(() => {
       if (activeCardType === 'prayer') {
-        prayerCard.shareCard("Share today's prayer from Christian Daily Bread");
+        prayerCard.shareCard("Share today's prayer from CDB Therapy");
       } else if (activeCardType === 'verse') {
-        verseCard.shareCard("Share today's verse from Christian Daily Bread");
+        verseCard.shareCard("Share today's verse from CDB Therapy");
       } else if (activeCardType === 'application') {
-        applicationCard.shareCard("Share today's prayer application from Christian Daily Bread");
+        applicationCard.shareCard("Share today's prayer application from CDB Therapy");
       }
     }, 300);
   };

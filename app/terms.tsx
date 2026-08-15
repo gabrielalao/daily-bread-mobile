@@ -17,19 +17,19 @@ export default function TermsOfServiceScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Daily Bread Terms of Service</Text>
+        <Text style={styles.title}>CDB Therapy Terms of Service</Text>
         <Text style={styles.subtitle}>User Agreement & Guidelines</Text>
         <Text style={styles.lastModified}>Last modified on December 14, 2025</Text>
 
         <Text style={styles.paragraph}>
-          Welcome to Daily Bread! These Terms of Service (&quot;Terms&quot;) govern your use of our mobile application, website, and services. By using Daily Bread, you agree to be bound by these Terms. Please read them carefully.
+          Welcome to CDB Therapy! These Terms of Service (&quot;Terms&quot;) govern your use of our mobile application, website, and services. By using CDB Therapy, you agree to be bound by these Terms. Please read them carefully.
         </Text>
 
         <Text style={styles.sectionTitle}>Subscription Services</Text>
         
         <Text style={styles.subsectionTitle}>Premium Subscription Plans</Text>
         <Text style={styles.paragraph}>
-          Christian Daily Bread offers premium subscription plans with enhanced features:
+          CDB Therapy offers premium subscription plans with enhanced features:
         </Text>
         
         <View style={styles.requirementsList}>
@@ -59,23 +59,23 @@ export default function TermsOfServiceScreen() {
 
         <Text style={styles.sectionTitle}>Use of Service</Text>
         <Text style={styles.paragraph}>
-          Daily Bread is available for personal, non-commercial use. You are responsible for complying with these Terms.
+          CDB Therapy is available for personal, non-commercial use. You are responsible for complying with these Terms.
         </Text>
 
         <Text style={styles.subsectionTitle}>Intellectual Property</Text>
         <Text style={styles.paragraph}>
-          All content on Daily Bread is protected by intellectual property laws and cannot be copied, reproduced, or distributed without prior written consent.
+          All content on CDB Therapy is protected by intellectual property laws and cannot be copied, reproduced, or distributed without prior written consent.
         </Text>
 
         <Text style={styles.sectionTitle}>Disclaimer of Warranties</Text>
         <Text style={styles.paragraph}>
-          Daily Bread is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis. We disclaim all warranties, express or implied.
+          CDB Therapy is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis. We disclaim all warranties, express or implied.
         </Text>
 
         <View style={styles.infoBox}>
           <Text style={styles.infoTitle}>Important Information</Text>
           <Text style={styles.infoText}>
-            Daily Bread&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
+            CDB Therapy&apos;s AI-powered conversations provide emotional support and biblical guidance based on scripture and Christian principles. This service does not replace professional mental health care, medical advice, or pastoral counseling.
           </Text>
           <Text style={styles.infoText}>
             If you are experiencing a mental health crisis, thoughts of self-harm, or severe distress, please contact a licensed mental health professional, your healthcare provider, or a crisis hotline immediately.
@@ -85,8 +85,8 @@ export default function TermsOfServiceScreen() {
         <Text style={styles.sectionTitle}>FAQ</Text>
 
         <View style={styles.faqItem}>
-          <Text style={styles.faqQuestion}>Q: Is Daily Bread free to download and use?</Text>
-          <Text style={styles.faqAnswer}>A: Yes, Daily Bread is free to download. Basic features are available for free. Premium subscriptions with enhanced features are available for users in the US, Canada, and Europe, with a 7-day free trial. Users in other regions get all premium features free.</Text>
+          <Text style={styles.faqQuestion}>Q: Is CDB Therapy free to download and use?</Text>
+          <Text style={styles.faqAnswer}>A: Yes, CDB Therapy is free to download. Basic features are available for free. Premium subscriptions with enhanced features are available for users in the US, Canada, and Europe, with a 7-day free trial. Users in other regions get all premium features free.</Text>
         </View>
 
         <View style={styles.faqItem}>
@@ -96,12 +96,12 @@ export default function TermsOfServiceScreen() {
 
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>Q: How do I cancel my subscription?</Text>
-          <Text style={styles.faqAnswer}>A: Go to Settings → [Your Name] → Subscriptions on your iOS device. Select Christian Daily Bread and tap &quot;Cancel Subscription&quot;. Cancellation takes effect at the end of your current billing period.</Text>
+          <Text style={styles.faqAnswer}>A: Go to Settings → [Your Name] → Subscriptions on your iOS device. Select CDB Therapy and tap &quot;Cancel Subscription&quot;. Cancellation takes effect at the end of your current billing period.</Text>
         </View>
 
         <View style={styles.faqItem}>
-          <Text style={styles.faqQuestion}>Q: Do I need to create an account to use Daily Bread?</Text>
-          <Text style={styles.faqAnswer}>A: No, you don&apos;t need to sign up or log in to use Daily Bread. Just download and start exploring!</Text>
+          <Text style={styles.faqQuestion}>Q: Do I need to create an account to use CDB Therapy?</Text>
+          <Text style={styles.faqAnswer}>A: No, you don&apos;t need to sign up or log in to use CDB Therapy. Just download and start exploring!</Text>
         </View>
 
         <View style={styles.faqItem}>
@@ -111,17 +111,17 @@ export default function TermsOfServiceScreen() {
 
         <View style={styles.faqItem}>
           <Text style={styles.faqQuestion}>Q: What kind of therapy resources are available?</Text>
-          <Text style={styles.faqAnswer}>A: Daily Bread offers Christ-centered therapy resources, including devotions, scriptural reflections, and spiritual guidance for mental and emotional well-being.</Text>
+          <Text style={styles.faqAnswer}>A: CDB Therapy offers Christ-centered therapy resources, including devotions, scriptural reflections, and spiritual guidance for mental and emotional well-being.</Text>
         </View>
 
         <View style={styles.faqItem}>
-          <Text style={styles.faqQuestion}>Q: Is Daily Bread available on multiple devices?</Text>
-          <Text style={styles.faqAnswer}>A: Yes, Daily Bread is available on iOS and Android devices.</Text>
+          <Text style={styles.faqQuestion}>Q: Is CDB Therapy available on multiple devices?</Text>
+          <Text style={styles.faqAnswer}>A: Yes, CDB Therapy is available on iOS and Android devices.</Text>
         </View>
 
         <Text style={styles.sectionTitle}>Partnerships</Text>
         <Text style={styles.paragraph}>
-          Daily Bread is seeking partnerships with churches, Christian faith organizations, and individuals to support our mission. Your support will help us provide free therapy services and resources to those in need.
+          CDB Therapy is seeking partnerships with churches, Christian faith organizations, and individuals to support our mission. Your support will help us provide free therapy services and resources to those in need.
         </Text>
         <Text style={styles.paragraph}>
           If you&apos;re interested in partnering with us, please contact us at support@dailybread.app.
@@ -134,7 +134,7 @@ export default function TermsOfServiceScreen() {
 
         <Text style={styles.sectionTitle}>Free Christian Therapy Services</Text>
         <Text style={styles.paragraph}>
-          Daily Bread is committed to providing free therapy services to those who cannot afford it. If you need support, please contact us at support@dailybread.app or call us at +1 512 500 5160. We&apos;ll do our best to connect you with a licensed therapist.
+          CDB Therapy is committed to providing free therapy services to those who cannot afford it. If you need support, please contact us at support@dailybread.app or call us at +1 512 500 5160. We&apos;ll do our best to connect you with a licensed therapist.
         </Text>
 
         <Text style={styles.sectionTitle}>Partner with Us</Text>
@@ -158,7 +158,7 @@ export default function TermsOfServiceScreen() {
           <Text style={styles.contactValue}>support@dailybread.app</Text>
         </TouchableOpacity>
 
-        <Text style={styles.footer}>© {new Date().getFullYear()} Christian Daily Bread. All rights reserved.</Text>
+        <Text style={styles.footer}>© {new Date().getFullYear()} CDB Therapy. All rights reserved.</Text>
       </ScrollView>
     </SafeAreaView>
   );

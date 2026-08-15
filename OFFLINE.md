@@ -1,6 +1,6 @@
 # Offline Functionality
 
-Daily Bread now supports offline mode, ensuring users can access content even without an internet connection.
+CDB Therapy now supports offline mode, ensuring users can access content even without an internet connection.
 
 ## ✅ Features Available Offline
 
@@ -85,14 +85,14 @@ Daily Bread now supports offline mode, ensuring users can access content even wi
 ### On iOS:
 1. Open Settings app
 2. Enable Airplane Mode
-3. Open Daily Bread app
+3. Open CDB Therapy app
 4. Navigate through all tabs
 5. Try AI features (should show offline messages)
 
 ### On Android:
 1. Swipe down notification panel
 2. Tap Airplane Mode
-3. Open Daily Bread app
+3. Open CDB Therapy app
 4. Test all features
 
 ### In Expo Go/Development:

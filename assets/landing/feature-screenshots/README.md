@@ -1,6 +1,6 @@
 # Landing screenshots (feature pack)
 
-These are **real iOS Simulator screenshots** of the current Daily Bread app UI, intended for your **Next.js landing page**.
+These are **real iOS Simulator screenshots** of the current CDB Therapy app UI, intended for your **Next.js landing page**.
 
 ## iOS screenshots
 

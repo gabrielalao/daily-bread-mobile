@@ -7,7 +7,7 @@ import colors from "@/constants/colors";
 export default function SupportScreen() {
   const handleEmail = () => {
     const email = 'support@dailybread.app';
-    const subject = 'Christian Daily Bread - Support Request';
+    const subject = 'CDB Therapy - Support Request';
     const body = 'Hello, I need help with...';
     
     Linking.openURL(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`)
@@ -46,7 +46,7 @@ export default function SupportScreen() {
         <View style={styles.infoBox}>
           <Text style={styles.infoTitle}>Free Christian Therapy Services</Text>
           <Text style={styles.infoText}>
-            Daily Bread is committed to providing free therapy services to those who cannot afford it. If you need support, please contact us. We&apos;ll do our best to connect you with a licensed therapist.
+            CDB Therapy is committed to providing free therapy services to those who cannot afford it. If you need support, please contact us. We&apos;ll do our best to connect you with a licensed therapist.
           </Text>
         </View>
 
@@ -70,7 +70,7 @@ export default function SupportScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Partnerships</Text>
           <Text style={styles.paragraph}>
-            Daily Bread is seeking partnerships with churches, Christian faith organizations, and individuals to support our mission. Your support will help us provide free therapy services and resources to those in need.
+            CDB Therapy is seeking partnerships with churches, Christian faith organizations, and individuals to support our mission. Your support will help us provide free therapy services and resources to those in need.
           </Text>
           <TouchableOpacity style={styles.ctaButton} onPress={handleEmail}>
             <Text style={styles.ctaButtonText}>Become a Partner</Text>
@@ -84,11 +84,11 @@ export default function SupportScreen() {
             Your donation will help us continue to provide free Christian therapy resources and services to those who need them.
           </Text>
           <TouchableOpacity style={styles.ctaButton} onPress={handleEmail}>
-            <Text style={styles.ctaButtonText}>Support Daily Bread</Text>
+            <Text style={styles.ctaButtonText}>Support CDB Therapy</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.footer}>© {new Date().getFullYear()} Christian Daily Bread. All rights reserved.</Text>
+        <Text style={styles.footer}>© {new Date().getFullYear()} CDB Therapy. All rights reserved.</Text>
       </ScrollView>
     </SafeAreaView>
   );

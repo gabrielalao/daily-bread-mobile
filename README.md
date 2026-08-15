@@ -1,4 +1,4 @@
-# Christian Daily Bread
+# CDB Therapy
 
 ## Project info
 
